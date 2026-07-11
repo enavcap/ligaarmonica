@@ -20,7 +20,7 @@
       Solo hace falta para la pestaña Admin; las vistas públicas funcionan
       sin ella. Instrucciones de instalación en Code-escritura.gs.
 */
-const SPREADSHEET_ID = '1dnKir-osb8z4sqnMEqjUeA-GLYM45KVW1ip_sv8uBRg';
+const SPREADSHEET_ID = '1y0IUlAwVa3mPrNd3Bbb7qS3YvJZNdg_uGQvLFH8leTo';
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5Brkod4ER7xcwfbyRaVipMHeQeZAK-4ugECF1vi9QUu48XZ0U/exec';
 </script>
 
@@ -104,6 +104,32 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   }
   .grid3 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 20px; }
   .grid2 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .grid-insignias { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 8px; }
+  .tarjeta-fama { text-align: center; }
+  .imagen-fama {
+    width: 140px; height: 140px; margin: 0 auto 12px; border-radius: 16px;
+    background-color: var(--night-2); background-size: contain; background-repeat: no-repeat; background-position: center;
+    border: 1px solid rgba(30, 92, 65, 0.5); display: flex; align-items: center; justify-content: center; font-size: 60px;
+  }
+  .avatar-alumno {
+    position: relative; display: inline-block; flex-shrink: 0;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
+  }
+  .avatar-retrato {
+    display: block; width: 100%; height: 100%; border-radius: 50%;
+    border-style: solid; background: var(--night-2); overflow: hidden;
+  }
+  .avatar-retrato svg { display: block; width: 100%; height: 100%; }
+  .avatar-instrumento {
+    position: absolute; right: -6px; bottom: -6px;
+    border-radius: 50%; background: var(--night); border-style: solid;
+    display: flex; align-items: center; justify-content: center; line-height: 1;
+  }
+  .avatar-mini-fila { display: flex; align-items: center; gap: 10px; }
+  .perfil-cabecera { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .lista-ganadores { text-align: left; margin: 10px 0 0; padding: 0; list-style: none; }
+  .lista-ganadores li { padding: 6px 2px; border-bottom: 1px solid rgba(30, 92, 65, 0.2); font-size: 14px; }
+  .lista-ganadores li:last-child { border-bottom: none; }
 
   .etiqueta { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold); }
   .principal {
@@ -112,6 +138,12 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     margin: 8px 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .secundario { font-size: 14px; color: var(--muted); margin: 0; }
+  .extra-tarjeta { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(30, 92, 65, 0.35); }
+  .extra-titulo {
+    display: block; font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 3px;
+  }
+  .extra-texto { font-size: 14px; color: var(--chalk); margin: 0; line-height: 1.4; }
 
   .card h3 {
     font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px;
@@ -138,6 +170,11 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   .pos.p1 { background: var(--gold); color: var(--night); box-shadow: 0 0 0 2px rgba(243, 217, 139, 0.5); }
   .pos.p2 { background: #cbd5e1; color: var(--night); }
   .pos.p3 { background: #b45309; color: var(--chalk); }
+  .tendencia { display: inline-block; font-size: 12px; line-height: 1; cursor: default; }
+  .tendencia-sube { color: #0ca30c; }
+  .tendencia-baja { color: #e0524f; }
+  .tendencia-igual { color: var(--muted); font-size: 10px; }
+  .tendencia-nuevo { color: var(--gold-light); }
   .dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); margin-right: 7px; vertical-align: -1px; }
   .nota { font-size: 12px; color: rgba(244,246,243,0.35); margin-top: 12px; }
   .vermas { font-size: 13px; font-weight: 600; color: var(--gold); text-decoration: none; float: right; }
@@ -162,6 +199,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   svg.grafico .barra, svg.grafico .punto { cursor: pointer; }
   svg.grafico text { font-family: 'Barlow', sans-serif; }
   svg.grafico .eje-txt { fill: var(--muted); font-size: 11px; }
+  svg.grafico .diana-eje-txt { font-size: 13px; fill: var(--chalk); }
   svg.grafico .rejilla { stroke: rgba(244, 246, 243, 0.10); stroke-width: 1; }
   svg.grafico .base { stroke: rgba(244, 246, 243, 0.35); stroke-width: 1; }
   .grafico-vacio { color: var(--muted); font-size: 14px; text-align: center; padding: 40px 0; margin: 0; }
@@ -172,22 +210,34 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   .aviso h2 { color: var(--gold); margin-bottom: 12px; }
   .aviso p { color: var(--muted); font-size: 14px; line-height: 1.6; }
   .aviso code { background: var(--night-2); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
-  .spinner {
-    width: 38px; height: 38px; margin: 80px auto 12px; border-radius: 50%;
-    border: 2px solid var(--line); border-top-color: var(--gold);
-    animation: girar 0.9s linear infinite;
-  }
   @keyframes girar { to { transform: rotate(360deg); } }
+  .carga-liga { text-align: center; margin: 70px auto 0; }
+  .carga-marca { position: relative; width: 104px; height: 104px; margin: 0 auto 22px; }
+  .carga-anillo {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 3px solid rgba(229, 185, 78, 0.15);
+    border-top-color: var(--gold); border-right-color: var(--gold-light);
+    animation: girar 1s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+    box-shadow: 0 0 26px rgba(229, 185, 78, 0.14);
+  }
+  .carga-iniciales {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 34px;
+    letter-spacing: 0.03em; color: var(--gold-light);
+    animation: respirar-marca 1.6s ease-in-out infinite;
+  }
+  @keyframes respirar-marca { 0%, 100% { opacity: 0.72; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
   .cargando { text-align: center; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-size: 18px; text-transform: uppercase; letter-spacing: 0.2em; }
   footer { margin-top: 60px; padding-top: 14px; border-top: 1px solid rgba(30,92,65,0.4); text-align: center; font-size: 12px; color: rgba(244,246,243,0.35); }
 
   /* --- Panel de administración --- */
-  input, select {
+  input, select, textarea {
     font-family: 'Barlow', sans-serif; font-size: 14px; color: var(--chalk);
     background: rgba(8, 15, 28, 0.7); border: 1px solid rgba(30, 92, 65, 0.6);
     border-radius: 8px; padding: 7px 10px; outline: none; transition: 0.15s;
   }
-  input:focus, select:focus { border-color: var(--gold); }
+  textarea { width: 100%; min-height: 64px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { border-color: var(--gold); }
   select option { background: var(--night-2); }
   .btn-oro, .btn-borde {
     font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 17px;
@@ -223,8 +273,30 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   .form-grid label.check { flex-direction: row; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--chalk); grid-column: 1 / -1; }
   .form-grid input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--gold); }
   .btn-mini { font-size: 14px; padding: 4px 12px; }
+  .imagen-preview {
+    width: 140px; height: 140px; border-radius: 14px; background: var(--night-2);
+    border: 1px solid rgba(30, 92, 65, 0.5); object-fit: contain; display: block;
+  }
+  .imagen-preview.vacia { display: flex; align-items: center; justify-content: center; font-size: 46px; }
+  .miniatura-insignia {
+    width: 34px; height: 34px; border-radius: 9px; background: var(--night-2);
+    border: 1px solid rgba(30, 92, 65, 0.5); object-fit: contain; vertical-align: middle; margin-right: 8px;
+  }
+  .escudo-equipo {
+    border-radius: 6px; object-fit: contain; margin-right: 7px;
+    background: var(--night-2); border: 1px solid rgba(30, 92, 65, 0.5);
+  }
+  .escudo-grande { display: block; height: 190px; width: auto; max-width: 100%; object-fit: contain; }
+  .paleta-iconos { display: flex; flex-wrap: wrap; gap: 6px; max-width: 260px; }
+  .icono-opcion {
+    width: 36px; height: 36px; border-radius: 8px; font-size: 19px; cursor: pointer;
+    background: rgba(8, 15, 28, 0.7); border: 1px solid rgba(30, 92, 65, 0.6); transition: 0.15s;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .icono-opcion:hover { border-color: var(--gold); }
+  .icono-opcion.on { background: var(--gold); border-color: var(--gold); }
 
-  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .carga-anillo, .carga-iniciales { animation: none; } }
 </style>
 </head>
 <body>
@@ -237,12 +309,19 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
       <button data-vista="dashboard" class="on">Dashboard</button>
       <button data-vista="individual">Individual</button>
       <button data-vista="equipos">Equipos</button>
+      <button data-vista="jornadas">Jornadas</button>
+      <button data-vista="salon">Salón de la Fama</button>
       <button data-vista="admin">Admin</button>
     </nav>
   </header>
   <main id="main">
-    <div class="spinner"></div>
-    <p class="cargando">Cargando la liga…</p>
+    <div class="carga-liga">
+      <div class="carga-marca">
+        <span class="carga-anillo"></span>
+        <span class="carga-iniciales">LA</span>
+      </div>
+      <p class="cargando">Cargando la liga…</p>
+    </div>
   </main>
   <footer id="pie">Liga Armónica · Gamificación de la asignatura de Armonía</footer>
 </div>
@@ -282,13 +361,14 @@ async function leerPestana(nombre) {
 }
 
 async function cargarDatos() {
-  const [configFilas, alumnos, equipos, jornadas, registros] = await Promise.all([
+  const [configFilas, alumnos, equipos, jornadas, registros, criterios, evaluaciones, insignias, insigniasAlumnos] = await Promise.all([
     leerPestana('CONFIG'), leerPestana('ALUMNOS'), leerPestana('EQUIPOS'),
     leerPestana('JORNADAS'), leerPestana('REGISTROS'),
+    leerPestana('CRITERIOS'), leerPestana('EVALUACIONES'), leerPestana('INSIGNIAS'), leerPestana('INSIGNIAS_ALUMNOS'),
   ]);
   const config = {};
   configFilas.forEach(f => { config[String(f.clave)] = f.valor; });
-  return { config, alumnos, equipos, jornadas, registros };
+  return { config, alumnos, equipos, jornadas, registros, criterios, evaluaciones, insignias, insigniasAlumnos };
 }
 
 /* =========================================================================
@@ -306,6 +386,21 @@ function jornadasPublicadas(jornadas, trimestre) {
   });
 }
 
+/**
+ * Jornada que se muestra en la tarjeta "Jornada actual" del Dashboard.
+ * Si hay una jornada elegida a mano en Liga → Configuración, se respeta;
+ * si no, se usa siempre la última creada (mayor número) entre las publicadas.
+ */
+function jornadaActual(datos, idManual) {
+  if (idManual) {
+    const manual = datos.jornadas.find(j => String(j.id_jornada) === String(idManual));
+    if (manual) return manual;
+  }
+  const publicadas = datos.jornadas.filter(j => String(j.estado_publicacion).toLowerCase() === 'publicada');
+  if (publicadas.length === 0) return null;
+  return publicadas.reduce((mejor, j) => num(j.numero_jornada) > num(mejor.numero_jornada) ? j : mejor, publicadas[0]);
+}
+
 function registrosValidos(datos, trimestre) {
   const ids = new Set(jornadasPublicadas(datos.jornadas, trimestre).map(j => String(j.id_jornada)));
   return datos.registros.filter(r => ids.has(String(r.id_jornada)));
@@ -318,6 +413,16 @@ function clasIndividual(datos, trimestre) {
     if (!acc.has(id)) acc.set(id, { puntos: 0, jornadas: 0 });
     const a = acc.get(id); a.puntos += num(r.total); a.jornadas += 1;
   }
+
+  const pubs = jornadasPublicadas(datos.jornadas, trimestre);
+  const ultima = pubs.length ? pubs.reduce((m, j) => num(j.numero_jornada) > num(m.numero_jornada) ? j : m, pubs[0]) : null;
+  const puntosUltima = new Map();
+  if (ultima) {
+    datos.registros.forEach(r => {
+      if (String(r.id_jornada) === String(ultima.id_jornada)) puntosUltima.set(String(r.id_alumno), num(r.total));
+    });
+  }
+
   const eqById = new Map(datos.equipos.map(e => [String(e.id_equipo), e]));
   const filas = datos.alumnos.filter(activo).map(a => {
     const s = acc.get(String(a.id_alumno)) || { puntos: 0, jornadas: 0 };
@@ -327,8 +432,11 @@ function clasIndividual(datos, trimestre) {
       nombre: a.nombre_publico || '—',
       equipo: eq ? eq.nombre_equipo : '—',
       color: eq ? eq.color : null,
+      escudo: eq ? eq.escudo : null,
       puntos: s.puntos, jornadas: s.jornadas,
       media: s.jornadas > 0 ? s.puntos / s.jornadas : 0,
+      puntosUltima: puntosUltima.get(String(a.id_alumno)),
+      numeroUltima: ultima ? num(ultima.numero_jornada) : null,
     };
   });
   filas.sort((a, b) => b.puntos - a.puntos || b.media - a.media || a.nombre.localeCompare(b.nombre, 'es'));
@@ -338,20 +446,57 @@ function clasIndividual(datos, trimestre) {
 
 function clasEquipos(datos, trimestre) {
   const acc = new Map();
+  const accAlumno = new Map();
   for (const r of registrosValidos(datos, trimestre)) {
     const id = String(r.id_equipo_en_jornada);
-    if (!id) continue;
-    if (!acc.has(id)) acc.set(id, { puntos: 0, registros: 0 });
-    const e = acc.get(id); e.puntos += num(r.total); e.registros += 1;
+    if (id) {
+      if (!acc.has(id)) acc.set(id, { puntos: 0, registros: 0 });
+      const e = acc.get(id); e.puntos += num(r.total); e.registros += 1;
+    }
+    const idAl = String(r.id_alumno);
+    if (!accAlumno.has(idAl)) accAlumno.set(idAl, { puntos: 0, jornadas: 0 });
+    const al = accAlumno.get(idAl); al.puntos += num(r.total); al.jornadas += 1;
   }
+
+  const pubs = jornadasPublicadas(datos.jornadas, trimestre);
+  const ultima = pubs.length ? pubs.reduce((m, j) => num(j.numero_jornada) > num(m.numero_jornada) ? j : m, pubs[0]) : null;
+  const accUltima = new Map();
+  if (ultima) {
+    datos.registros.forEach(r => {
+      if (String(r.id_jornada) !== String(ultima.id_jornada)) return;
+      const id = String(r.id_equipo_en_jornada);
+      if (!id) return;
+      if (!accUltima.has(id)) accUltima.set(id, { puntos: 0, registros: 0 });
+      const e = accUltima.get(id); e.puntos += num(r.total); e.registros += 1;
+    });
+  }
+
   const filas = datos.equipos.filter(activo).map(e => {
     const s = acc.get(String(e.id_equipo)) || { puntos: 0, registros: 0 };
     const n = datos.alumnos.filter(a => activo(a) && String(a.id_equipo_actual) === String(e.id_equipo)).length;
+    const sUltima = accUltima.get(String(e.id_equipo));
+
+    const medias = datos.alumnos
+      .filter(a => activo(a) && String(a.id_equipo_actual) === String(e.id_equipo))
+      .map(a => accAlumno.get(String(a.id_alumno)))
+      .filter(al => al && al.jornadas > 0)
+      .map(al => al.puntos / al.jornadas);
+    let equilibrio = null;
+    if (medias.length >= 2) {
+      const mediaGrupo = medias.reduce((s, v) => s + v, 0) / medias.length;
+      const varianza = medias.reduce((s, v) => s + (v - mediaGrupo) ** 2, 0) / medias.length;
+      equilibrio = Math.sqrt(varianza);
+    }
+
     return {
       id: String(e.id_equipo),
-      equipo: e.nombre_equipo, color: e.color,
+      equipo: e.nombre_equipo, color: e.color, escudo: e.escudo,
       puntos: s.puntos, registros: s.registros, alumnos: n,
       media: s.registros > 0 ? s.puntos / s.registros : 0,
+      puntosUltima: sUltima ? sUltima.puntos : null,
+      mediaUltima: sUltima && sUltima.registros > 0 ? sUltima.puntos / sUltima.registros : null,
+      numeroUltima: ultima ? num(ultima.numero_jornada) : null,
+      equilibrio,
     };
   });
   filas.sort((a, b) => b.media - a.media || b.puntos - a.puntos || a.equipo.localeCompare(b.equipo, 'es'));
@@ -360,8 +505,199 @@ function clasEquipos(datos, trimestre) {
 }
 
 /* =========================================================================
+   Tendencia de la clasificación (sube / baja / se mantiene)
+   ========================================================================= */
+
+/** Lee un flag de CONFIG tipo TRUE/FALSE; si no está definido, se considera activado. */
+const configActivo = (valor, porDefecto = true) => {
+  if (valor === undefined || valor === null || valor === '') return porDefecto;
+  return String(valor).toUpperCase() !== 'FALSE';
+};
+
+/** La jornada publicada con mayor número dentro del alcance (trimestre o curso completo). */
+function jornadaMasReciente(jornadas, trimestre) {
+  const pubs = jornadasPublicadas(jornadas, trimestre);
+  if (pubs.length === 0) return null;
+  return pubs.reduce((mejor, j) => num(j.numero_jornada) > num(mejor.numero_jornada) ? j : mejor, pubs[0]);
+}
+
+/**
+ * Mapa id → 'subio' | 'bajo' | 'igual' | 'nuevo', comparando la clasificación
+ * actual con la que había antes de contar la última jornada publicada del
+ * alcance. `tipo` es 'individual' o 'equipos'.
+ */
+function tendencias(datos, trimestre, filasActuales, tipo) {
+  const mapa = new Map();
+  const ultima = jornadaMasReciente(datos.jornadas, trimestre);
+  if (!ultima) return mapa;
+  const datosAntes = { ...datos, jornadas: datos.jornadas.filter(j => String(j.id_jornada) !== String(ultima.id_jornada)) };
+  const filasAntes = tipo === 'equipos' ? clasEquipos(datosAntes, trimestre) : clasIndividual(datosAntes, trimestre);
+  const posAntes = new Map(filasAntes.map(f => [f.id, f.pos]));
+  filasActuales.forEach(f => {
+    const antes = posAntes.get(f.id);
+    if (antes === undefined) { mapa.set(f.id, 'nuevo'); return; }
+    if (antes > f.pos) mapa.set(f.id, 'subio');
+    else if (antes < f.pos) mapa.set(f.id, 'bajo');
+    else mapa.set(f.id, 'igual');
+  });
+  return mapa;
+}
+
+function badgeTendencia(t) {
+  if (t === 'subio') return `<span class="tendencia tendencia-sube" title="Ha subido puestos desde la última jornada">▲</span>`;
+  if (t === 'bajo') return `<span class="tendencia tendencia-baja" title="Ha bajado puestos desde la última jornada">▼</span>`;
+  if (t === 'nuevo') return `<span class="tendencia tendencia-nuevo" title="Nueva incorporación a la clasificación">●</span>`;
+  if (t === 'igual') return `<span class="tendencia tendencia-igual" title="Se mantiene desde la última jornada">▬</span>`;
+  return '';
+}
+
+/* =========================================================================
+   Diana de evaluación (criterios personalizables por el profesor)
+   ========================================================================= */
+
+const PERIODOS_DIANA = [['inicial', 'Evaluación inicial'], ['1', '1.º trimestre'], ['2', '2.º trimestre'], ['3', '3.º trimestre']];
+
+function criteriosActivos(datos) {
+  return datos.criterios
+    .filter(activo)
+    .slice()
+    .sort((a, b) => num(a.orden) - num(b.orden) || String(a.nombre).localeCompare(String(b.nombre), 'es'));
+}
+
+/** Valoraciones (0-5) de un alumno en un periodo, una por cada criterio activo. */
+function dianaAlumno(datos, idAlumno, periodo) {
+  const valores = new Map();
+  datos.evaluaciones.forEach(e => {
+    if (String(e.id_alumno) === String(idAlumno) && String(e.periodo) === String(periodo)) {
+      valores.set(String(e.id_criterio), e.valor);
+    }
+  });
+  return criteriosActivos(datos).map(c => {
+    const v = valores.get(String(c.id_criterio));
+    const evaluado = v !== undefined && v !== '';
+    return { id: String(c.id_criterio), nombre: c.nombre || '—', valor: evaluado ? num(v) : 0, evaluado };
+  });
+}
+
+/** Refleja localmente (sin esperar a Google) un lote de valoraciones ya guardado en el servidor. */
+function aplicarEvaluacionesLocal(valoraciones) {
+  valoraciones.forEach(v => {
+    const i = DATOS.evaluaciones.findIndex(ev =>
+      String(ev.id_alumno) === String(v.id_alumno) &&
+      String(ev.periodo) === String(v.periodo) &&
+      String(ev.id_criterio) === String(v.id_criterio));
+    const nuevo = { id_alumno: v.id_alumno, periodo: v.periodo, id_criterio: v.id_criterio, valor: v.valor };
+    if (i >= 0) DATOS.evaluaciones[i] = nuevo; else DATOS.evaluaciones.push(nuevo);
+  });
+}
+
+/** Diana radar (estilo FIFA): un eje por criterio, valores 0-5, anillos concéntricos. */
+function svgDiana(ejes) {
+  if (ejes.length === 0) return `<p class="grafico-vacio">Todavía no hay criterios de evaluación configurados.</p>`;
+  if (ejes.length < 3) return `<p class="grafico-vacio">Se necesitan al menos 3 criterios activos para dibujar la diana.</p>`;
+  if (!ejes.some(e => e.evaluado)) return `<p class="grafico-vacio">Todavía no hay ninguna valoración guardada para este periodo.</p>`;
+
+  const n = ejes.length, max = 5;
+  const cx = 180, cy = 180, R = 108;
+  const anguloIni = -Math.PI / 2;
+  const paso = (Math.PI * 2) / n;
+  const punto = (i, valor) => {
+    const ang = anguloIni + i * paso;
+    const r = (Math.max(0, Math.min(valor, max)) / max) * R;
+    return [cx + r * Math.cos(ang), cy + r * Math.sin(ang)];
+  };
+
+  let anillos = '';
+  for (let nivel = 1; nivel <= max; nivel++) {
+    const pts = ejes.map((_, i) => punto(i, nivel).join(',')).join(' ');
+    anillos += `<polygon points="${pts}" fill="none" class="rejilla" />`;
+  }
+
+  let radios = '';
+  ejes.forEach((_, i) => {
+    const [x, y] = punto(i, max);
+    radios += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" class="rejilla" />`;
+  });
+
+  let etiquetas = '';
+  ejes.forEach((e, i) => {
+    const ang = anguloIni + i * paso;
+    const cosv = Math.cos(ang), sinv = Math.sin(ang);
+    const lx = cx + (R + 20) * cosv;
+    const ly = cy + (R + 20) * sinv;
+    const anchor = Math.abs(cosv) < 0.25 ? 'middle' : (cosv > 0 ? 'start' : 'end');
+    etiquetas += `<text class="eje-txt diana-eje-txt" x="${lx}" y="${ly + (sinv > 0.6 ? 11 : sinv < -0.6 ? -3 : 4)}" text-anchor="${anchor}">${esc(e.nombre)}</text>`;
+  });
+
+  const puntosDatos = ejes.map((e, i) => punto(i, e.valor));
+  const dPoly = puntosDatos.map(p => p.join(',')).join(' ');
+  let vertices = '';
+  ejes.forEach((e, i) => {
+    const [x, y] = puntosDatos[i];
+    const tip = `<b>${esc(e.nombre)}</b><br>${e.evaluado ? e.valor + ' / 5' : 'Sin evaluar'}`;
+    vertices += `<circle class="punto" data-tip="${tip}" cx="${x}" cy="${y}" r="4" fill="var(--gold)" stroke="var(--night-2)" stroke-width="2" />`;
+  });
+
+  return `<div class="grafico-wrap"><div class="grafico-tooltip"></div>
+    <svg class="grafico" width="100%" height="320" viewBox="0 0 360 360" style="max-width:380px; display:block; margin:0 auto; overflow:visible">
+      ${anillos}
+      ${radios}
+      <polygon points="${dPoly}" fill="var(--gold)" fill-opacity="0.18" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round" />
+      ${vertices}
+      ${etiquetas}
+    </svg></div>`;
+}
+
+/* =========================================================================
    Ficha del alumno (datos + gráficas individuales)
    ========================================================================= */
+
+/**
+ * Insignias que tiene un alumno en el periodo, agrupadas por tipo con las
+ * jornadas concretas en las que se consiguió cada una (solo cuenta jornadas
+ * publicadas).
+ */
+function insigniasAlumnoDetalle(datos, idAlumno, trimestre) {
+  const idsJornadas = new Set(jornadasPublicadas(datos.jornadas, trimestre).map(j => String(j.id_jornada)));
+  const jornadasPorId = new Map(datos.jornadas.map(j => [String(j.id_jornada), j]));
+  const porInsignia = new Map();
+  datos.insigniasAlumnos.forEach(x => {
+    if (String(x.id_alumno) !== String(idAlumno)) return;
+    if (!idsJornadas.has(String(x.id_jornada))) return;
+    const id = String(x.id_insignia);
+    if (!porInsignia.has(id)) porInsignia.set(id, []);
+    const j = jornadasPorId.get(String(x.id_jornada));
+    if (j) porInsignia.get(id).push(j);
+  });
+  const porId = new Map(datos.insignias.map(i => [String(i.id_insignia), i]));
+  return [...porInsignia.entries()]
+    .map(([id, jornadas]) => ({
+      insignia: porId.get(id),
+      jornadas: jornadas.slice().sort((a, b) => num(b.numero_jornada) - num(a.numero_jornada)),
+    }))
+    .filter(x => x.insignia && activo(x.insignia))
+    .sort((a, b) => b.jornadas.length - a.jornadas.length || a.insignia.nombre.localeCompare(b.insignia.nombre, 'es'));
+}
+
+/** Tarjeta grande de una insignia conseguida por el alumno: escudo (o icono) y en qué jornadas. */
+function tarjetaInsigniaAlumnoHTML(item) {
+  const ins = item.insignia;
+  const imagen = ins.imagen
+    ? `<div class="imagen-fama" style="background-image:url('${esc(ins.imagen)}')"></div>`
+    : `<div class="imagen-fama">${esc(ins.icono || '🎖️')}</div>`;
+  const jornadasTxt = item.jornadas.map(j => 'J' + esc(j.numero_jornada)).join(', ');
+  return `<div class="tarjeta-fama">
+    ${imagen}
+    <h3 style="margin:10px 0 2px">${esc(ins.nombre)}</h3>
+    <p class="secundario">${jornadasTxt}</p>
+  </div>`;
+}
+
+/** Icono de una insignia (resumen) junto al número de veces conseguida. */
+function chipInsigniaHTML(insignia, n) {
+  const icono = `<span style="font-size:22px;line-height:1">${esc(insignia.icono || '🎖️')}</span>`;
+  return `<span title="${esc(insignia.nombre)}" style="display:inline-flex;align-items:center;gap:6px;background:rgba(8,15,28,0.5);border:1px solid rgba(30,92,65,0.5);border-radius:9px;padding:6px 10px">${icono}<span style="font-size:13px;color:var(--muted)">×${n}</span></span>`;
+}
 
 function datosAlumno(datos, id) {
   const a = datos.alumnos.find(x => String(x.id_alumno) === String(id));
@@ -420,7 +756,7 @@ function wireTooltips(root) {
 
 /** Barras verticales: puntos obtenidos en cada jornada, sobre el máximo posible `maxY` (7 para un alumno,
     7 × integrantes para un equipo). Marca los cambios de trimestre. */
-function svgBarrasJornada(serie, maxY = 7) {
+function svgBarrasJornada(serie, maxY = 10, campo = 'puntos', formatear = v => String(v), unidad = 'pts') {
   if (serie.length === 0) return `<p class="grafico-vacio">No hay jornadas publicadas en este periodo.</p>`;
 
   const multiTrimestre = serie.some((j, i) => i > 0 && j.trimestre !== serie[i - 1].trimestre);
@@ -448,12 +784,12 @@ function svgBarrasJornada(serie, maxY = 7) {
       capas += `<text class="eje-txt" x="${x}" y="${padSup - 14}" fill="var(--gold)" font-weight="600">${esc(j.trimestre)}º trim.</text>`;
       prevTri = j.trimestre;
     }
-    const y = escY(j.puntos);
+    const y = escY(j[campo]);
     const h = y0 - y;
     if (h > 0) {
       const r = Math.min(4, h);
       const color = j.jugada ? 'var(--gold)' : 'rgba(244,246,243,0.18)';
-      const tip = `<b>J${j.numero}</b> · ${esc(j.titulo)}<br>${j.jugada ? j.puntos + ' pts' : 'No participó'}`;
+      const tip = `<b>J${j.numero}</b> · ${esc(j.titulo)}<br>${j.jugada ? formatear(j[campo]) + ' ' + unidad : 'No participó'}`;
       capas += `<path class="barra" data-tip="${tip}"
         d="M${x},${y0} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + anchoBarra - r},${y} Q${x + anchoBarra},${y} ${x + anchoBarra},${y + r} L${x + anchoBarra},${y0} Z"
         fill="${color}" />`;
@@ -481,7 +817,7 @@ function svgLineaAcumulada(serie) {
 
   let acc = 0;
   const acumulado = serie.map(j => { acc += j.puntos; return acc; });
-  const maxY = Math.max(7, Math.ceil(acc / 5) * 5);
+  const maxY = Math.max(10, Math.ceil(acc / 5) * 5);
   const y0 = alto - padInf;
   const escY = v => y0 - (v / maxY) * (y0 - padSup);
   const escX = i => padIzq + i * pasoX;
@@ -555,7 +891,6 @@ function renderAlumno(id) {
   const posActual = ind.find(f => f.id === String(id));
   const st = statsAlumno(DATOS, id, TRIMESTRE);
   const serie = serieJornadas(DATOS, id, TRIMESTRE);
-  const pubs = jornadasPublicadas(DATOS.jornadas, TRIMESTRE);
 
   const equipoStats = eq ? eqClas.find(e2 => e2.id === String(eq.id_equipo)) : null;
   const jugaron = ind.filter(f => f.jornadas > 0);
@@ -566,27 +901,51 @@ function renderAlumno(id) {
     { etiqueta: 'Media liga', valor: mediaLiga },
   ];
 
+  const tendAl = configActivo(DATOS.config.mostrar_tendencia_alumnos) ? tendencias(DATOS, TRIMESTRE, ind, 'individual') : null;
+  const insigniasDetalle = insigniasAlumnoDetalle(DATOS, id, TRIMESTRE);
+
   return `
     <div class="fila-titulo">
       <h2><a class="vermas" href="#" data-ir="individual" style="float:none;margin-right:14px">← Volver</a>${esc(a.nombre_publico)}</h2>
       ${pills()}
     </div>
-    <div class="grid3">
-      <div class="card lider">
-        <div class="etiqueta"><span>🎻</span>Ficha</div>
-        <p class="principal">${eq ? dot(eq.color) : ''}${esc(a.nombre_publico)}</p>
-        <p class="secundario">${eq ? `<a class="enlace" href="#" data-equipo="${esc(eq.id_equipo)}">${esc(eq.nombre_equipo)}</a>` : 'Sin equipo'}${a.instrumento ? ' · ' + esc(a.instrumento) : ''}</p>
+    <div class="grid2" style="margin-bottom:14px;grid-template-columns:auto 1fr">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="perfil-cabecera">
+            ${svgAvatar(a, eq, 'grande')}
+            <div>
+              <p class="principal" style="margin:0 0 8px">${esc(a.nombre_publico)}</p>
+              <p class="secundario" style="margin-top:10px">${eq ? `<a class="enlace" href="#" data-equipo="${esc(eq.id_equipo)}">${escudoEquipoHTML(eq, 18)}${esc(eq.nombre_equipo)}</a>` : 'Sin equipo'}</p>
+              ${a.grupo ? `<p class="secundario" style="margin-top:10px">${esc(a.grupo)}</p>` : ''}
+              ${a.instrumento ? `<p class="secundario" style="display:flex;align-items:center;gap:6px;margin-top:10px">${iconoInstrumento(a.instrumento, 16)} ${esc(a.instrumento)}</p>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="card lider">
+          <div class="etiqueta"><span>🏅</span>Posición</div>
+          <p class="principal">${posActual ? '#' + posActual.pos : '—'}</p>
+          <p class="secundario" style="font-size:18px">${st.puntos} pts · media ${fmtMedia(st.media)}</p>
+          ${insigniasDetalle.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+            ${insigniasDetalle.map(item => chipInsigniaHTML(item.insignia, item.jornadas.length)).join('')}
+          </div>` : ''}
+        </div>
+        <div class="card lider" style="display:flex;align-items:center;gap:14px">
+          ${eq && eq.escudo ? escudoGrandeHTML(eq, 60) : ''}
+          <div>
+            <div class="etiqueta"><span>🛡️</span>Equipo</div>
+            <p class="principal">${equipoStats ? '#' + equipoStats.pos : '—'}</p>
+            <p class="secundario">${eq ? esc(eq.nombre_equipo) : 'Sin equipo'}</p>
+          </div>
+        </div>
       </div>
-      <div class="card lider">
-        <div class="etiqueta"><span>🏅</span>Posición</div>
-        <p class="principal">${posActual ? '#' + posActual.pos : '—'}</p>
-        <p class="secundario">${st.puntos} pts · media ${fmtMedia(st.media)}</p>
-      </div>
-      <div class="card lider">
-        <div class="etiqueta"><span>📅</span>Jornadas jugadas</div>
-        <p class="principal">${st.jornadas}</p>
-        <p class="secundario">de ${pubs.length} publicadas</p>
-      </div>
+      <div class="card tabla-scroll"><h3>Clasificación individual</h3>${tablaIndividual(ind, false, tendAl)}</div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <h3>Insignias conseguidas</h3>
+      ${insigniasDetalle.length > 0
+        ? `<div class="grid-insignias">${insigniasDetalle.map(tarjetaInsigniaAlumnoHTML).join('')}</div>`
+        : `<p class="nota">Todavía no ha conseguido ninguna insignia en este periodo.</p>`}
     </div>
     <div class="card" style="margin-bottom:14px">
       <h3>Puntos por jornada</h3>
@@ -595,6 +954,10 @@ function renderAlumno(id) {
     <div class="grid2">
       <div class="card"><h3>Puntos acumulados</h3>${svgLineaAcumulada(serie)}</div>
       <div class="card"><h3>Media comparada (pts/jornada)</h3>${svgComparativa(comparativa)}</div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="fila-titulo" style="margin-bottom:14px"><h3 style="margin:0">Diana de evaluación</h3>${pillsPeriodo()}</div>
+      ${svgDiana(dianaAlumno(DATOS, id, DIANA_PERIODO))}
     </div>`;
 }
 
@@ -625,8 +988,9 @@ function serieJornadasEquipo(datos, id, trimestre) {
   datos.registros.forEach(r => {
     if (String(r.id_equipo_en_jornada) !== String(id)) return;
     const clave = String(r.id_jornada);
-    const acc = porJornada.get(clave) || { puntos: 0 };
+    const acc = porJornada.get(clave) || { puntos: 0, registros: 0 };
     acc.puntos += num(r.total);
+    acc.registros += 1;
     porJornada.set(clave, acc);
   });
   return js.map(j => {
@@ -636,37 +1000,12 @@ function serieJornadasEquipo(datos, id, trimestre) {
       titulo: j.titulo || 'Jornada',
       trimestre: String(j.trimestre),
       puntos: acc ? acc.puntos : 0,
+      media: acc && acc.registros > 0 ? acc.puntos / acc.registros : 0,
       jugada: !!acc,
     };
   });
 }
 
-/** Barras horizontales: puntos de cada integrante del equipo en el periodo, de mayor a menor. */
-function svgRankingIntegrantes(filas) {
-  if (filas.length === 0) return `<p class="grafico-vacio">Este equipo no tiene alumnos activos.</p>`;
-
-  const altoBarra = 20, gapFila = 10, padSup = 8, padIzq = 130, padDer = 46;
-  const anchoMax = 220;
-  const alto = padSup + filas.length * (altoBarra + gapFila);
-  const ancho = padIzq + anchoMax + padDer;
-  const maxV = Math.max(...filas.map(f => f.puntos), 1);
-
-  const capas = filas.map((f, i) => {
-    const y = padSup + i * (altoBarra + gapFila);
-    const w = Math.max(2, (f.puntos / maxV) * anchoMax);
-    const r = Math.min(4, altoBarra / 2, w);
-    const tip = `<b>${esc(f.nombre)}</b><br>${f.puntos} pts · media ${fmtMedia(f.media)}`;
-    return `
-      <text class="eje-txt" x="${padIzq - 10}" y="${y + altoBarra / 2 + 4}" text-anchor="end">${esc(f.nombre)}</text>
-      <path class="barra" data-tip="${tip}"
-        d="M${padIzq},${y} L${padIzq + w - r},${y} Q${padIzq + w},${y} ${padIzq + w},${y + r} L${padIzq + w},${y + altoBarra - r} Q${padIzq + w},${y + altoBarra} ${padIzq + w - r},${y + altoBarra} L${padIzq},${y + altoBarra} Z"
-        fill="var(--gold)" />
-      <text class="eje-txt" x="${padIzq + w + 8}" y="${y + altoBarra / 2 + 4}" fill="var(--gold-light)">${f.puntos}</text>`;
-  }).join('');
-
-  return `<div class="grafico-wrap"><div class="grafico-tooltip"></div>
-    <svg class="grafico" width="${ancho}" height="${alto}" viewBox="0 0 ${ancho} ${alto}" style="max-width:100%">${capas}</svg></div>`;
-}
 
 function tablaIntegrantes(filas) {
   if (filas.length === 0) return `<p class="nota">Este equipo no tiene alumnos activos.</p>`;
@@ -693,7 +1032,6 @@ function renderEquipo(id) {
   const eqClas = clasEquipos(DATOS, TRIMESTRE);
   const posActual = eqClas.find(f => f.id === String(id));
   const serie = serieJornadasEquipo(DATOS, id, TRIMESTRE);
-  const pubs = jornadasPublicadas(DATOS.jornadas, TRIMESTRE);
 
   const jugaronEq = eqClas.filter(f => f.registros > 0);
   const mediaLiga = jugaronEq.length ? jugaronEq.reduce((s, f) => s + f.media, 0) / jugaronEq.length : 0;
@@ -712,37 +1050,34 @@ function renderEquipo(id) {
 
   return `
     <div class="fila-titulo">
-      <h2><a class="vermas" href="#" data-ir="equipos" style="float:none;margin-right:14px">← Volver</a>${dot(e.color)}${esc(e.nombre_equipo)}</h2>
+      <h2><a class="vermas" href="#" data-ir="equipos" style="float:none;margin-right:14px">← Volver</a>${e.escudo ? '' : escudoEquipoHTML(e, 34)}${esc(e.nombre_equipo)}</h2>
       ${pills()}
     </div>
-    <div class="grid3">
-      <div class="card lider">
-        <div class="etiqueta"><span>🛡️</span>Posición</div>
-        <p class="principal">${posActual ? '#' + posActual.pos : '—'}</p>
-        <p class="secundario">${posActual ? posActual.puntos : 0} pts · media ${fmtMedia(posActual ? posActual.media : 0)}</p>
+    <div class="grid2" style="margin-bottom:14px;grid-template-columns:auto 1fr">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        ${e.escudo ? `<div class="card" style="display:flex;align-items:center;justify-content:center;padding:28px">${escudoGrandeHTML(e)}</div>` : ''}
+        <div class="card lider">
+          <div class="etiqueta"><span>🛡️</span>Posición</div>
+          <p class="principal">${posActual ? '#' + posActual.pos : '—'}</p>
+          <p class="secundario">${posActual ? posActual.puntos : 0} pts · media ${fmtMedia(posActual ? posActual.media : 0)}</p>
+        </div>
       </div>
-      <div class="card lider">
-        <div class="etiqueta"><span>👥</span>Integrantes</div>
-        <p class="principal">${integrantes.length}</p>
-        <p class="secundario">alumnos activos</p>
-      </div>
-      <div class="card lider">
-        <div class="etiqueta"><span>📅</span>Jornadas puntuadas</div>
-        <p class="principal">${posActual ? posActual.registros : 0}</p>
-        <p class="secundario">de ${pubs.length} publicadas</p>
-      </div>
+      <div class="card tabla-scroll"><h3>Plantilla (${integrantes.length})</h3>${tablaIntegrantes(reparto)}</div>
+    </div>
+    <div class="card tabla-scroll" style="margin-bottom:14px">
+      <h3>Clasificación de equipos</h3>${tablaEquipos(eqClas, false, null)}
     </div>
     <div class="card" style="margin-bottom:14px">
       <h3>Puntos por jornada</h3>
-      ${svgBarrasJornada(serie, Math.max(7, integrantes.length * 7))}
+      ${svgBarrasJornada(serie, Math.max(10, integrantes.length * 10))}
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <h3>Media por jornada</h3>
+      ${svgBarrasJornada(serie, 10, 'media', fmtMedia, 'de media')}
     </div>
     <div class="grid2">
       <div class="card"><h3>Puntos acumulados</h3>${svgLineaAcumulada(serie)}</div>
       <div class="card"><h3>Media comparada (pts/jornada)</h3>${svgComparativa(comparativa, e.nombre_equipo)}</div>
-    </div>
-    <div class="grid2" style="margin-top:14px">
-      <div class="card"><h3>Reparto de puntos por integrante</h3>${svgRankingIntegrantes(reparto)}</div>
-      <div class="card tabla-scroll"><h3>Plantilla</h3>${tablaIntegrantes(reparto)}</div>
     </div>`;
 }
 
@@ -765,6 +1100,7 @@ let VISTA = 'dashboard';
 let TRIMESTRE = '1';
 let ALUMNO_SEL = null;
 let EQUIPO_SEL = null;
+let DIANA_PERIODO = '1';
 
 const TRIMESTRES = [['1','1.º trimestre'],['2','2.º trimestre'],['3','3.º trimestre'],['curso','Curso completo']];
 
@@ -774,48 +1110,147 @@ function badgePos(p) {
 }
 const dot = c => `<span class="dot" style="background:${esc(c || '#666')}"></span>`;
 
+/** Escudo del equipo si se subió imagen; si no, el punto de color de siempre. */
+function escudoEquipoHTML(obj, tamano = 22) {
+  if (!obj) return '';
+  if (obj.escudo) return `<img class="escudo-equipo" src="${esc(obj.escudo)}" width="${tamano}" height="${tamano}" alt="" style="vertical-align:-${Math.round(tamano * 0.22)}px" />`;
+  return dot(obj.color);
+}
+
+/** Escudo grande y sin fondo, para la ficha del equipo. Vacío si no hay imagen subida. */
+function escudoGrandeHTML(obj, alturaPx) {
+  if (!obj || !obj.escudo) return '';
+  const estilo = alturaPx ? ` style="height:${alturaPx}px"` : '';
+  return `<img class="escudo-grande" src="${esc(obj.escudo)}" alt=""${estilo} />`;
+}
+
+/** Escudo enorme sin fondo, pensado para asomar recortado por una esquina de una tarjeta. */
+function escudoEsquinaHTML(obj, altura = 260) {
+  if (!obj || !obj.escudo) return '';
+  return `<img src="${esc(obj.escudo)}" alt="" style="display:block;height:${altura}px;width:auto" />`;
+}
+
 function pills() {
   return `<div class="pills">${TRIMESTRES.map(([v, l]) =>
     `<button data-tri="${v}" class="${TRIMESTRE === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 }
 
-function tablaIndividual(filas, compacta) {
+function pillsPeriodo() {
+  return `<div class="pills">${PERIODOS_DIANA.map(([v, l]) =>
+    `<button data-periodo="${v}" class="${DIANA_PERIODO === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+}
+
+function tablaIndividual(filas, compacta, tendMap) {
   if (!filas.some(f => f.jornadas > 0) && filas.length === 0) filas = [];
   if (filas.length === 0) return `<p class="nota">Todavía no hay registros publicados en este trimestre.</p>`;
+  const numUltima = filas.find(f => f.numeroUltima != null);
   return `<table><thead><tr>
-      <th>Pos</th><th>Alumno/a</th><th>Equipo</th><th class="num">Puntos</th>
-      ${compacta ? '' : '<th class="num">Media</th><th class="num">Jornadas</th>'}
+      <th>Pos</th>${tendMap ? '<th></th>' : ''}<th>Alumno/a</th><th>Equipo</th><th class="num">Puntos</th>
+      ${compacta ? '' : `<th class="num">Media</th><th class="num">Jornadas</th><th class="num">${numUltima ? 'J' + numUltima.numeroUltima : 'Última jornada'}</th>`}
     </tr></thead><tbody>${filas.map(f => `
     <tr class="${f.pos <= 3 ? 'podio' : ''}">
       <td>${badgePos(f.pos)}</td>
+      ${tendMap ? `<td>${badgeTendencia(tendMap.get(f.id))}</td>` : ''}
       <td><a class="enlace" href="#" data-alumno="${esc(f.id)}"><strong>${esc(f.nombre)}</strong></a></td>
-      <td>${dot(f.color)}${esc(f.equipo)}</td>
+      <td>${escudoEquipoHTML(f, 20)}${esc(f.equipo)}</td>
       <td class="num pts">${f.puntos}</td>
-      ${compacta ? '' : `<td class="num">${fmtMedia(f.media)}</td><td class="num" style="color:var(--muted)">${f.jornadas}</td>`}
+      ${compacta ? '' : `<td class="num">${fmtMedia(f.media)}</td><td class="num" style="color:var(--muted)">${f.jornadas}</td><td class="num" style="color:var(--muted)">${f.puntosUltima != null ? f.puntosUltima : '—'}</td>`}
     </tr>`).join('')}</tbody></table>`;
 }
 
-function tablaEquipos(filas, compacta) {
+function tablaEquipos(filas, compacta, tendMap) {
   if (filas.length === 0) return `<p class="nota">Todavía no hay registros publicados en este trimestre.</p>`;
+  const numUltima = filas.find(f => f.numeroUltima != null);
+  const etiquetaUltima = numUltima ? 'J' + numUltima.numeroUltima : 'Última jornada';
   return `<table><thead><tr>
-      <th>Pos</th><th>Equipo</th><th class="num">Media</th><th class="num">Puntos</th>
-      ${compacta ? '' : '<th class="num">Alumnos</th>'}
+      <th>Pos</th>${tendMap ? '<th></th>' : ''}<th>Equipo</th><th class="num">Media</th><th class="num">Puntos</th>
+      ${compacta ? '' : `<th class="num">Alumnos</th><th class="num">Media ${etiquetaUltima}</th><th class="num">Puntos ${etiquetaUltima}</th><th class="num">Equilibrio</th>`}
     </tr></thead><tbody>${filas.map(f => `
     <tr class="${f.pos === 1 ? 'podio' : ''}">
       <td>${badgePos(f.pos)}</td>
-      <td><a class="enlace" href="#" data-equipo="${esc(f.id)}"><strong>${dot(f.color)}${esc(f.equipo)}</strong></a></td>
+      ${tendMap ? `<td>${badgeTendencia(tendMap.get(f.id))}</td>` : ''}
+      <td><a class="enlace" href="#" data-equipo="${esc(f.id)}"><strong>${escudoEquipoHTML(f, 20)}${esc(f.equipo)}</strong></a></td>
       <td class="num pts">${fmtMedia(f.media)}</td>
       <td class="num">${f.puntos}</td>
-      ${compacta ? '' : `<td class="num" style="color:var(--muted)">${f.alumnos}</td>`}
+      ${compacta ? '' : `<td class="num" style="color:var(--muted)">${f.alumnos}</td><td class="num" style="color:var(--muted)">${f.mediaUltima != null ? fmtMedia(f.mediaUltima) : '—'}</td><td class="num" style="color:var(--muted)">${f.puntosUltima != null ? f.puntosUltima : '—'}</td><td class="num" style="color:var(--muted)">${f.equilibrio != null ? '±' + fmtMedia(f.equilibrio) : '—'}</td>`}
     </tr>`).join('')}</tbody></table>`;
 }
 
-function tarjetaLider(etiqueta, icono, principal, secundario, color, idAlumno, idEquipo) {
+/** Histórico público de jornadas publicadas: qué se hizo y qué tareas había en cada una. */
+function listaJornadas(jornadas, trimestre) {
+  const pubs = jornadasPublicadas(jornadas, trimestre)
+    .slice()
+    .sort((a, b) => num(b.numero_jornada) - num(a.numero_jornada));
+  if (pubs.length === 0) return `<p class="nota">Todavía no hay jornadas publicadas en este periodo.</p>`;
+  return pubs.map(j => `
+    <div class="card" style="margin-bottom:14px">
+      <div class="fila-titulo" style="margin-bottom:${j.descripcion || j.tareas ? '10px' : '0'}">
+        <h3 style="margin:0">J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Jornada')}</h3>
+        <span class="secundario" style="white-space:nowrap">${j.fecha ? esc(fmtFecha(j.fecha)) : ''}</span>
+      </div>
+      ${j.descripcion ? `<p class="secundario">${esc(j.descripcion)}</p>` : ''}
+      ${j.tareas ? `<div class="extra-tarjeta"><span class="extra-titulo">Tareas</span><p class="extra-texto">${esc(j.tareas)}</p></div>` : ''}
+    </div>`).join('');
+}
+
+/** Salón de la Fama: una vitrina por insignia activa, agrupadas por periodicidad, con quién la tiene. */
+function renderSalonFama() {
+  const activas = insigniasActivas();
+  if (activas.length === 0) {
+    return `<div class="card aviso"><h2>Todavía no hay insignias</h2>
+      <p class="secundario">Cuando el profesor cree y reparta insignias, aparecerán aquí.</p></div>`;
+  }
+
+  const alumnosPorId = new Map(DATOS.alumnos.filter(activo).map(a => [String(a.id_alumno), a]));
+  const jornadasPorId = new Map(DATOS.jornadas.map(j => [String(j.id_jornada), j]));
+  const equiposPorId = new Map(DATOS.equipos.map(e => [String(e.id_equipo), e]));
+
+  const grupos = PERIODICIDADES_INSIGNIA
+    .map(([valor, etiqueta]) => [etiqueta, activas.filter(i => i.periodicidad === valor)])
+    .filter(([, grupo]) => grupo.length > 0);
+
+  return grupos.map(([etiqueta, grupo], i) => `
+    <div class="fila-titulo" style="margin-top:${i === 0 ? '0' : '28px'}"><h2>${esc(etiqueta)}</h2></div>
+    <div class="grid-insignias">${grupo.map(ins => tarjetaInsigniaFama(ins, alumnosPorId, jornadasPorId, equiposPorId)).join('')}</div>`
+  ).join('');
+}
+
+function tarjetaInsigniaFama(insignia, alumnosPorId, jornadasPorId, equiposPorId) {
+  const ganadores = DATOS.insigniasAlumnos
+    .filter(x => String(x.id_insignia) === String(insignia.id_insignia))
+    .map(x => ({ alumno: alumnosPorId.get(String(x.id_alumno)), jornada: jornadasPorId.get(String(x.id_jornada)) }))
+    .filter(g => g.alumno)
+    .sort((a, b) => num(b.jornada && b.jornada.numero_jornada) - num(a.jornada && a.jornada.numero_jornada));
+
+  const imagen = insignia.imagen
+    ? `<div class="imagen-fama" style="background-image:url('${esc(insignia.imagen)}')"></div>`
+    : `<div class="imagen-fama">${esc(insignia.icono || '🎖️')}</div>`;
+
+  return `<div class="card tarjeta-fama">
+    ${imagen}
+    <h3>${esc(insignia.nombre)}</h3>
+    <p class="secundario">${ganadores.length} ${ganadores.length === 1 ? 'alumno/a' : 'alumnos/as'}</p>
+    ${ganadores.length === 0 ? `<p class="nota">Todavía nadie la ha conseguido.</p>` : `
+    <ul class="lista-ganadores">
+      ${ganadores.map(g => `<li class="avatar-mini-fila">
+        ${svgAvatar(g.alumno, equiposPorId.get(String(g.alumno.id_equipo_actual)), 'pequeno')}
+        <span><a class="enlace" href="#" data-alumno="${esc(g.alumno.id_alumno)}">${esc(g.alumno.nombre_publico)}</a>${g.jornada ? `<span class="secundario"> · J${esc(g.jornada.numero_jornada)}</span>` : ''}</span>
+      </li>`).join('')}
+    </ul>`}
+  </div>`;
+}
+
+function tarjetaLider(etiqueta, icono, principal, secundario, color, idAlumno, idEquipo, extra, lineaExtra, escudoEsquina, avatarHTML) {
   const attr = idAlumno ? ` data-alumno="${esc(idAlumno)}"` : idEquipo ? ` data-equipo="${esc(idEquipo)}"` : '';
+  const marca = color ? dot(color) : '';
   return `<div class="card lider"${attr}>
     <div class="etiqueta"><span>${icono}</span>${etiqueta}</div>
-    <p class="principal">${color ? dot(color) : ''}${esc(principal)}</p>
+    <p class="principal">${marca}${esc(principal)}</p>
     <p class="secundario">${esc(secundario)}</p>
+    ${lineaExtra ? `<p class="secundario" style="margin-top:2px">${esc(lineaExtra)}</p>` : ''}
+    ${extra ? `<div class="extra-tarjeta"><span class="extra-titulo">${esc(extra.titulo)}</span><p class="extra-texto">${esc(extra.texto)}</p></div>` : ''}
+    ${avatarHTML ? `<span style="position:absolute;bottom:12px;right:18px;transform:scale(0.68);transform-origin:bottom right">${avatarHTML}</span>` : ''}
+    ${escudoEsquina ? `<span style="position:absolute;z-index:-1;bottom:-10px;right:-70px;transform:rotate(-40deg);transform-origin:bottom right;opacity:0.5;filter:blur(0.15px)">${escudoEsquina}</span>` : ''}
   </div>`;
 }
 
@@ -824,6 +1259,8 @@ function render() {
   const main = $('#main');
   const ind = clasIndividual(DATOS, TRIMESTRE);
   const eq = clasEquipos(DATOS, TRIMESTRE);
+  const tendAl = configActivo(DATOS.config.mostrar_tendencia_alumnos) ? tendencias(DATOS, TRIMESTRE, ind, 'individual') : null;
+  const tendEq = configActivo(DATOS.config.mostrar_tendencia_equipos) ? tendencias(DATOS, TRIMESTRE, eq, 'equipos') : null;
 
   let html = '';
   if (VISTA === 'alumno') {
@@ -833,36 +1270,50 @@ function render() {
   } else if (VISTA === 'dashboard') {
     const liderEq = eq.find(e => e.registros > 0);
     const liderAl = ind.find(a => a.jornadas > 0);
-    const pubs = jornadasPublicadas(DATOS.jornadas, TRIMESTRE);
+    const alumnoLider = liderAl ? DATOS.alumnos.find(a => String(a.id_alumno) === String(liderAl.id)) : null;
+    const avatarLiderHTML = alumnoLider ? svgAvatar(alumnoLider, { color: liderAl.color }, 'grande') : '';
+    const escudoLiderHTML = liderEq ? escudoEsquinaHTML(liderEq, 230) : '';
     const idActual = String(DATOS.config.jornada_actual || '');
-    const jAct = DATOS.jornadas.find(j => String(j.id_jornada) === idActual) || pubs[pubs.length - 1];
+    const jAct = jornadaActual(DATOS, idActual);
 
     html = `
       <div class="fila-titulo"><h2>Marcador de la liga</h2>${pills()}</div>
       <div class="grid3">
         ${tarjetaLider('Equipo líder', '🛡️', liderEq ? liderEq.equipo : '—',
-          liderEq ? `${fmtMedia(liderEq.media)} de media · ${liderEq.puntos} pts` : 'Sin datos', liderEq && liderEq.color, null, liderEq ? liderEq.id : null)}
+          liderEq ? `${fmtMedia(liderEq.media)} de media · ${liderEq.puntos} pts` : 'Sin datos', liderEq && liderEq.color, null, liderEq ? liderEq.id : null, null, null, escudoLiderHTML)}
         ${tarjetaLider('Alumno/a líder', '🏆', liderAl ? liderAl.nombre : '—',
-          liderAl ? `${liderAl.puntos} pts · media ${fmtMedia(liderAl.media)}` : 'Sin datos', null, liderAl ? liderAl.id : null)}
+          liderAl ? `${liderAl.puntos} pts · media ${fmtMedia(liderAl.media)}` : 'Sin datos', null, liderAl ? liderAl.id : null, null, null, null, null, avatarLiderHTML)}
         ${tarjetaLider('Jornada actual', '⚽', jAct ? `J${jAct.numero_jornada}` : '—',
-          jAct ? `${jAct.titulo || 'Jornada'}${jAct.fecha ? ' · ' + jAct.fecha : ''}` : 'Sin jornadas publicadas')}
+          jAct ? (jAct.titulo || 'Jornada') : 'Sin jornadas publicadas',
+          null, null, null,
+          jAct && jAct.tareas ? { titulo: 'Tareas', texto: jAct.tareas } : null,
+          jAct && jAct.fecha ? fmtFecha(jAct.fecha) : null)}
       </div>
       <div class="grid2">
-        <div class="card"><a class="vermas" href="#" data-ir="equipos">Ver completa →</a><h3>Clasificación por equipos</h3>${tablaEquipos(eq, true)}</div>
-        <div class="card"><a class="vermas" href="#" data-ir="individual">Ver completa →</a><h3>Top individual</h3>${tablaIndividual(ind.slice(0, 8), true)}</div>
+        <div class="card"><a class="vermas" href="#" data-ir="equipos">Ver completa →</a><h3>Clasificación por equipos</h3>${tablaEquipos(eq, true, tendEq)}</div>
+        <div class="card"><a class="vermas" href="#" data-ir="individual">Ver completa →</a><h3>Top individual</h3>${tablaIndividual(ind.slice(0, 8), true, tendAl)}</div>
       </div>`;
   } else if (VISTA === 'individual') {
     html = `<div class="fila-titulo"><h2>Clasificación individual</h2>${pills()}</div>
-      <div class="card">${tablaIndividual(ind, false)}</div>`;
+      <div class="card">${tablaIndividual(ind, false, tendAl)}</div>`;
+  } else if (VISTA === 'jornadas') {
+    html = `<div class="fila-titulo"><h2>Jornadas</h2>${pills()}</div>
+      ${listaJornadas(DATOS.jornadas, TRIMESTRE)}`;
+  } else if (VISTA === 'salon') {
+    html = `<div class="fila-titulo"><h2>Salón de la Fama</h2></div>
+      ${renderSalonFama()}`;
   } else {
     html = `<div class="fila-titulo"><h2>Clasificación por equipos</h2>${pills()}</div>
-      <div class="card">${tablaEquipos(eq, false)}
-      <p class="nota">Orden principal: media de puntos por alumno y jornada (solo jornadas publicadas).</p></div>`;
+      <div class="card">${tablaEquipos(eq, false, tendEq)}
+      <p class="nota">Orden principal: media de puntos por alumno y jornada (solo jornadas publicadas). Equilibrio:
+      desviación entre las medias de los integrantes con jornadas puntuadas — cuanto más bajo, más parejo el equipo.</p></div>`;
   }
   main.innerHTML = html;
 
   main.querySelectorAll('[data-tri]').forEach(b =>
     b.addEventListener('click', () => { TRIMESTRE = b.dataset.tri; render(); }));
+  main.querySelectorAll('[data-periodo]').forEach(b =>
+    b.addEventListener('click', () => { DIANA_PERIODO = b.dataset.periodo; render(); }));
   main.querySelectorAll('[data-ir]').forEach(a =>
     a.addEventListener('click', e => { e.preventDefault(); cambiarVista(a.dataset.ir); }));
   main.querySelectorAll('[data-alumno]').forEach(el =>
@@ -896,14 +1347,175 @@ const INSTRUMENTOS = ['Piano', 'Violín', 'Viola', 'Violonchelo', 'Contrabajo', 
   'Oboe', 'Clarinete', 'Fagot', 'Saxofón', 'Trompeta', 'Trompa', 'Trombón', 'Tuba',
   'Guitarra', 'Percusión', 'Canto', 'Otro'];
 
+/* =========================================================================
+   Avatar del alumno (retrato DiceBear "micah" + marco propio + instrumento)
+   ========================================================================= */
+
+const COLORES_PELO = [
+  ['negro', 'Negro', '1c1c1c'],
+  ['castano', 'Castaño', '5c3a21'],
+  ['rubio', 'Rubio', 'c99a3f'],
+  ['pelirrojo', 'Pelirrojo', 'a5461f'],
+  ['gris', 'Gris / cano', '9a9a9a'],
+];
+
+// Un icono SVG real y distinto por instrumento (vía Iconify, con recolor por
+// URL). Viola/Contrabajo/Oboe reutilizan el de su pariente más cercano
+// (Violín/Violonchelo/Clarinete): comprobado a fondo, no existe en ningún
+// set de iconos gratuito un dibujo que distinga viola de violín (son casi
+// idénticos a simple vista) ni uno dedicado a oboe o contrabajo.
+// El piano no tiene un único color "de material" (los hay negros, blancos,
+// de madera...), así que en vez de recolorearlo usa un icono ya multicolor
+// (teclas blancas y negras) en lugar del genérico dorado.
+const INSTRUMENTOS_ICONO_MULTICOLOR = new Set(['Piano']);
+
+const ICONOS_INSTRUMENTO = {
+  'Piano': 'twemoji:musical-keyboard',
+  'Violín': 'game-icons:violin',
+  'Viola': 'game-icons:violin',
+  'Violonchelo': 'qlementine-icons:cello-24',
+  'Contrabajo': 'qlementine-icons:cello-24',
+  'Flauta': 'game-icons:flute',
+  'Oboe': 'game-icons:clarinet',
+  'Clarinete': 'game-icons:clarinet',
+  'Fagot': 'game-icons:bassoon',
+  'Saxofón': 'game-icons:saxophone',
+  'Trompeta': 'game-icons:trumpet',
+  'Trompa': 'game-icons:french-horn',
+  'Trombón': 'game-icons:trombone',
+  'Tuba': 'game-icons:tuba',
+  'Guitarra': 'game-icons:guitar',
+  'Percusión': 'game-icons:drum',
+  'Canto': 'game-icons:microphone',
+  'Otro': 'game-icons:musical-notes',
+};
+
+// Color aproximado del material real de cada instrumento (latón dorado para
+// el viento-metal, madera para cuerda/madera, plateado para flauta/canto...),
+// para que cada icono se distinga también por color y no solo por forma.
+const COLORES_INSTRUMENTO = {
+  'Piano': 'e8e4d8',
+  'Violín': 'a05a2c',
+  'Viola': '8b4a24',
+  'Violonchelo': '73391a',
+  'Contrabajo': '5c2e15',
+  'Flauta': 'c8ccd0',
+  'Oboe': '4a3222',
+  'Clarinete': '5a5450',
+  'Fagot': '8f6a3a',
+  'Saxofón': 'd6b356',
+  'Trompeta': 'd4af37',
+  'Trompa': 'b8834a',
+  'Trombón': 'bfa14a',
+  'Tuba': 'a67c2e',
+  'Guitarra': '9c6b30',
+  'Percusión': 'b0473a',
+  'Canto': 'aab2b8',
+  'Otro': '9a9a9a',
+};
+
+function colorInstrumentoHex(instrumento) {
+  return COLORES_INSTRUMENTO[instrumento] || COLORES_INSTRUMENTO['Otro'];
+}
+
+function urlIconoInstrumento(instrumento, colorHex = null) {
+  const id = ICONOS_INSTRUMENTO[instrumento] || ICONOS_INSTRUMENTO['Otro'];
+  const [prefix, nombre] = id.split(':');
+  if (INSTRUMENTOS_ICONO_MULTICOLOR.has(instrumento) && !colorHex) {
+    return `https://api.iconify.design/${prefix}/${nombre}.svg`;
+  }
+  const color = colorHex || colorInstrumentoHex(instrumento);
+  return `https://api.iconify.design/${prefix}/${nombre}.svg?color=%23${color}`;
+}
+
+/** Icono del instrumento como <img>, listo para insertar junto a texto o dentro de una insignia. */
+function iconoInstrumento(instrumento, tamano = 18, colorHex = null) {
+  return `<img src="${esc(urlIconoInstrumento(instrumento, colorHex))}" width="${tamano}" height="${tamano}" alt="" style="vertical-align:-${Math.round(tamano * 0.2)}px" />`;
+}
+
+function colorPeloHex(valor) {
+  const par = COLORES_PELO.find(([v]) => v === valor);
+  return (par ? par[2] : COLORES_PELO[0][2]);
+}
+
+// La API pública de DiceBear (api.dicebear.com) ignora silenciosamente las
+// opciones de peinado/expresión (comprobado a mano: mismo resultado para
+// valores distintos), así que la librería se carga como módulo directamente
+// en el navegador y se genera el SVG en local — así si funciona de verdad.
+let DB_createAvatar = null;
+let DB_micah = null;
+
+async function cargarDicebear() {
+  try {
+    const [core, micah] = await Promise.all([
+      import('https://esm.sh/@dicebear/core@9.4.2'),
+      import('https://esm.sh/@dicebear/micah@9.4.2'),
+    ]);
+    DB_createAvatar = core.createAvatar;
+    DB_micah = micah;
+  } catch (err) {
+    console.error('No se pudo cargar la librería de avatares (DiceBear); se mostrará un marco liso.', err);
+  }
+}
+
+/** Un único peinado fijo por género (comprobado visualmente: "full" = largo, "fonze" = corto). */
+const PEINADO_POR_GENERO = { 'Masculino': 'fonze', 'Femenino': 'full' };
+const peinadoDe = genero => PEINADO_POR_GENERO[genero] || 'fonze';
+
+/**
+ * Avatar del alumno: retrato DiceBear (estilo "micah") recortado en círculo,
+ * con marco del color del equipo y el icono del instrumento superpuesto en
+ * una esquina. Mismo alumno → mismo dibujo siempre (semilla = id_alumno);
+ * mismo peinado y sonrisa fijos para todos según género, color de pelo
+ * elegido, y color de camiseta (propio o el del equipo).
+ * `tamano`: 'grande' (ficha) o 'pequeno' (miniatura, sin icono de instrumento).
+ */
+function svgAvatar(alumno, equipo, tamano = 'grande') {
+  const grande = tamano === 'grande';
+  const colorEquipo = (equipo && equipo.color) || '#5c6b73';
+  const colorCamiseta = alumno.color_camiseta || colorEquipo;
+  const lado = grande ? 168 : 40;
+  const borde = grande ? 6 : 3;
+
+  const retrato = (DB_createAvatar && DB_micah) ? DB_createAvatar(DB_micah, {
+    seed: String(alumno.id_alumno || 'alumno'),
+    backgroundColor: [String(colorEquipo).replace('#', '')],
+    shirtColor: [String(colorCamiseta).replace('#', '')],
+    hairColor: [colorPeloHex(alumno.color_pelo)],
+    hair: [peinadoDe(alumno.genero)],
+    mouth: ['smile'],
+    facialHairProbability: 0,
+    glassesProbability: 0,
+    earringsProbability: 0,
+  }).toString() : '';
+
+  const tamBadge = Math.round(lado * 0.34);
+  const badge = grande ? `
+    <span class="avatar-instrumento" style="border-color:${esc(colorEquipo)};border-width:3px;width:${tamBadge}px;height:${tamBadge}px">${iconoInstrumento(alumno.instrumento, Math.round(tamBadge * 0.6))}</span>` : '';
+
+  return `<span class="avatar-alumno" style="width:${lado}px;height:${lado}px">
+    <span class="avatar-retrato" style="border-color:${esc(colorEquipo)};border-width:${borde}px">${retrato}</span>
+    ${badge}
+  </span>`;
+}
+
 const ADMIN = {
   token: sessionStorage.getItem('liga_admin_token') || '',
   seccion: 'puntuar',
   jornadaSel: '',
   filas: {},          // id_alumno -> valores editables de la jornada
+  insigniasFilas: {}, // id_alumno -> { id_insignia: true } insignias asignadas en esta jornada
   editJornada: null,  // id en edición (null = crear nueva)
   editAlumno: null,
   editEquipo: null,
+  imagenEscudo: null, // data URI recién elegida en el formulario de equipo (null = sin cambios)
+  editCriterio: null,
+  editDianaAlumno: null,   // id_alumno cuya diana se está rellenando (solo Admin)
+  filasDianaAlumno: {},    // periodo -> { id_criterio: valor editable }
+  previewPeriodo: '1',     // periodo mostrado en la vista previa de la diana
+  editInsignia: null,
+  imagenInsignia: null,    // data URI recién elegida en el formulario (null = sin cambios)
+  iconoInsignia: null,     // emoji recién elegido en el formulario (null = sin cambios)
   ocupado: false,
 };
 
@@ -921,13 +1533,14 @@ async function postScript(action, payload = {}) {
 }
 
 const alumnosActivos = () => DATOS.alumnos.filter(activo);
+const insigniasActivas = () => DATOS.insignias.filter(activo).slice().sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
 const valorDe = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
 const marcado = id => { const el = document.getElementById(id); return el ? el.checked : true; };
 
 function totalLocal(f) {
   if (f.estado_entrega === 'No entregado') return 0;
   const cal = f.calidad === '' ? 0 : Number(f.calidad) || 0;
-  return Math.min(7, cal + (Number(f.entrega) || 0) + (Number(f.correccion) || 0));
+  return Math.min(10, cal + (Number(f.entrega) || 0) + (Number(f.correccion) || 0));
 }
 
 function prepararFilas() {
@@ -946,6 +1559,20 @@ function prepararFilas() {
       correccion: String(num(r.correccion)),
       racha: (r.racha_manual === '' || r.racha_manual == null) ? '' : String(r.racha_manual),
     } : { estado_entrega: 'En plazo', calidad: '', entrega: '0', correccion: '0', racha: '' };
+  }
+  prepararInsigniasFilas();
+}
+
+/** Como mucho una insignia por alumno y jornada (se elige con un desplegable). */
+function prepararInsigniasFilas() {
+  const existentes = new Map(
+    DATOS.insigniasAlumnos
+      .filter(x => String(x.id_jornada) === String(ADMIN.jornadaSel))
+      .map(x => [String(x.id_alumno), String(x.id_insignia)])
+  );
+  ADMIN.insigniasFilas = {};
+  for (const a of alumnosActivos()) {
+    ADMIN.insigniasFilas[a.id_alumno] = existentes.get(String(a.id_alumno)) || '';
   }
 }
 
@@ -1003,7 +1630,7 @@ function renderAdmin(mensaje = '', esError = false) {
   // --- Estructura común: cabecera + subnavegación + sección ---
   const SECCIONES = [
     ['puntuar', 'Puntuar'], ['jornadas', 'Jornadas'], ['alumnos', 'Alumnos'],
-    ['equipos', 'Equipos'], ['liga', 'Liga'],
+    ['equipos', 'Equipos'], ['criterios', 'Criterios'], ['insignias', 'Insignias'], ['liga', 'Liga'],
   ];
   const subnav = `<div class="pills" style="margin-bottom:16px">
     ${SECCIONES.map(([v, l]) =>
@@ -1014,6 +1641,8 @@ function renderAdmin(mensaje = '', esError = false) {
     ADMIN.seccion === 'jornadas' ? seccionJornadas() :
     ADMIN.seccion === 'alumnos' ? seccionAlumnos() :
     ADMIN.seccion === 'equipos' ? seccionEquipos() :
+    ADMIN.seccion === 'criterios' ? seccionCriterios() :
+    ADMIN.seccion === 'insignias' ? seccionInsignias() :
     ADMIN.seccion === 'liga' ? seccionLiga() :
     seccionPuntuar();
 
@@ -1038,7 +1667,10 @@ function renderAdmin(mensaje = '', esError = false) {
   else if (ADMIN.seccion === 'jornadas') wireJornadas();
   else if (ADMIN.seccion === 'alumnos') wireAlumnos();
   else if (ADMIN.seccion === 'equipos') wireEquipos();
+  else if (ADMIN.seccion === 'criterios') wireCriterios();
+  else if (ADMIN.seccion === 'insignias') wireInsignias();
   else if (ADMIN.seccion === 'liga') wireLiga();
+  wireTooltips(main);
 }
 
 /** Envuelve un guardado: deshabilita el botón, ejecuta y muestra el resultado. */
@@ -1071,6 +1703,7 @@ function seccionPuntuar() {
 
   const jornada = DATOS.jornadas.find(j => String(j.id_jornada) === String(ADMIN.jornadaSel));
   const publicada = jornada && String(jornada.estado_publicacion).toLowerCase() === 'publicada';
+  const insignias = insigniasActivas();
 
   return `
     <div class="card admin-barra" style="margin-bottom:14px">
@@ -1095,18 +1728,20 @@ function seccionPuntuar() {
         <thead><tr>
           <th>Alumno/a</th><th>Estado</th><th>Calidad</th><th>Entrega</th>
           <th>Corrección</th><th style="text-align:center">Total</th><th>Racha</th>
+          ${insignias.length ? '<th>Insignias</th>' : ''}
         </tr></thead>
         <tbody>
           ${alumnosActivos().map(a => {
             const f = ADMIN.filas[a.id_alumno];
             const off = f.estado_entrega === 'No entregado' ? 'disabled' : '';
+            const insAlumno = ADMIN.insigniasFilas[a.id_alumno] || '';
             return `<tr data-alumno="${esc(a.id_alumno)}">
               <td><strong>${esc(a.nombre_publico)}</strong></td>
               <td><select data-campo="estado_entrega">
                 ${ESTADOS_ENTREGA.map(s => `<option ${f.estado_entrega === s ? 'selected' : ''}>${s}</option>`).join('')}
               </select></td>
               <td><select data-campo="calidad" ${off}>
-                ${['', '0', '1', '2', '3', '4', '5'].map(c =>
+                ${['', '0', '1', '2', '3', '4', '5', '6', '7', '8'].map(c =>
                   `<option value="${c}" ${f.calidad === c ? 'selected' : ''}>${c === '' ? '—' : c}</option>`).join('')}
               </select></td>
               <td><select data-campo="entrega" ${off}>
@@ -1119,6 +1754,10 @@ function seccionPuntuar() {
               </select></td>
               <td class="total-celda">${totalLocal(f)}</td>
               <td><input type="number" min="0" data-campo="racha" value="${esc(f.racha)}" /></td>
+              ${insignias.length ? `<td><select data-insignia-alumno>
+                <option value="">— Ninguna —</option>
+                ${insignias.map(i => `<option value="${esc(i.id_insignia)}" ${insAlumno === String(i.id_insignia) ? 'selected' : ''}>${esc(i.nombre)}</option>`).join('')}
+              </select></td>` : ''}
             </tr>`;
           }).join('')}
         </tbody>
@@ -1126,8 +1765,9 @@ function seccionPuntuar() {
       <div class="admin-barra" style="margin-top:16px">
         <button class="btn-oro" id="guardar-btn">Guardar toda la jornada</button>
       </div>
-      <p class="nota">El total definitivo lo calcula la fórmula de la hoja al guardar (máximo 7;
+      <p class="nota">El total definitivo lo calcula la fórmula de la hoja al guardar (máximo 10;
       «No entregado» = 0). Guardar no duplica: actualiza el registro de cada alumno en esta jornada.
+      ${insignias.length ? 'Elige en el desplegable la insignia (como mucho una) que se lleva cada alumno en esta jornada.' : ''}
       La vista para otros visitantes tarda unos minutos en refrescarse.</p>`}
     </div>`;
 }
@@ -1165,6 +1805,13 @@ function wirePuntuar() {
     });
   });
 
+  document.querySelectorAll('#main [data-insignia-alumno]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const tr = sel.closest('tr');
+      ADMIN.insigniasFilas[tr.dataset.alumno] = sel.value;
+    });
+  });
+
   const btnGuardar = $('#guardar-btn');
   if (btnGuardar) btnGuardar.addEventListener('click', e =>
     operar(e.target, async () => {
@@ -1196,6 +1843,21 @@ function wirePuntuar() {
           String(r.id_alumno) === String(reg.id_alumno));
         if (i >= 0) DATOS.registros[i] = nuevo; else DATOS.registros.push(nuevo);
       });
+
+      // Solo se toca la pestaña de insignias si hay alguna activa; si no, no hay
+      // columna que editar y no queremos borrar asignaciones de insignias ya
+      // desactivadas que puedan seguir ahí por historial.
+      if (insigniasActivas().length > 0) {
+        const asignaciones = [];
+        alumnosActivos().forEach(a => {
+          const idInsignia = ADMIN.insigniasFilas[a.id_alumno];
+          if (idInsignia) asignaciones.push({ id_alumno: a.id_alumno, id_insignia: idInsignia });
+        });
+        await postScript('saveAsignacionesInsignias', { id_jornada: ADMIN.jornadaSel, asignaciones });
+        DATOS.insigniasAlumnos = DATOS.insigniasAlumnos.filter(x => String(x.id_jornada) !== String(ADMIN.jornadaSel));
+        asignaciones.forEach(a => DATOS.insigniasAlumnos.push({ ...a, id_jornada: ADMIN.jornadaSel }));
+      }
+
       return `Guardado: ${res.creados} nuevos, ${res.actualizados} actualizados.`;
     }));
 }
@@ -1214,11 +1876,12 @@ function seccionJornadas() {
       <div class="form-grid">
         <label>N.º de jornada<input type="number" id="j-numero" min="1" value="${ed ? esc(ed.numero_jornada) : maxNum + 1}" /></label>
         <label>Título<input type="text" id="j-titulo" value="${ed ? esc(ed.titulo) : ''}" placeholder="p. ej. Enlace de acordes I-IV-V" /></label>
-        <label>Fecha<input type="date" id="j-fecha" value="${ed ? esc(fechaISO(ed.fecha)) : ''}" /></label>
+        <label>Fecha<input type="date" id="j-fecha" value="${ed ? esc(fechaISO(ed.fecha)) : hoyISO()}" /></label>
         <label>Trimestre<select id="j-trimestre">
           ${['1', '2', '3'].map(t => `<option value="${t}" ${String(ed ? ed.trimestre : DATOS.config.trimestre_activo || '1') === t ? 'selected' : ''}>${t}.º</option>`).join('')}
         </select></label>
         <label style="grid-column:1/-1">Descripción<input type="text" id="j-descripcion" value="${ed ? esc(ed.descripcion) : ''}" /></label>
+        <label style="grid-column:1/-1">Tareas<textarea id="j-tareas" placeholder="Qué tienen que preparar o entregar los alumnos en esta jornada">${ed ? esc(ed.tareas) : ''}</textarea></label>
       </div>
       <div class="admin-barra" style="margin-top:14px">
         <button class="btn-oro" id="j-guardar">${ed ? 'Guardar cambios' : 'Crear jornada'}</button>
@@ -1231,12 +1894,13 @@ function seccionJornadas() {
       <h3>Jornadas del curso</h3>
       ${DATOS.jornadas.length === 0 ? `<p class="nota">Todavía no hay jornadas.</p>` : `
       <table>
-        <thead><tr><th>N.º</th><th>Título</th><th>Fecha</th><th>Trim.</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>N.º</th><th>Título</th><th>Tareas</th><th>Fecha</th><th>Trim.</th><th>Estado</th><th></th></tr></thead>
         <tbody>${[...DATOS.jornadas].sort((a, b) => num(a.numero_jornada) - num(b.numero_jornada)).map(j => `
           <tr>
             <td class="num">J${esc(j.numero_jornada)}</td>
             <td><strong>${esc(j.titulo || '—')}</strong></td>
-            <td>${esc(j.fecha || '—')}</td>
+            <td style="max-width:220px;color:var(--muted)">${esc(j.tareas || '—')}</td>
+            <td>${esc(j.fecha ? fmtFecha(j.fecha) : '—')}</td>
             <td class="num">${esc(j.trimestre)}</td>
             <td><span class="estado-chip ${String(j.estado_publicacion).toLowerCase() === 'publicada' ? 'chip-pub' : 'chip-borr'}">${esc(j.estado_publicacion)}</span></td>
             <td style="text-align:right"><button class="btn-borde btn-mini" data-editar="${esc(j.id_jornada)}">Editar</button></td>
@@ -1261,6 +1925,7 @@ function wireJornadas() {
         fecha: valorDe('j-fecha'),
         trimestre: valorDe('j-trimestre'),
         descripcion: valorDe('j-descripcion'),
+        tareas: valorDe('j-tareas'),
       };
       if (!datos.titulo) throw new Error('La jornada necesita un título.');
       const esEdicion = !!ADMIN.editJornada;
@@ -1284,6 +1949,7 @@ function wireJornadas() {
 /* ---------- Sección: Alumnos ---------- */
 
 function seccionAlumnos() {
+  if (ADMIN.editDianaAlumno) return seccionDianaAlumno();
   const ed = ADMIN.editAlumno
     ? DATOS.alumnos.find(a => String(a.id_alumno) === String(ADMIN.editAlumno))
     : null;
@@ -1309,8 +1975,18 @@ function seccionAlumnos() {
           <option value="">— Sin equipo —</option>
           ${equiposActivos.map(e => `<option value="${esc(e.id_equipo)}" ${ed && String(ed.id_equipo_actual) === String(e.id_equipo) ? 'selected' : ''}>${esc(e.nombre_equipo)}</option>`).join('')}
         </select></label>
+        <label>Grupo/curso<input type="text" id="a-grupo" value="${ed ? esc(ed.grupo) : ''}" placeholder="p. ej. 2.º EE.PP." /></label>
+        <label>Color de pelo del avatar<select id="a-pelo">
+          ${COLORES_PELO.map(([v, l]) => `<option value="${v}" ${(ed ? ed.color_pelo : 'negro') === v ? 'selected' : ''}>${l}</option>`).join('')}
+        </select></label>
+        <label>Color de camiseta del avatar<input type="color" id="a-camiseta"
+          value="${ed && /^#[0-9a-fA-F]{6}$/.test(String(ed.color_camiseta)) ? esc(ed.color_camiseta) : '#888888'}" style="height:38px;padding:2px" /></label>
+        <label class="check"><input type="checkbox" id="a-camiseta-custom" ${ed && ed.color_camiseta ? 'checked' : ''} /> Personalizar color de camiseta (si no, se usa el color del equipo)</label>
         <label class="check"><input type="checkbox" id="a-activo" ${!ed || activo(ed) ? 'checked' : ''} /> Activo (aparece en clasificaciones y al puntuar)</label>
       </div>
+      ${ed ? `<div class="admin-barra" style="margin-top:14px">${svgAvatar(ed, DATOS.equipos.find(e => String(e.id_equipo) === String(ed.id_equipo_actual)), 'grande')}
+        <p class="nota" style="margin:0">Avatar generado con los datos guardados actualmente. Cambia género,
+        color de pelo, equipo o instrumento y guarda para verlo actualizado.</p></div>` : ''}
       <div class="admin-barra" style="margin-top:14px">
         <button class="btn-oro" id="a-guardar">${ed ? 'Guardar cambios' : 'Crear alumno/a'}</button>
         ${ed ? `<button class="btn-borde" id="a-cancelar">Cancelar</button>` : ''}
@@ -1322,14 +1998,18 @@ function seccionAlumnos() {
       <h3>Plantilla (${DATOS.alumnos.length})</h3>
       ${DATOS.alumnos.length === 0 ? `<p class="nota">Todavía no hay alumnos.</p>` : `
       <table>
-        <thead><tr><th>Nombre</th><th>Instrumento</th><th>Equipo</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Grupo</th><th>Instrumento</th><th>Equipo</th><th>Estado</th><th></th></tr></thead>
         <tbody>${DATOS.alumnos.map(a => `
           <tr style="${activo(a) ? '' : 'opacity:0.45'}">
             <td><strong>${esc(a.nombre_publico)}</strong></td>
+            <td>${esc(a.grupo || '—')}</td>
             <td>${esc(a.instrumento || '—')}</td>
             <td>${esc(nombreEquipo(a.id_equipo_actual))}</td>
             <td>${activo(a) ? 'Activo' : 'Inactivo'}</td>
-            <td style="text-align:right"><button class="btn-borde btn-mini" data-editar="${esc(a.id_alumno)}">Editar</button></td>
+            <td style="text-align:right">
+              <button class="btn-borde btn-mini" data-diana="${esc(a.id_alumno)}" style="margin-right:6px">Diana</button>
+              <button class="btn-borde btn-mini" data-editar="${esc(a.id_alumno)}">Editar</button>
+            </td>
           </tr>`).join('')}
         </tbody>
       </table>`}
@@ -1337,6 +2017,14 @@ function seccionAlumnos() {
 }
 
 function wireAlumnos() {
+  if (ADMIN.editDianaAlumno) { wireDianaAlumno(); return; }
+
+  document.querySelectorAll('[data-diana]').forEach(b =>
+    b.addEventListener('click', () => {
+      ADMIN.editDianaAlumno = b.dataset.diana;
+      ADMIN.filasDianaAlumno = {};
+      renderAdmin();
+    }));
   document.querySelectorAll('[data-editar]').forEach(b =>
     b.addEventListener('click', () => { ADMIN.editAlumno = b.dataset.editar; renderAdmin(); }));
   const cancelar = $('#a-cancelar');
@@ -1350,6 +2038,9 @@ function wireAlumnos() {
         genero: valorDe('a-genero'),
         instrumento: valorDe('a-instrumento'),
         id_equipo_actual: valorDe('a-equipo'),
+        grupo: valorDe('a-grupo'),
+        color_pelo: valorDe('a-pelo'),
+        color_camiseta: marcado('a-camiseta-custom') ? valorDe('a-camiseta') : '',
         activo: marcado('a-activo'),
       };
       if (!datos.nombre_publico) throw new Error('El alumno necesita un nombre público.');
@@ -1364,13 +2055,127 @@ function wireAlumnos() {
     }));
 }
 
+/* ---------- Panel: Diana de un alumno (las 4 evaluaciones a la vez) ---------- */
+
+function prepararFilasDianaAlumno(idAlumno) {
+  const crits = criteriosActivos(DATOS);
+  const porPeriodo = {};
+  PERIODOS_DIANA.forEach(([p]) => { porPeriodo[p] = {}; });
+  DATOS.evaluaciones
+    .filter(e => String(e.id_alumno) === String(idAlumno))
+    .forEach(e => {
+      const p = String(e.periodo);
+      if (!porPeriodo[p]) return;
+      porPeriodo[p][String(e.id_criterio)] = (e.valor === '' || e.valor == null) ? '' : String(e.valor);
+    });
+  const filas = {};
+  PERIODOS_DIANA.forEach(([p]) => {
+    filas[p] = {};
+    crits.forEach(c => { filas[p][c.id_criterio] = porPeriodo[p][String(c.id_criterio)] !== undefined ? porPeriodo[p][String(c.id_criterio)] : ''; });
+  });
+  ADMIN.filasDianaAlumno = filas;
+}
+
+function seccionDianaAlumno() {
+  const a = DATOS.alumnos.find(x => String(x.id_alumno) === String(ADMIN.editDianaAlumno));
+  if (!a) { ADMIN.editDianaAlumno = null; return seccionAlumnos(); }
+  const crits = criteriosActivos(DATOS);
+  if (Object.keys(ADMIN.filasDianaAlumno).length === 0) prepararFilasDianaAlumno(a.id_alumno);
+  if (!PERIODOS_DIANA.some(([v]) => v === ADMIN.previewPeriodo)) ADMIN.previewPeriodo = '1';
+
+  const cabecera = `
+    <div class="fila-titulo">
+      <h3 style="margin:0">Diana de ${esc(a.nombre_publico)}</h3>
+      <button class="btn-borde btn-mini" id="diana-volver">← Volver a alumnos</button>
+    </div>`;
+
+  if (crits.length === 0) {
+    return `${cabecera}<div class="card" style="margin-top:14px"><p class="nota">Todavía no hay
+      criterios activos. Créalos en la pestaña <strong>Criterios</strong> antes de poder evaluar.</p></div>`;
+  }
+
+  const ejesPreview = crits.map(c => {
+    const v = ADMIN.filasDianaAlumno[ADMIN.previewPeriodo][c.id_criterio];
+    const evaluado = v !== '' && v != null;
+    return { id: c.id_criterio, nombre: c.nombre, valor: evaluado ? num(v) : 0, evaluado };
+  });
+
+  return `${cabecera}
+    <div class="card tabla-scroll" style="margin-top:14px">
+      <table class="tabla-admin">
+        <thead><tr><th>Criterio</th>${PERIODOS_DIANA.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead>
+        <tbody>${crits.map(c => `
+          <tr data-criterio="${esc(c.id_criterio)}">
+            <td><strong>${esc(c.nombre)}</strong></td>
+            ${PERIODOS_DIANA.map(([p]) => `<td><select data-periodo="${p}">
+              ${['', '0', '1', '2', '3', '4', '5'].map(op =>
+                `<option value="${op}" ${String(ADMIN.filasDianaAlumno[p][c.id_criterio] || '') === op ? 'selected' : ''}>${op === '' ? '—' : op}</option>`).join('')}
+            </select></td>`).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="admin-barra" style="margin-top:16px">
+        <button class="btn-oro" id="diana-guardar">Guardar todas las dianas</button>
+      </div>
+      <p class="nota">Escala 0-5; deja «—» si todavía no se ha evaluado ese criterio en ese periodo.</p>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="fila-titulo" style="margin-bottom:14px">
+        <h3 style="margin:0">Vista previa</h3>
+        <div class="pills">${PERIODOS_DIANA.map(([v, l]) =>
+          `<button data-preview-periodo="${v}" class="${ADMIN.previewPeriodo === v ? 'on' : ''}">${l}</button>`).join('')}</div>
+      </div>
+      ${svgDiana(ejesPreview)}
+    </div>`;
+}
+
+function wireDianaAlumno() {
+  $('#diana-volver').addEventListener('click', () => { ADMIN.editDianaAlumno = null; renderAdmin(); });
+
+  document.querySelectorAll('[data-preview-periodo]').forEach(b =>
+    b.addEventListener('click', () => { ADMIN.previewPeriodo = b.dataset.previewPeriodo; renderAdmin(); }));
+
+  document.querySelectorAll('#main [data-periodo]').forEach(el => {
+    el.addEventListener('change', () => {
+      const tr = el.closest('tr');
+      const idCriterio = tr.dataset.criterio;
+      ADMIN.filasDianaAlumno[el.dataset.periodo][idCriterio] = el.value;
+    });
+  });
+
+  const btnGuardar = $('#diana-guardar');
+  if (btnGuardar) btnGuardar.addEventListener('click', e =>
+    operar(e.target, async () => {
+      const idAlumno = ADMIN.editDianaAlumno;
+      const valoraciones = [];
+      PERIODOS_DIANA.forEach(([p]) => {
+        criteriosActivos(DATOS).forEach(c => {
+          const v = ADMIN.filasDianaAlumno[p][c.id_criterio];
+          if (v === '' || v == null) return;
+          valoraciones.push({ id_alumno: idAlumno, periodo: p, id_criterio: c.id_criterio, valor: v });
+        });
+      });
+      if (valoraciones.length === 0) throw new Error('No hay ninguna valoración rellenada que guardar.');
+      const res = await postScript('saveEvaluaciones', { valoraciones });
+      aplicarEvaluacionesLocal(valoraciones);
+      return `Guardado: ${res.creados} nuevas, ${res.actualizados} actualizadas.`;
+    }));
+}
+
 /* ---------- Sección: Equipos ---------- */
+
+/** Vista previa del escudo en el formulario: la imagen subida, o un hueco vacío. */
+function previewEscudoHTML(escudo) {
+  if (escudo) return `<div class="imagen-preview" id="e-preview" style="background-image:url('${escudo}');background-size:contain;background-repeat:no-repeat;background-position:center;"></div>`;
+  return `<div class="imagen-preview vacia" id="e-preview">🛡️</div>`;
+}
 
 function seccionEquipos() {
   const ed = ADMIN.editEquipo
     ? DATOS.equipos.find(e => String(e.id_equipo) === String(ADMIN.editEquipo))
     : null;
   const nAlumnos = id => DATOS.alumnos.filter(a => activo(a) && String(a.id_equipo_actual) === String(id)).length;
+  const escudoActual = ADMIN.imagenEscudo !== null ? ADMIN.imagenEscudo : (ed ? ed.escudo : '');
 
   return `
     <div class="card" style="margin-bottom:14px">
@@ -1379,11 +2184,24 @@ function seccionEquipos() {
         <label>Nombre del equipo<input type="text" id="e-nombre" value="${ed ? esc(ed.nombre_equipo) : ''}" placeholder="p. ej. Napolitana FC" /></label>
         <label>Color<input type="color" id="e-color" value="${ed && /^#[0-9a-fA-F]{6}$/.test(String(ed.color)) ? esc(ed.color) : '#C8102E'}" style="height:38px;padding:2px" /></label>
         <label class="check"><input type="checkbox" id="e-activo" ${!ed || activo(ed) ? 'checked' : ''} /> Activo (aparece en la clasificación)</label>
+        <label style="grid-column:1/-1">Escudo
+          <div class="admin-barra" style="margin-top:6px;align-items:flex-start">
+            ${previewEscudoHTML(escudoActual)}
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <input type="file" id="e-escudo" accept="image/*" />
+              ${escudoActual ? `<button type="button" class="btn-borde btn-mini" id="e-escudo-quitar">Quitar escudo</button>` : ''}
+            </div>
+          </div>
+        </label>
       </div>
       <div class="admin-barra" style="margin-top:14px">
         <button class="btn-oro" id="e-guardar">${ed ? 'Guardar cambios' : 'Crear equipo'}</button>
         ${ed ? `<button class="btn-borde" id="e-cancelar">Cancelar</button>` : ''}
       </div>
+      <p class="nota">Al subir la imagen se intenta quitar el fondo automáticamente (asumiendo que es de un color
+      liso) y se reduce a un máximo de 800×800 px antes de guardarse en tu Google Drive (carpeta «Liga Armónica —
+      Escudos»). Si el resultado no queda bien, sube directamente un PNG ya recortado con fondo transparente.
+      Si no subes ningún escudo, se sigue mostrando el punto de color de siempre.</p>
     </div>
     <div class="card tabla-scroll">
       <h3>Equipos (${DATOS.equipos.length})</h3>
@@ -1392,7 +2210,7 @@ function seccionEquipos() {
         <thead><tr><th>Equipo</th><th class="num">Alumnos activos</th><th>Estado</th><th></th></tr></thead>
         <tbody>${DATOS.equipos.map(eq => `
           <tr style="${activo(eq) ? '' : 'opacity:0.45'}">
-            <td><strong>${dot(eq.color)}${esc(eq.nombre_equipo)}</strong></td>
+            <td><strong>${escudoEquipoHTML(eq, 22)}${esc(eq.nombre_equipo)}</strong></td>
             <td class="num">${nAlumnos(eq.id_equipo)}</td>
             <td>${activo(eq) ? 'Activo' : 'Inactivo'}</td>
             <td style="text-align:right"><button class="btn-borde btn-mini" data-editar="${esc(eq.id_equipo)}">Editar</button></td>
@@ -1404,26 +2222,356 @@ function seccionEquipos() {
 
 function wireEquipos() {
   document.querySelectorAll('[data-editar]').forEach(b =>
-    b.addEventListener('click', () => { ADMIN.editEquipo = b.dataset.editar; renderAdmin(); }));
+    b.addEventListener('click', () => { ADMIN.editEquipo = b.dataset.editar; ADMIN.imagenEscudo = null; renderAdmin(); }));
   const cancelar = $('#e-cancelar');
-  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editEquipo = null; renderAdmin(); });
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editEquipo = null; ADMIN.imagenEscudo = null; renderAdmin(); });
+
+  const inputEscudo = $('#e-escudo');
+  if (inputEscudo) inputEscudo.addEventListener('change', async () => {
+    const file = inputEscudo.files[0];
+    if (!file) return;
+    try {
+      const redimensionada = await leerImagenRedimensionada(file);
+      ADMIN.imagenEscudo = await quitarFondoImagen(redimensionada);
+      renderAdmin();
+    } catch (err) {
+      alert(err.message);
+      inputEscudo.value = '';
+    }
+  });
+  const quitarEscudo = $('#e-escudo-quitar');
+  if (quitarEscudo) quitarEscudo.addEventListener('click', () => { ADMIN.imagenEscudo = ''; renderAdmin(); });
 
   $('#e-guardar').addEventListener('click', e =>
     operar(e.target, async () => {
+      const ed = ADMIN.editEquipo ? DATOS.equipos.find(x => String(x.id_equipo) === String(ADMIN.editEquipo)) : null;
       const datos = {
         id_equipo: ADMIN.editEquipo || '',
         nombre_equipo: valorDe('e-nombre'),
         color: valorDe('e-color') || '#888888',
         activo: marcado('e-activo'),
+        escudo: ADMIN.imagenEscudo !== null ? ADMIN.imagenEscudo : (ed ? (ed.escudo || '') : ''),
       };
       if (!datos.nombre_equipo) throw new Error('El equipo necesita un nombre.');
       const res = await postScript('saveEquipo', { datos });
-      const local = { ...datos, id_equipo: res.id_equipo, activo: datos.activo ? 'TRUE' : 'FALSE' };
+      const local = { ...datos, id_equipo: res.id_equipo, escudo: res.escudo, activo: datos.activo ? 'TRUE' : 'FALSE' };
       const i = DATOS.equipos.findIndex(x => String(x.id_equipo) === String(res.id_equipo));
       if (i >= 0) DATOS.equipos[i] = { ...DATOS.equipos[i], ...local }; else DATOS.equipos.push(local);
       const esEdicion = !!ADMIN.editEquipo;
       ADMIN.editEquipo = null;
+      ADMIN.imagenEscudo = null;
       return esEdicion ? 'Equipo actualizado.' : 'Equipo creado.';
+    }));
+}
+
+/* ---------- Sección: Criterios (diana de evaluación) ---------- */
+
+function seccionCriterios() {
+  const ed = ADMIN.editCriterio
+    ? DATOS.criterios.find(c => String(c.id_criterio) === String(ADMIN.editCriterio))
+    : null;
+  const ordenSugerido = DATOS.criterios.reduce((m, c) => Math.max(m, num(c.orden)), 0) + 1;
+  const ordenados = [...DATOS.criterios].sort((a, b) => num(a.orden) - num(b.orden));
+
+  return `
+    <div class="card" style="margin-bottom:14px">
+      <h3>${ed ? `Editar: ${esc(ed.nombre)}` : 'Nuevo criterio'}</h3>
+      <div class="form-grid">
+        <label>Nombre del criterio<input type="text" id="cr-nombre" value="${ed ? esc(ed.nombre) : ''}" placeholder="p. ej. Afinación" /></label>
+        <label>Orden en la diana<input type="number" id="cr-orden" min="0" value="${ed ? esc(ed.orden) : ordenSugerido}" /></label>
+        <label class="check"><input type="checkbox" id="cr-activo" ${!ed || activo(ed) ? 'checked' : ''} /> Activo (aparece en la diana de evaluación)</label>
+      </div>
+      <div class="admin-barra" style="margin-top:14px">
+        <button class="btn-oro" id="cr-guardar">${ed ? 'Guardar cambios' : 'Crear criterio'}</button>
+        ${ed ? `<button class="btn-borde" id="cr-cancelar">Cancelar</button>` : ''}
+      </div>
+      <p class="nota">La diana necesita al menos 3 criterios activos para poder dibujarse. Si desactivas
+      un criterio, sus valoraciones ya guardadas se conservan pero dejan de mostrarse.</p>
+    </div>
+    <div class="card tabla-scroll">
+      <h3>Criterios (${DATOS.criterios.length})</h3>
+      ${DATOS.criterios.length === 0 ? `<p class="nota">Todavía no hay criterios.</p>` : `
+      <table>
+        <thead><tr><th class="num">Orden</th><th>Criterio</th><th>Estado</th><th></th></tr></thead>
+        <tbody>${ordenados.map(c => `
+          <tr style="${activo(c) ? '' : 'opacity:0.45'}">
+            <td class="num">${esc(c.orden)}</td>
+            <td><strong>${esc(c.nombre)}</strong></td>
+            <td>${activo(c) ? 'Activo' : 'Inactivo'}</td>
+            <td style="text-align:right">
+              <button class="btn-borde btn-mini" data-editar="${esc(c.id_criterio)}" style="margin-right:6px">Editar</button>
+              <button class="btn-borde btn-mini" data-eliminar="${esc(c.id_criterio)}">Eliminar</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+
+function wireCriterios() {
+  document.querySelectorAll('[data-editar]').forEach(b =>
+    b.addEventListener('click', () => { ADMIN.editCriterio = b.dataset.editar; renderAdmin(); }));
+  const cancelar = $('#cr-cancelar');
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editCriterio = null; renderAdmin(); });
+
+  document.querySelectorAll('[data-eliminar]').forEach(b =>
+    b.addEventListener('click', e => {
+      const id = b.dataset.eliminar;
+      const c = DATOS.criterios.find(x => String(x.id_criterio) === String(id));
+      const nombre = c ? c.nombre : id;
+      const tieneValoraciones = DATOS.evaluaciones.some(ev => String(ev.id_criterio) === String(id) && ev.valor !== '');
+      const aviso = tieneValoraciones
+        ? `¿Eliminar el criterio «${nombre}»? Ya tiene valoraciones guardadas: dejarán de mostrarse en las dianas. Esta acción no se puede deshacer.`
+        : `¿Eliminar el criterio «${nombre}»? Esta acción no se puede deshacer.`;
+      if (!confirm(aviso)) return;
+      operar(e.target, async () => {
+        await postScript('deleteCriterio', { id_criterio: id });
+        DATOS.criterios = DATOS.criterios.filter(x => String(x.id_criterio) !== String(id));
+        ADMIN.filasDianaAlumno = {};
+        if (String(ADMIN.editCriterio) === String(id)) ADMIN.editCriterio = null;
+        return 'Criterio eliminado.';
+      });
+    }));
+
+  $('#cr-guardar').addEventListener('click', e =>
+    operar(e.target, async () => {
+      const datos = {
+        id_criterio: ADMIN.editCriterio || '',
+        nombre: valorDe('cr-nombre'),
+        orden: valorDe('cr-orden') || '0',
+        activo: marcado('cr-activo'),
+      };
+      if (!datos.nombre) throw new Error('El criterio necesita un nombre.');
+      const res = await postScript('saveCriterio', { datos });
+      const local = { ...datos, id_criterio: res.id_criterio, activo: datos.activo ? 'TRUE' : 'FALSE' };
+      const i = DATOS.criterios.findIndex(x => String(x.id_criterio) === String(res.id_criterio));
+      if (i >= 0) DATOS.criterios[i] = { ...DATOS.criterios[i], ...local }; else DATOS.criterios.push(local);
+      ADMIN.filasDianaAlumno = {}; // el panel de diana por alumno cambia si varían los criterios activos
+      const esEdicion = !!ADMIN.editCriterio;
+      ADMIN.editCriterio = null;
+      return esEdicion ? 'Criterio actualizado.' : 'Criterio creado.';
+    }));
+}
+
+/* ---------- Sección: Insignias ---------- */
+
+const PERIODICIDADES_INSIGNIA = [['semanal', 'Semanal'], ['mensual', 'Mensual'], ['trimestral', 'Trimestral']];
+
+/** Lee un archivo de imagen, lo reduce a `maxLado` px (conservando proporción) y lo devuelve como data URI PNG. */
+function leerImagenRedimensionada(file, maxLado = 800) {
+  return new Promise((resolve, reject) => {
+    if (!file.type || !file.type.startsWith('image/')) { reject(new Error('El archivo elegido no es una imagen.')); return; }
+    if (file.size > 5 * 1024 * 1024) { reject(new Error('La imagen no puede pesar más de 5 MB.')); return; }
+    const lector = new FileReader();
+    lector.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+    lector.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('El archivo no es una imagen válida.'));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxLado || height > maxLado) {
+          if (width >= height) { height = Math.round(height * maxLado / width); width = maxLado; }
+          else { width = Math.round(width * maxLado / height); height = maxLado; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(file);
+  });
+}
+
+/**
+ * Quita el fondo de una imagen tipo logo/escudo: asume que el fondo es del
+ * color de las esquinas y lo vuelve transparente por inundación desde los
+ * bordes, sin tocar zonas del interior que compartan ese color pero no
+ * toquen el borde (así no agujerea el propio dibujo del escudo).
+ */
+function quitarFondoImagen(dataUrl, tolerancia = 32) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error('No se pudo procesar la imagen.'));
+    img.onload = () => {
+      const { width, height } = img;
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const imagen = ctx.getImageData(0, 0, width, height);
+      const px = imagen.data;
+      const idx = (x, y) => (y * width + x) * 4;
+
+      const esquinas = [idx(0, 0), idx(width - 1, 0), idx(0, height - 1), idx(width - 1, height - 1)];
+      const fondo = [0, 1, 2].map(c => esquinas.reduce((s, i) => s + px[i + c], 0) / esquinas.length);
+      const pareceFondo = i => {
+        const dr = px[i] - fondo[0], dg = px[i + 1] - fondo[1], db = px[i + 2] - fondo[2];
+        return Math.sqrt(dr * dr + dg * dg + db * db) <= tolerancia;
+      };
+
+      const visitado = new Uint8Array(width * height);
+      const pila = [];
+      for (let x = 0; x < width; x++) { pila.push(x, 0, x, height - 1); }
+      for (let y = 0; y < height; y++) { pila.push(0, y, width - 1, y); }
+
+      while (pila.length) {
+        const y = pila.pop(), x = pila.pop();
+        if (x < 0 || y < 0 || x >= width || y >= height) continue;
+        const p = y * width + x;
+        if (visitado[p]) continue;
+        visitado[p] = 1;
+        const i = p * 4;
+        if (!pareceFondo(i)) continue;
+        px[i + 3] = 0;
+        pila.push(x + 1, y, x - 1, y, x, y + 1, x, y - 1);
+      }
+
+      ctx.putImageData(imagen, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.src = dataUrl;
+  });
+}
+
+function etiquetaPeriodicidad(v) {
+  const par = PERIODICIDADES_INSIGNIA.find(([val]) => val === v);
+  return par ? par[1] : v;
+}
+
+const ICONOS_INSIGNIA = ['🏆', '🥇', '🥈', '🥉', '⭐', '🌟', '🎖️', '🔥', '💎', '👑', '🎯', '🎵', '🎶', '🎸', '🎹', '🥁', '🚀', '💪', '✨', '🎓'];
+
+function paletaIconos(seleccionado) {
+  return `<div class="paleta-iconos">${ICONOS_INSIGNIA.map(ic =>
+    `<button type="button" class="icono-opcion ${seleccionado === ic ? 'on' : ''}" data-icono="${ic}">${ic}</button>`).join('')}</div>`;
+}
+
+/** Vista previa del icono elegido (o uno genérico si todavía no hay ninguno). */
+function previewIconoInsigniaHTML(icono) {
+  return `<div class="imagen-preview" id="in-preview-icono" style="font-size:60px;display:flex;align-items:center;justify-content:center;">${esc(icono || '🎖️')}</div>`;
+}
+
+/** Vista previa del escudo subido, o un hueco vacío si todavía no hay ninguno. */
+function previewEscudoInsigniaHTML(imagen) {
+  if (imagen) return `<div class="imagen-preview" id="in-preview-escudo" style="background-image:url('${imagen}');background-size:contain;background-repeat:no-repeat;background-position:center;"></div>`;
+  return `<div class="imagen-preview vacia" id="in-preview-escudo">🛡️</div>`;
+}
+
+/** Miniatura para resúmenes (tablas, listados): siempre el icono, nunca el escudo. */
+function miniaturaInsigniaHTML(i) {
+  return `<span class="miniatura-insignia" style="display:inline-flex;align-items:center;justify-content:center;font-size:18px">${esc(i.icono || '🎖️')}</span>`;
+}
+
+function seccionInsignias() {
+  const ed = ADMIN.editInsignia
+    ? DATOS.insignias.find(i => String(i.id_insignia) === String(ADMIN.editInsignia))
+    : null;
+  const imagenActual = ADMIN.imagenInsignia !== null ? ADMIN.imagenInsignia : (ed ? ed.imagen : '');
+  const iconoActual = ADMIN.iconoInsignia !== null ? ADMIN.iconoInsignia : (ed ? ed.icono : '');
+
+  return `
+    <div class="card" style="margin-bottom:14px">
+      <h3>${ed ? `Editar: ${esc(ed.nombre)}` : 'Nueva insignia'}</h3>
+      <div class="form-grid">
+        <label>Nombre de la insignia<input type="text" id="in-nombre" value="${ed ? esc(ed.nombre) : ''}" placeholder="p. ej. Racha de oro" /></label>
+        <label>Periodicidad<select id="in-periodicidad">
+          ${PERIODICIDADES_INSIGNIA.map(([v, l]) => `<option value="${v}" ${(ed ? ed.periodicidad : 'semanal') === v ? 'selected' : ''}>${l}</option>`).join('')}
+        </select></label>
+        <label class="check"><input type="checkbox" id="in-activo" ${!ed || activo(ed) ? 'checked' : ''} /> Activa (disponible para asignar)</label>
+        <label style="grid-column:1/-1">Icono (se usa en resúmenes: listados, chips en la ficha del alumno...)
+          <div class="admin-barra" style="margin-top:6px;align-items:flex-start">
+            ${previewIconoInsigniaHTML(iconoActual)}
+            ${paletaIconos(iconoActual)}
+          </div>
+        </label>
+        <label style="grid-column:1/-1">Escudo (opcional; se usa en grande en el Salón de la Fama)
+          <div class="admin-barra" style="margin-top:6px;align-items:flex-start">
+            ${previewEscudoInsigniaHTML(imagenActual)}
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <input type="file" id="in-imagen" accept="image/*" />
+              ${imagenActual ? `<button type="button" class="btn-borde btn-mini" id="in-imagen-quitar">Quitar escudo</button>` : ''}
+            </div>
+          </div>
+        </label>
+      </div>
+      <div class="admin-barra" style="margin-top:14px">
+        <button class="btn-oro" id="in-guardar">${ed ? 'Guardar cambios' : 'Crear insignia'}</button>
+        ${ed ? `<button class="btn-borde" id="in-cancelar">Cancelar</button>` : ''}
+      </div>
+      <p class="nota">El icono y el escudo son independientes: el icono aparece en los sitios donde la insignia se
+      muestra en pequeño (listados, resúmenes...) y el escudo, si lo subes, se muestra grande en el Salón de la
+      Fama sin recortar aunque no sea cuadrado — si no subes ningún escudo, ahí también se usa el icono. Al subirlo
+      se intenta quitar el fondo automáticamente y se reduce a un máximo de 800×800 px antes de guardarse en tu
+      Google Drive (carpeta «Liga Armónica — Insignias»).</p>
+    </div>
+    <div class="card tabla-scroll">
+      <h3>Insignias (${DATOS.insignias.length})</h3>
+      ${DATOS.insignias.length === 0 ? `<p class="nota">Todavía no hay insignias.</p>` : `
+      <table>
+        <thead><tr><th></th><th>Nombre</th><th>Periodicidad</th><th>Estado</th><th></th></tr></thead>
+        <tbody>${DATOS.insignias.map(i => `
+          <tr style="${activo(i) ? '' : 'opacity:0.45'}">
+            <td>${miniaturaInsigniaHTML(i)}</td>
+            <td><strong>${esc(i.nombre)}</strong></td>
+            <td>${esc(etiquetaPeriodicidad(i.periodicidad))}</td>
+            <td>${activo(i) ? 'Activa' : 'Inactiva'}</td>
+            <td style="text-align:right"><button class="btn-borde btn-mini" data-editar="${esc(i.id_insignia)}">Editar</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+
+function wireInsignias() {
+  document.querySelectorAll('[data-editar]').forEach(b =>
+    b.addEventListener('click', () => { ADMIN.editInsignia = b.dataset.editar; ADMIN.imagenInsignia = null; ADMIN.iconoInsignia = null; renderAdmin(); }));
+  const cancelar = $('#in-cancelar');
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editInsignia = null; ADMIN.imagenInsignia = null; ADMIN.iconoInsignia = null; renderAdmin(); });
+
+  const inputImagen = $('#in-imagen');
+  if (inputImagen) inputImagen.addEventListener('change', async () => {
+    const file = inputImagen.files[0];
+    if (!file) return;
+    try {
+      const redimensionada = await leerImagenRedimensionada(file);
+      ADMIN.imagenInsignia = await quitarFondoImagen(redimensionada);
+      renderAdmin();
+    } catch (err) {
+      alert(err.message);
+      inputImagen.value = '';
+    }
+  });
+  const quitarImagen = $('#in-imagen-quitar');
+  if (quitarImagen) quitarImagen.addEventListener('click', () => { ADMIN.imagenInsignia = ''; renderAdmin(); });
+
+  document.querySelectorAll('[data-icono]').forEach(b =>
+    b.addEventListener('click', () => {
+      ADMIN.iconoInsignia = b.dataset.icono;
+      renderAdmin();
+    }));
+
+  $('#in-guardar').addEventListener('click', e =>
+    operar(e.target, async () => {
+      const ed = ADMIN.editInsignia ? DATOS.insignias.find(i => String(i.id_insignia) === String(ADMIN.editInsignia)) : null;
+      const datos = {
+        id_insignia: ADMIN.editInsignia || '',
+        nombre: valorDe('in-nombre'),
+        periodicidad: valorDe('in-periodicidad'),
+        icono: ADMIN.iconoInsignia !== null ? ADMIN.iconoInsignia : (ed ? (ed.icono || '') : ''),
+        imagen: ADMIN.imagenInsignia !== null ? ADMIN.imagenInsignia : (ed ? (ed.imagen || '') : ''),
+        activo: marcado('in-activo'),
+      };
+      if (!datos.nombre) throw new Error('La insignia necesita un nombre.');
+      const res = await postScript('saveInsignia', { datos });
+      const local = { ...datos, id_insignia: res.id_insignia, imagen: res.imagen, activo: datos.activo ? 'TRUE' : 'FALSE' };
+      const i = DATOS.insignias.findIndex(x => String(x.id_insignia) === String(res.id_insignia));
+      if (i >= 0) DATOS.insignias[i] = { ...DATOS.insignias[i], ...local }; else DATOS.insignias.push(local);
+      const esEdicion = !!ADMIN.editInsignia;
+      ADMIN.editInsignia = null;
+      ADMIN.imagenInsignia = null;
+      ADMIN.iconoInsignia = null;
+      return esEdicion ? 'Insignia actualizada.' : 'Insignia creada.';
     }));
 }
 
@@ -1442,17 +2590,24 @@ function seccionLiga() {
           ${['1', '2', '3'].map(t => `<option value="${t}" ${String(c.trimestre_activo) === t ? 'selected' : ''}>${t}.º</option>`).join('')}
         </select></label>
         <label>Jornada actual (Dashboard)<select id="c-jornada">
-          <option value=""></option>
+          <option value="">— Automático: la última creada —</option>
           ${DATOS.jornadas.map(j => `<option value="${esc(j.id_jornada)}" ${String(c.jornada_actual) === String(j.id_jornada) ? 'selected' : ''}>
             J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Sin título')}</option>`).join('')}
         </select></label>
+        <label class="check"><input type="checkbox" id="c-tend-alumnos" ${configActivo(c.mostrar_tendencia_alumnos) ? 'checked' : ''} />
+          Mostrar en la clasificación individual si cada alumno/a sube, baja o se mantiene respecto a la última jornada</label>
+        <label class="check"><input type="checkbox" id="c-tend-equipos" ${configActivo(c.mostrar_tendencia_equipos) ? 'checked' : ''} />
+          Mostrar en la clasificación de equipos si cada equipo sube, baja o se mantiene respecto a la última jornada</label>
       </div>
       <div class="admin-barra" style="margin-top:14px">
         <button class="btn-oro" id="c-guardar">Guardar configuración</button>
       </div>
       <p class="nota">El «trimestre activo» es el que se muestra por defecto al abrir la web.
       Al empezar un trimestre nuevo, cámbialo aquí: la clasificación principal se reinicia sola
-      porque cada trimestre cuenta únicamente sus jornadas (el histórico sigue en «Curso completo»).</p>
+      porque cada trimestre cuenta únicamente sus jornadas (el histórico sigue en «Curso completo»).
+      La «jornada actual» no hace falta tocarla normalmente: si la dejas en automático, el Dashboard
+      siempre enseña la última jornada publicada que hayas creado. Solo elige una a mano aquí si
+      quieres forzar que se muestre otra distinta.</p>
     </div>`;
 }
 
@@ -1465,6 +2620,8 @@ function wireLiga() {
         profesor: valorDe('c-profesor'),
         trimestre_activo: valorDe('c-trimestre'),
         jornada_actual: valorDe('c-jornada'),
+        mostrar_tendencia_alumnos: marcado('c-tend-alumnos') ? 'TRUE' : 'FALSE',
+        mostrar_tendencia_equipos: marcado('c-tend-equipos') ? 'TRUE' : 'FALSE',
       };
       await postScript('saveConfig', { config });
       Object.assign(DATOS.config, config);
@@ -1483,6 +2640,26 @@ function fechaISO(f) {
   return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
 }
 
+/** Fecha de hoy en formato aaaa-mm-dd, para precargar el input type="date". */
+function hoyISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Formatea una fecha (aaaa-mm-dd o dd/mm/aaaa) como d-m-a. Si no reconoce el formato, la deja tal cual. */
+function fmtFecha(f) {
+  const s = String(f || '').trim();
+  if (!s) return '';
+  let d, m, a;
+  let match = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (match) { [, a, m, d] = match; } else {
+    match = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (match) { [, d, m, a] = match; }
+  }
+  if (!d) return s;
+  return `${d.padStart(2, '0')}-${m.padStart(2, '0')}-${a}`;
+}
+
 (async function iniciar() {
   if (!SPREADSHEET_ID || SPREADSHEET_ID.startsWith('PEGA_AQUI')) {
     mostrarError('Falta configurar la hoja',
@@ -1492,9 +2669,11 @@ function fechaISO(f) {
     return;
   }
   try {
-    DATOS = await cargarDatos();
+    const [datosCargados] = await Promise.all([cargarDatos(), cargarDicebear()]);
+    DATOS = datosCargados;
     TRIMESTRE = String(DATOS.config.trimestre_activo || '1');
     if (!TRIMESTRES.some(([v]) => v === TRIMESTRE)) TRIMESTRE = '1';
+    DIANA_PERIODO = ['1', '2', '3'].includes(TRIMESTRE) ? TRIMESTRE : '1';
     if (DATOS.config.nombre_liga) { $('#titulo').textContent = DATOS.config.nombre_liga; document.title = DATOS.config.nombre_liga; }
     if (DATOS.config.curso) { $('#curso').textContent = DATOS.config.curso; $('#temporada').hidden = false; }
     if (DATOS.config.profesor) { $('#pie').textContent += ' · ' + DATOS.config.profesor; }
@@ -1503,7 +2682,7 @@ function fechaISO(f) {
     mostrarError('No se pudieron cargar los datos',
       `${esc(err.message)}<br><br>Comprueba que el ID de la hoja es correcto, que está compartida como
        «Cualquier persona con el enlace: Lector» y que las pestañas se llaman CONFIG, ALUMNOS,
-       EQUIPOS, JORNADAS y REGISTROS.`);
+       EQUIPOS, JORNADAS, REGISTROS, CRITERIOS, EVALUACIONES, INSIGNIAS e INSIGNIAS_ALUMNOS.`);
   }
 })();
 </script>
