@@ -34,6 +34,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     --gold-light: #f3d98b;
     --chalk: #f4f6f3;
     --muted: rgba(244, 246, 243, 0.55);
+    --ref: #3f8f6d;
   }
   * { box-sizing: border-box; }
   body {
@@ -141,6 +142,31 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   .nota { font-size: 12px; color: rgba(244,246,243,0.35); margin-top: 12px; }
   .vermas { font-size: 13px; font-weight: 600; color: var(--gold); text-decoration: none; float: right; }
   .vermas:hover { color: var(--gold-light); }
+
+  .enlace { color: inherit; text-decoration: none; cursor: pointer; }
+  .enlace:hover { color: var(--gold-light); text-decoration: underline; }
+  .lider[data-alumno], .lider[data-equipo] { cursor: pointer; transition: 0.15s; }
+  .lider[data-alumno]:hover, .lider[data-equipo]:hover { border-color: rgba(229, 185, 78, 0.6); }
+
+  /* --- Gráficas de la ficha de alumno --- */
+  .grafico-wrap { position: relative; }
+  .grafico-tooltip {
+    position: absolute; pointer-events: none; z-index: 5; opacity: 0;
+    background: var(--night-2); border: 1px solid rgba(229, 185, 78, 0.4);
+    border-radius: 6px; padding: 6px 10px; font-size: 12px; line-height: 1.4;
+    color: var(--chalk); white-space: nowrap; transform: translate(-50%, -100%);
+    transition: opacity 0.1s; box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+  .grafico-tooltip.on { opacity: 1; }
+  .grafico-tooltip b { color: var(--gold-light); }
+  svg.grafico .barra, svg.grafico .punto { cursor: pointer; }
+  svg.grafico text { font-family: 'Barlow', sans-serif; }
+  svg.grafico .eje-txt { fill: var(--muted); font-size: 11px; }
+  svg.grafico .rejilla { stroke: rgba(244, 246, 243, 0.10); stroke-width: 1; }
+  svg.grafico .base { stroke: rgba(244, 246, 243, 0.35); stroke-width: 1; }
+  .grafico-vacio { color: var(--muted); font-size: 14px; text-align: center; padding: 40px 0; margin: 0; }
+  .leyenda-mini { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0 0; font-size: 12px; color: var(--muted); }
+  .leyenda-mini .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 
   .aviso { max-width: 560px; margin: 60px auto; text-align: center; }
   .aviso h2 { color: var(--gold); margin-bottom: 12px; }
@@ -297,6 +323,7 @@ function clasIndividual(datos, trimestre) {
     const s = acc.get(String(a.id_alumno)) || { puntos: 0, jornadas: 0 };
     const eq = eqById.get(String(a.id_equipo_actual));
     return {
+      id: String(a.id_alumno),
       nombre: a.nombre_publico || '—',
       equipo: eq ? eq.nombre_equipo : '—',
       color: eq ? eq.color : null,
@@ -321,6 +348,7 @@ function clasEquipos(datos, trimestre) {
     const s = acc.get(String(e.id_equipo)) || { puntos: 0, registros: 0 };
     const n = datos.alumnos.filter(a => activo(a) && String(a.id_equipo_actual) === String(e.id_equipo)).length;
     return {
+      id: String(e.id_equipo),
       equipo: e.nombre_equipo, color: e.color,
       puntos: s.puntos, registros: s.registros, alumnos: n,
       media: s.registros > 0 ? s.puntos / s.registros : 0,
@@ -329,6 +357,400 @@ function clasEquipos(datos, trimestre) {
   filas.sort((a, b) => b.media - a.media || b.puntos - a.puntos || a.equipo.localeCompare(b.equipo, 'es'));
   filas.forEach((f, i) => f.pos = i + 1);
   return filas;
+}
+
+/* =========================================================================
+   Ficha del alumno (datos + gráficas individuales)
+   ========================================================================= */
+
+function datosAlumno(datos, id) {
+  const a = datos.alumnos.find(x => String(x.id_alumno) === String(id));
+  if (!a) return null;
+  const eq = datos.equipos.find(e => String(e.id_equipo) === String(a.id_equipo_actual));
+  return { a, eq };
+}
+
+function statsAlumno(datos, id, trimestre) {
+  const filas = registrosValidos(datos, trimestre).filter(r => String(r.id_alumno) === String(id));
+  const puntos = filas.reduce((s, r) => s + num(r.total), 0);
+  const jornadas = filas.length;
+  return { puntos, jornadas, media: jornadas > 0 ? puntos / jornadas : 0 };
+}
+
+/** Puntos del alumno en cada jornada publicada del periodo, en orden cronológico. */
+function serieJornadas(datos, id, trimestre) {
+  const js = jornadasPublicadas(datos.jornadas, trimestre)
+    .slice()
+    .sort((a, b) => num(a.numero_jornada) - num(b.numero_jornada));
+  const regs = new Map(
+    datos.registros
+      .filter(r => String(r.id_alumno) === String(id))
+      .map(r => [String(r.id_jornada), r])
+  );
+  return js.map(j => {
+    const r = regs.get(String(j.id_jornada));
+    return {
+      numero: num(j.numero_jornada),
+      titulo: j.titulo || 'Jornada',
+      trimestre: String(j.trimestre),
+      puntos: r ? num(r.total) : 0,
+      jugada: !!r,
+    };
+  });
+}
+
+/* ---------- Utilidades de gráficas SVG (sin librerías externas) ---------- */
+
+/** Activa el tooltip flotante para cualquier elemento [data-tip] dentro de un .grafico-wrap. */
+function wireTooltips(root) {
+  root.querySelectorAll('.grafico-wrap').forEach(wrap => {
+    const tip = wrap.querySelector('.grafico-tooltip');
+    if (!tip) return;
+    wrap.querySelectorAll('[data-tip]').forEach(el => {
+      el.addEventListener('mouseenter', () => { tip.innerHTML = el.dataset.tip; tip.classList.add('on'); });
+      el.addEventListener('mousemove', e => {
+        const r = wrap.getBoundingClientRect();
+        tip.style.left = (e.clientX - r.left) + 'px';
+        tip.style.top = (e.clientY - r.top - 10) + 'px';
+      });
+      el.addEventListener('mouseleave', () => tip.classList.remove('on'));
+    });
+  });
+}
+
+/** Barras verticales: puntos obtenidos en cada jornada, sobre el máximo posible `maxY` (7 para un alumno,
+    7 × integrantes para un equipo). Marca los cambios de trimestre. */
+function svgBarrasJornada(serie, maxY = 7) {
+  if (serie.length === 0) return `<p class="grafico-vacio">No hay jornadas publicadas en este periodo.</p>`;
+
+  const multiTrimestre = serie.some((j, i) => i > 0 && j.trimestre !== serie[i - 1].trimestre);
+  const alto = 190, padInf = 26, padIzq = 34, padDer = 12;
+  const padSup = multiTrimestre ? 30 : 16;
+  const anchoBarra = 20, gapBarra = 12;
+  const n = serie.length;
+  const ancho = padIzq + n * anchoBarra + (n - 1) * gapBarra + padDer;
+  const y0 = alto - padInf;
+  const escY = v => y0 - (Math.max(0, Math.min(v, maxY)) / maxY) * (y0 - padSup);
+  const pasoEtiqueta = n <= 16 ? 1 : n <= 40 ? 5 : 10;
+
+  let capas = '';
+  [0, maxY / 2, maxY].forEach(v => {
+    const y = escY(v);
+    capas += `<line class="rejilla" x1="${padIzq}" x2="${ancho - padDer}" y1="${y}" y2="${y}" />
+      <text class="eje-txt" x="${padIzq - 6}" y="${y + 3}" text-anchor="end">${fmtMedia(v).replace(/,00$/, '')}</text>`;
+  });
+
+  let prevTri = null;
+  serie.forEach((j, i) => {
+    const x = padIzq + i * (anchoBarra + gapBarra);
+    if (multiTrimestre && j.trimestre !== prevTri) {
+      if (i > 0) capas += `<line x1="${x - gapBarra / 2}" x2="${x - gapBarra / 2}" y1="${padSup - 8}" y2="${y0}" stroke="rgba(229,185,78,0.3)" stroke-dasharray="3,3" />`;
+      capas += `<text class="eje-txt" x="${x}" y="${padSup - 14}" fill="var(--gold)" font-weight="600">${esc(j.trimestre)}º trim.</text>`;
+      prevTri = j.trimestre;
+    }
+    const y = escY(j.puntos);
+    const h = y0 - y;
+    if (h > 0) {
+      const r = Math.min(4, h);
+      const color = j.jugada ? 'var(--gold)' : 'rgba(244,246,243,0.18)';
+      const tip = `<b>J${j.numero}</b> · ${esc(j.titulo)}<br>${j.jugada ? j.puntos + ' pts' : 'No participó'}`;
+      capas += `<path class="barra" data-tip="${tip}"
+        d="M${x},${y0} L${x},${y + r} Q${x},${y} ${x + r},${y} L${x + anchoBarra - r},${y} Q${x + anchoBarra},${y} ${x + anchoBarra},${y + r} L${x + anchoBarra},${y0} Z"
+        fill="${color}" />`;
+    }
+    if (i % pasoEtiqueta === 0 || i === n - 1) {
+      capas += `<text class="eje-txt" x="${x + anchoBarra / 2}" y="${alto - 8}" text-anchor="middle">J${j.numero}</text>`;
+    }
+  });
+
+  return `<div class="grafico-wrap"><div class="grafico-tooltip"></div>
+    <div class="tabla-scroll"><svg class="grafico" width="${ancho}" height="${alto}" viewBox="0 0 ${ancho} ${alto}">
+      ${capas}
+      <line class="base" x1="${padIzq}" x2="${ancho - padDer}" y1="${y0}" y2="${y0}" />
+    </svg></div></div>`;
+}
+
+/** Línea de puntos acumulados a lo largo de las jornadas del periodo. */
+function svgLineaAcumulada(serie) {
+  if (serie.length === 0) return `<p class="grafico-vacio">No hay datos suficientes.</p>`;
+
+  const alto = 170, padSup = 16, padInf = 26, padIzq = 34, padDer = 46;
+  const pasoX = 34;
+  const n = serie.length;
+  const ancho = padIzq + Math.max(1, n - 1) * pasoX + padDer;
+
+  let acc = 0;
+  const acumulado = serie.map(j => { acc += j.puntos; return acc; });
+  const maxY = Math.max(7, Math.ceil(acc / 5) * 5);
+  const y0 = alto - padInf;
+  const escY = v => y0 - (v / maxY) * (y0 - padSup);
+  const escX = i => padIzq + i * pasoX;
+
+  let capas = '';
+  [0, maxY / 2, maxY].forEach(v => {
+    const y = escY(v);
+    capas += `<line class="rejilla" x1="${padIzq}" x2="${ancho - padDer}" y1="${y}" y2="${y}" />
+      <text class="eje-txt" x="${padIzq - 6}" y="${y + 3}" text-anchor="end">${Math.round(v)}</text>`;
+  });
+
+  const d = acumulado.map((v, i) => `${i === 0 ? 'M' : 'L'}${escX(i)},${escY(v)}`).join(' ');
+  const area = `M${escX(0)},${y0} ` + acumulado.map((v, i) => `L${escX(i)},${escY(v)}`).join(' ') + ` L${escX(n - 1)},${y0} Z`;
+  const puntos = acumulado.map((v, i) => {
+    const tip = `<b>J${serie[i].numero}</b> · ${esc(serie[i].titulo)}<br>Acumulado: ${v} pts`;
+    return `<circle class="punto" data-tip="${tip}" cx="${escX(i)}" cy="${escY(v)}" r="4" fill="var(--gold)" stroke="var(--night-2)" stroke-width="2" />`;
+  }).join('');
+
+  capas += `<path d="${area}" fill="var(--gold)" fill-opacity="0.10" stroke="none" />`;
+  capas += `<path d="${d}" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />`;
+  capas += puntos;
+  capas += `<text class="eje-txt" x="${escX(n - 1) + 8}" y="${escY(acumulado[n - 1]) + 4}" fill="var(--gold-light)" font-weight="600">${acumulado[n - 1]} pts</text>`;
+
+  return `<div class="grafico-wrap"><div class="grafico-tooltip"></div>
+    <div class="tabla-scroll"><svg class="grafico" width="${ancho}" height="${alto}" viewBox="0 0 ${ancho} ${alto}">
+      ${capas}
+      <line class="base" x1="${padIzq}" x2="${ancho - padDer}" y1="${y0}" y2="${y0}" />
+    </svg></div></div>`;
+}
+
+/** Barras horizontales comparando una media propia con una o varias medias de referencia. */
+function svgComparativa(valores, etiquetaPropia = 'Tú') {
+  const altoBarra = 22, gapFila = 16, padSup = 10, padIzq = 100, padDer = 46;
+  const anchoMax = 260;
+  const alto = padSup + valores.length * (altoBarra + gapFila);
+  const ancho = padIzq + anchoMax + padDer;
+  const maxV = Math.max(...valores.map(v => v.valor), 1);
+
+  const filas = valores.map((v, i) => {
+    const y = padSup + i * (altoBarra + gapFila);
+    const w = Math.max(2, (v.valor / maxV) * anchoMax);
+    const r = Math.min(4, altoBarra / 2, w);
+    const color = v.tuyo ? 'var(--gold)' : 'var(--ref)';
+    const tip = `<b>${esc(v.etiqueta)}</b><br>${fmtMedia(v.valor)} pts/jornada`;
+    return `
+      <text class="eje-txt" x="${padIzq - 10}" y="${y + altoBarra / 2 + 4}" text-anchor="end">${esc(v.etiqueta)}</text>
+      <path class="barra" data-tip="${tip}"
+        d="M${padIzq},${y} L${padIzq + w - r},${y} Q${padIzq + w},${y} ${padIzq + w},${y + r} L${padIzq + w},${y + altoBarra - r} Q${padIzq + w},${y + altoBarra} ${padIzq + w - r},${y + altoBarra} L${padIzq},${y + altoBarra} Z"
+        fill="${color}" />
+      <text class="eje-txt" x="${padIzq + w + 8}" y="${y + altoBarra / 2 + 4}" fill="var(--gold-light)">${fmtMedia(v.valor)}</text>`;
+  }).join('');
+
+  return `<div class="grafico-wrap"><div class="grafico-tooltip"></div>
+    <svg class="grafico" width="${ancho}" height="${alto}" viewBox="0 0 ${ancho} ${alto}" style="max-width:100%">${filas}</svg></div>
+    <div class="leyenda-mini">
+      <span><span class="sw" style="background:var(--gold)"></span>${esc(etiquetaPropia)}</span>
+      <span><span class="sw" style="background:var(--ref)"></span>Referencia</span>
+    </div>`;
+}
+
+function renderAlumno(id) {
+  const info = datosAlumno(DATOS, id);
+  if (!info) {
+    return `<div class="card aviso"><h2>Alumno/a no encontrado/a</h2>
+      <p class="secundario">Puede que el registro haya cambiado.</p>
+      <a class="vermas" href="#" data-ir="individual" style="float:none">← Volver a individual</a></div>`;
+  }
+  const { a, eq } = info;
+  const ind = clasIndividual(DATOS, TRIMESTRE);
+  const eqClas = clasEquipos(DATOS, TRIMESTRE);
+  const posActual = ind.find(f => f.id === String(id));
+  const st = statsAlumno(DATOS, id, TRIMESTRE);
+  const serie = serieJornadas(DATOS, id, TRIMESTRE);
+  const pubs = jornadasPublicadas(DATOS.jornadas, TRIMESTRE);
+
+  const equipoStats = eq ? eqClas.find(e2 => e2.id === String(eq.id_equipo)) : null;
+  const jugaron = ind.filter(f => f.jornadas > 0);
+  const mediaLiga = jugaron.length ? jugaron.reduce((s, f) => s + f.media, 0) / jugaron.length : 0;
+  const comparativa = [
+    { etiqueta: 'Tú', valor: st.media, tuyo: true },
+    { etiqueta: eq ? eq.nombre_equipo : 'Tu equipo', valor: equipoStats ? equipoStats.media : 0 },
+    { etiqueta: 'Media liga', valor: mediaLiga },
+  ];
+
+  return `
+    <div class="fila-titulo">
+      <h2><a class="vermas" href="#" data-ir="individual" style="float:none;margin-right:14px">← Volver</a>${esc(a.nombre_publico)}</h2>
+      ${pills()}
+    </div>
+    <div class="grid3">
+      <div class="card lider">
+        <div class="etiqueta"><span>🎻</span>Ficha</div>
+        <p class="principal">${eq ? dot(eq.color) : ''}${esc(a.nombre_publico)}</p>
+        <p class="secundario">${eq ? `<a class="enlace" href="#" data-equipo="${esc(eq.id_equipo)}">${esc(eq.nombre_equipo)}</a>` : 'Sin equipo'}${a.instrumento ? ' · ' + esc(a.instrumento) : ''}</p>
+      </div>
+      <div class="card lider">
+        <div class="etiqueta"><span>🏅</span>Posición</div>
+        <p class="principal">${posActual ? '#' + posActual.pos : '—'}</p>
+        <p class="secundario">${st.puntos} pts · media ${fmtMedia(st.media)}</p>
+      </div>
+      <div class="card lider">
+        <div class="etiqueta"><span>📅</span>Jornadas jugadas</div>
+        <p class="principal">${st.jornadas}</p>
+        <p class="secundario">de ${pubs.length} publicadas</p>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <h3>Puntos por jornada</h3>
+      ${svgBarrasJornada(serie)}
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>Puntos acumulados</h3>${svgLineaAcumulada(serie)}</div>
+      <div class="card"><h3>Media comparada (pts/jornada)</h3>${svgComparativa(comparativa)}</div>
+    </div>`;
+}
+
+function abrirAlumno(id) {
+  ALUMNO_SEL = id;
+  VISTA = 'alumno';
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.vista === 'individual'));
+  render();
+}
+
+/* =========================================================================
+   Ficha del equipo (integrantes + gráficas del equipo)
+   ========================================================================= */
+
+function datosEquipo(datos, id) {
+  const e = datos.equipos.find(x => String(x.id_equipo) === String(id));
+  if (!e) return null;
+  const integrantes = datos.alumnos.filter(a => activo(a) && String(a.id_equipo_actual) === String(id));
+  return { e, integrantes };
+}
+
+/** Suma de puntos del equipo en cada jornada publicada del periodo, en orden cronológico. */
+function serieJornadasEquipo(datos, id, trimestre) {
+  const js = jornadasPublicadas(datos.jornadas, trimestre)
+    .slice()
+    .sort((a, b) => num(a.numero_jornada) - num(b.numero_jornada));
+  const porJornada = new Map();
+  datos.registros.forEach(r => {
+    if (String(r.id_equipo_en_jornada) !== String(id)) return;
+    const clave = String(r.id_jornada);
+    const acc = porJornada.get(clave) || { puntos: 0 };
+    acc.puntos += num(r.total);
+    porJornada.set(clave, acc);
+  });
+  return js.map(j => {
+    const acc = porJornada.get(String(j.id_jornada));
+    return {
+      numero: num(j.numero_jornada),
+      titulo: j.titulo || 'Jornada',
+      trimestre: String(j.trimestre),
+      puntos: acc ? acc.puntos : 0,
+      jugada: !!acc,
+    };
+  });
+}
+
+/** Barras horizontales: puntos de cada integrante del equipo en el periodo, de mayor a menor. */
+function svgRankingIntegrantes(filas) {
+  if (filas.length === 0) return `<p class="grafico-vacio">Este equipo no tiene alumnos activos.</p>`;
+
+  const altoBarra = 20, gapFila = 10, padSup = 8, padIzq = 130, padDer = 46;
+  const anchoMax = 220;
+  const alto = padSup + filas.length * (altoBarra + gapFila);
+  const ancho = padIzq + anchoMax + padDer;
+  const maxV = Math.max(...filas.map(f => f.puntos), 1);
+
+  const capas = filas.map((f, i) => {
+    const y = padSup + i * (altoBarra + gapFila);
+    const w = Math.max(2, (f.puntos / maxV) * anchoMax);
+    const r = Math.min(4, altoBarra / 2, w);
+    const tip = `<b>${esc(f.nombre)}</b><br>${f.puntos} pts · media ${fmtMedia(f.media)}`;
+    return `
+      <text class="eje-txt" x="${padIzq - 10}" y="${y + altoBarra / 2 + 4}" text-anchor="end">${esc(f.nombre)}</text>
+      <path class="barra" data-tip="${tip}"
+        d="M${padIzq},${y} L${padIzq + w - r},${y} Q${padIzq + w},${y} ${padIzq + w},${y + r} L${padIzq + w},${y + altoBarra - r} Q${padIzq + w},${y + altoBarra} ${padIzq + w - r},${y + altoBarra} L${padIzq},${y + altoBarra} Z"
+        fill="var(--gold)" />
+      <text class="eje-txt" x="${padIzq + w + 8}" y="${y + altoBarra / 2 + 4}" fill="var(--gold-light)">${f.puntos}</text>`;
+  }).join('');
+
+  return `<div class="grafico-wrap"><div class="grafico-tooltip"></div>
+    <svg class="grafico" width="${ancho}" height="${alto}" viewBox="0 0 ${ancho} ${alto}" style="max-width:100%">${capas}</svg></div>`;
+}
+
+function tablaIntegrantes(filas) {
+  if (filas.length === 0) return `<p class="nota">Este equipo no tiene alumnos activos.</p>`;
+  return `<table><thead><tr>
+      <th>Alumno/a</th><th>Instrumento</th><th class="num">Puntos</th><th class="num">Media</th><th class="num">Jornadas</th>
+    </tr></thead><tbody>${filas.map(f => `
+    <tr>
+      <td><a class="enlace" href="#" data-alumno="${esc(f.id)}"><strong>${esc(f.nombre)}</strong></a></td>
+      <td>${esc(f.instrumento || '—')}</td>
+      <td class="num pts">${f.puntos}</td>
+      <td class="num">${fmtMedia(f.media)}</td>
+      <td class="num" style="color:var(--muted)">${f.jornadas}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function renderEquipo(id) {
+  const info = datosEquipo(DATOS, id);
+  if (!info) {
+    return `<div class="card aviso"><h2>Equipo no encontrado</h2>
+      <p class="secundario">Puede que el registro haya cambiado.</p>
+      <a class="vermas" href="#" data-ir="equipos" style="float:none">← Volver a equipos</a></div>`;
+  }
+  const { e, integrantes } = info;
+  const eqClas = clasEquipos(DATOS, TRIMESTRE);
+  const posActual = eqClas.find(f => f.id === String(id));
+  const serie = serieJornadasEquipo(DATOS, id, TRIMESTRE);
+  const pubs = jornadasPublicadas(DATOS.jornadas, TRIMESTRE);
+
+  const jugaronEq = eqClas.filter(f => f.registros > 0);
+  const mediaLiga = jugaronEq.length ? jugaronEq.reduce((s, f) => s + f.media, 0) / jugaronEq.length : 0;
+  const comparativa = [
+    { etiqueta: e.nombre_equipo, valor: posActual ? posActual.media : 0, tuyo: true },
+    { etiqueta: 'Media liga', valor: mediaLiga },
+  ];
+
+  const reparto = integrantes.map(a => {
+    const st = statsAlumno(DATOS, a.id_alumno, TRIMESTRE);
+    return {
+      id: String(a.id_alumno), nombre: a.nombre_publico || '—', instrumento: a.instrumento || '',
+      puntos: st.puntos, media: st.media, jornadas: st.jornadas,
+    };
+  }).sort((x, y) => y.puntos - x.puntos || y.media - x.media);
+
+  return `
+    <div class="fila-titulo">
+      <h2><a class="vermas" href="#" data-ir="equipos" style="float:none;margin-right:14px">← Volver</a>${dot(e.color)}${esc(e.nombre_equipo)}</h2>
+      ${pills()}
+    </div>
+    <div class="grid3">
+      <div class="card lider">
+        <div class="etiqueta"><span>🛡️</span>Posición</div>
+        <p class="principal">${posActual ? '#' + posActual.pos : '—'}</p>
+        <p class="secundario">${posActual ? posActual.puntos : 0} pts · media ${fmtMedia(posActual ? posActual.media : 0)}</p>
+      </div>
+      <div class="card lider">
+        <div class="etiqueta"><span>👥</span>Integrantes</div>
+        <p class="principal">${integrantes.length}</p>
+        <p class="secundario">alumnos activos</p>
+      </div>
+      <div class="card lider">
+        <div class="etiqueta"><span>📅</span>Jornadas puntuadas</div>
+        <p class="principal">${posActual ? posActual.registros : 0}</p>
+        <p class="secundario">de ${pubs.length} publicadas</p>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <h3>Puntos por jornada</h3>
+      ${svgBarrasJornada(serie, Math.max(7, integrantes.length * 7))}
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>Puntos acumulados</h3>${svgLineaAcumulada(serie)}</div>
+      <div class="card"><h3>Media comparada (pts/jornada)</h3>${svgComparativa(comparativa, e.nombre_equipo)}</div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="card"><h3>Reparto de puntos por integrante</h3>${svgRankingIntegrantes(reparto)}</div>
+      <div class="card tabla-scroll"><h3>Plantilla</h3>${tablaIntegrantes(reparto)}</div>
+    </div>`;
+}
+
+function abrirEquipo(id) {
+  EQUIPO_SEL = id;
+  VISTA = 'equipo';
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.vista === 'equipos'));
+  render();
 }
 
 /* =========================================================================
@@ -341,6 +763,8 @@ const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 let DATOS = null;
 let VISTA = 'dashboard';
 let TRIMESTRE = '1';
+let ALUMNO_SEL = null;
+let EQUIPO_SEL = null;
 
 const TRIMESTRES = [['1','1.º trimestre'],['2','2.º trimestre'],['3','3.º trimestre'],['curso','Curso completo']];
 
@@ -364,7 +788,7 @@ function tablaIndividual(filas, compacta) {
     </tr></thead><tbody>${filas.map(f => `
     <tr class="${f.pos <= 3 ? 'podio' : ''}">
       <td>${badgePos(f.pos)}</td>
-      <td><strong>${esc(f.nombre)}</strong></td>
+      <td><a class="enlace" href="#" data-alumno="${esc(f.id)}"><strong>${esc(f.nombre)}</strong></a></td>
       <td>${dot(f.color)}${esc(f.equipo)}</td>
       <td class="num pts">${f.puntos}</td>
       ${compacta ? '' : `<td class="num">${fmtMedia(f.media)}</td><td class="num" style="color:var(--muted)">${f.jornadas}</td>`}
@@ -379,15 +803,16 @@ function tablaEquipos(filas, compacta) {
     </tr></thead><tbody>${filas.map(f => `
     <tr class="${f.pos === 1 ? 'podio' : ''}">
       <td>${badgePos(f.pos)}</td>
-      <td><strong>${dot(f.color)}${esc(f.equipo)}</strong></td>
+      <td><a class="enlace" href="#" data-equipo="${esc(f.id)}"><strong>${dot(f.color)}${esc(f.equipo)}</strong></a></td>
       <td class="num pts">${fmtMedia(f.media)}</td>
       <td class="num">${f.puntos}</td>
       ${compacta ? '' : `<td class="num" style="color:var(--muted)">${f.alumnos}</td>`}
     </tr>`).join('')}</tbody></table>`;
 }
 
-function tarjetaLider(etiqueta, icono, principal, secundario, color) {
-  return `<div class="card lider">
+function tarjetaLider(etiqueta, icono, principal, secundario, color, idAlumno, idEquipo) {
+  const attr = idAlumno ? ` data-alumno="${esc(idAlumno)}"` : idEquipo ? ` data-equipo="${esc(idEquipo)}"` : '';
+  return `<div class="card lider"${attr}>
     <div class="etiqueta"><span>${icono}</span>${etiqueta}</div>
     <p class="principal">${color ? dot(color) : ''}${esc(principal)}</p>
     <p class="secundario">${esc(secundario)}</p>
@@ -401,7 +826,11 @@ function render() {
   const eq = clasEquipos(DATOS, TRIMESTRE);
 
   let html = '';
-  if (VISTA === 'dashboard') {
+  if (VISTA === 'alumno') {
+    html = renderAlumno(ALUMNO_SEL);
+  } else if (VISTA === 'equipo') {
+    html = renderEquipo(EQUIPO_SEL);
+  } else if (VISTA === 'dashboard') {
     const liderEq = eq.find(e => e.registros > 0);
     const liderAl = ind.find(a => a.jornadas > 0);
     const pubs = jornadasPublicadas(DATOS.jornadas, TRIMESTRE);
@@ -412,9 +841,9 @@ function render() {
       <div class="fila-titulo"><h2>Marcador de la liga</h2>${pills()}</div>
       <div class="grid3">
         ${tarjetaLider('Equipo líder', '🛡️', liderEq ? liderEq.equipo : '—',
-          liderEq ? `${fmtMedia(liderEq.media)} de media · ${liderEq.puntos} pts` : 'Sin datos', liderEq && liderEq.color)}
+          liderEq ? `${fmtMedia(liderEq.media)} de media · ${liderEq.puntos} pts` : 'Sin datos', liderEq && liderEq.color, null, liderEq ? liderEq.id : null)}
         ${tarjetaLider('Alumno/a líder', '🏆', liderAl ? liderAl.nombre : '—',
-          liderAl ? `${liderAl.puntos} pts · media ${fmtMedia(liderAl.media)}` : 'Sin datos')}
+          liderAl ? `${liderAl.puntos} pts · media ${fmtMedia(liderAl.media)}` : 'Sin datos', null, liderAl ? liderAl.id : null)}
         ${tarjetaLider('Jornada actual', '⚽', jAct ? `J${jAct.numero_jornada}` : '—',
           jAct ? `${jAct.titulo || 'Jornada'}${jAct.fecha ? ' · ' + jAct.fecha : ''}` : 'Sin jornadas publicadas')}
       </div>
@@ -436,6 +865,11 @@ function render() {
     b.addEventListener('click', () => { TRIMESTRE = b.dataset.tri; render(); }));
   main.querySelectorAll('[data-ir]').forEach(a =>
     a.addEventListener('click', e => { e.preventDefault(); cambiarVista(a.dataset.ir); }));
+  main.querySelectorAll('[data-alumno]').forEach(el =>
+    el.addEventListener('click', e => { e.preventDefault(); abrirAlumno(el.dataset.alumno); }));
+  main.querySelectorAll('[data-equipo]').forEach(el =>
+    el.addEventListener('click', e => { e.preventDefault(); abrirEquipo(el.dataset.equipo); }));
+  wireTooltips(main);
 }
 
 function cambiarVista(v) {
