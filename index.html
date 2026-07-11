@@ -1,0 +1,1077 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Liga Armónica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>" />
+
+<script>
+/* =========================================================================
+   CONFIGURACIÓN — lo único que tienes que tocar
+   =========================================================================
+   1) SPREADSHEET_ID: el ID de tu hoja de Google Sheets (la parte larga de
+      la URL, entre /d/ y /edit). La hoja debe estar compartida como
+      "Cualquier persona con el enlace: Lector".
+   2) SCRIPT_URL: la URL de tu Apps Script de escritura (termina en /exec).
+      Solo hace falta para la pestaña Admin; las vistas públicas funcionan
+      sin ella. Instrucciones de instalación en Code-escritura.gs.
+*/
+const SPREADSHEET_ID = '1dnKir-osb8z4sqnMEqjUeA-GLYM45KVW1ip_sv8uBRg';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5Brkod4ER7xcwfbyRaVipMHeQeZAK-4ugECF1vi9QUu48XZ0U/exec';
+</script>
+
+<style>
+  :root {
+    --night: #080f1c;
+    --night-2: #0c1728;
+    --pitch: #0b2e20;
+    --line: #1e5c41;
+    --gold: #e5b94e;
+    --gold-light: #f3d98b;
+    --chalk: #f4f6f3;
+    --muted: rgba(244, 246, 243, 0.55);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Barlow', system-ui, sans-serif;
+    color: var(--chalk);
+    background-color: var(--night);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(30, 92, 65, 0.35), transparent),
+      linear-gradient(180deg, #080f1c 0%, #0b2e20 140%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 16px 64px; }
+
+  /* Cabecera tipo marcador */
+  header { border-bottom: 2px solid rgba(201, 153, 47, 0.4); padding-bottom: 16px; }
+  .eyebrow {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600; font-size: 14px; letter-spacing: 0.35em;
+    text-transform: uppercase; color: var(--gold); margin: 0;
+  }
+  h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800; font-size: clamp(40px, 8vw, 64px);
+    text-transform: uppercase; line-height: 0.95; margin: 4px 0 0;
+  }
+  .temporada {
+    float: right; text-align: right; margin-top: 8px;
+    border: 1px solid rgba(201, 153, 47, 0.4); border-radius: 10px;
+    background: rgba(12, 23, 40, 0.7); padding: 8px 14px;
+  }
+  .temporada small { display: block; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .temporada strong { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; color: var(--gold-light); }
+
+  nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  nav button, .pills button {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600; font-size: 17px; letter-spacing: 0.05em;
+    text-transform: uppercase; cursor: pointer;
+    border: none; border-radius: 8px; padding: 7px 16px;
+    background: transparent; color: var(--muted); transition: 0.15s;
+  }
+  nav button:hover { background: rgba(16, 64, 44, 0.6); color: var(--chalk); }
+  nav button.on, .pills button.on { background: var(--gold); color: var(--night); }
+
+  main { margin-top: 28px; }
+  .fila-titulo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+  h2 {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 28px; text-transform: uppercase; letter-spacing: 0.04em; margin: 0;
+  }
+  .pills { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 10px; border: 1px solid rgba(30, 92, 65, 0.5); background: rgba(12, 23, 40, 0.6); }
+  .pills button { font-size: 15px; padding: 5px 12px; }
+  .pills button:hover { color: var(--chalk); }
+
+  .card {
+    border: 1px solid rgba(30, 92, 65, 0.5); border-radius: 14px;
+    background: rgba(12, 23, 40, 0.8); box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+    padding: 20px; position: relative; overflow: hidden;
+  }
+  /* Brillo dorado diagonal en las tarjetas de líder */
+  .lider::after {
+    content: ''; position: absolute; top: -30%; right: -45%;
+    width: 70%; height: 160%; transform: rotate(18deg); pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(229, 185, 78, 0.09), transparent);
+  }
+  .grid3 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 20px; }
+  .grid2 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+  .etiqueta { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold); }
+  .principal {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+    font-size: 34px; text-transform: uppercase; line-height: 1.05;
+    margin: 8px 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .secundario { font-size: 14px; color: var(--muted); margin: 0; }
+
+  .card h3 {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px;
+    text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 12px;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 15px;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+    text-align: left; padding: 6px 10px; border-bottom: 1px solid rgba(30, 92, 65, 0.5);
+  }
+  td { padding: 8px 10px; border-bottom: 1px solid rgba(30, 92, 65, 0.2); }
+  tr.podio { background: rgba(16, 64, 44, 0.25); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  th.num { text-align: right; }
+  .pts { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; color: var(--gold-light); }
+  .pos {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 17px;
+    background: var(--night-2); color: var(--muted);
+  }
+  .pos.p1 { background: var(--gold); color: var(--night); box-shadow: 0 0 0 2px rgba(243, 217, 139, 0.5); }
+  .pos.p2 { background: #cbd5e1; color: var(--night); }
+  .pos.p3 { background: #b45309; color: var(--chalk); }
+  .dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); margin-right: 7px; vertical-align: -1px; }
+  .nota { font-size: 12px; color: rgba(244,246,243,0.35); margin-top: 12px; }
+  .vermas { font-size: 13px; font-weight: 600; color: var(--gold); text-decoration: none; float: right; }
+  .vermas:hover { color: var(--gold-light); }
+
+  .aviso { max-width: 560px; margin: 60px auto; text-align: center; }
+  .aviso h2 { color: var(--gold); margin-bottom: 12px; }
+  .aviso p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+  .aviso code { background: var(--night-2); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .spinner {
+    width: 38px; height: 38px; margin: 80px auto 12px; border-radius: 50%;
+    border: 2px solid var(--line); border-top-color: var(--gold);
+    animation: girar 0.9s linear infinite;
+  }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  .cargando { text-align: center; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-size: 18px; text-transform: uppercase; letter-spacing: 0.2em; }
+  footer { margin-top: 60px; padding-top: 14px; border-top: 1px solid rgba(30,92,65,0.4); text-align: center; font-size: 12px; color: rgba(244,246,243,0.35); }
+
+  /* --- Panel de administración --- */
+  input, select {
+    font-family: 'Barlow', sans-serif; font-size: 14px; color: var(--chalk);
+    background: rgba(8, 15, 28, 0.7); border: 1px solid rgba(30, 92, 65, 0.6);
+    border-radius: 8px; padding: 7px 10px; outline: none; transition: 0.15s;
+  }
+  input:focus, select:focus { border-color: var(--gold); }
+  select option { background: var(--night-2); }
+  .btn-oro, .btn-borde {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 17px;
+    letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;
+    border-radius: 8px; padding: 8px 18px; transition: 0.15s;
+  }
+  .btn-oro { border: none; background: var(--gold); color: var(--night); }
+  .btn-oro:hover { background: var(--gold-light); }
+  .btn-oro:disabled, .btn-borde:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-borde { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+  .btn-borde:hover { border-color: var(--gold); color: var(--gold-light); }
+  .estado-chip {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 0.1em; border-radius: 999px; padding: 4px 12px;
+  }
+  .chip-pub { background: var(--line); color: var(--chalk); }
+  .chip-borr { background: rgba(217, 119, 6, 0.3); color: #fcd34d; }
+  .admin-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .admin-barra .derecha { margin-left: auto; display: flex; gap: 8px; }
+  .tabla-scroll { overflow-x: auto; }
+  .tabla-admin { min-width: 760px; }
+  .tabla-admin td { padding: 6px 8px; }
+  .tabla-admin select, .tabla-admin input { width: 100%; min-width: 60px; }
+  .tabla-admin input[type=number] { width: 64px; }
+  .total-celda { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 22px; color: var(--gold-light); text-align: center; }
+  .msg-ok { color: #6ee7a8; font-size: 14px; }
+  .msg-error { color: #f87171; font-size: 14px; }
+  .login-caja { max-width: 420px; margin: 30px auto; }
+  .login-caja input { width: 100%; margin-top: 16px; }
+  .login-caja .btn-oro { width: 100%; margin-top: 14px; }
+  .form-grid { display: grid; gap: 12px 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .form-grid label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .form-grid label.check { flex-direction: row; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--chalk); grid-column: 1 / -1; }
+  .form-grid input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--gold); }
+  .btn-mini { font-size: 14px; padding: 4px 12px; }
+
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="temporada" id="temporada" hidden><small>Temporada</small><strong id="curso"></strong></div>
+    <p class="eyebrow">Conservatorio · Armonía</p>
+    <h1 id="titulo">Liga Armónica</h1>
+    <nav id="nav">
+      <button data-vista="dashboard" class="on">Dashboard</button>
+      <button data-vista="individual">Individual</button>
+      <button data-vista="equipos">Equipos</button>
+      <button data-vista="admin">Admin</button>
+    </nav>
+  </header>
+  <main id="main">
+    <div class="spinner"></div>
+    <p class="cargando">Cargando la liga…</p>
+  </main>
+  <footer id="pie">Liga Armónica · Gamificación de la asignatura de Armonía</footer>
+</div>
+
+<script>
+/* =========================================================================
+   Lectura de Google Sheets (endpoint gviz de hojas compartidas en lectura)
+   ========================================================================= */
+
+async function leerPestana(nombre) {
+  const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(nombre)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`No se pudo leer la pestaña ${nombre} (HTTP ${res.status}).`);
+  const texto = await res.text();
+  // La respuesta viene envuelta en google.visualization.Query.setResponse(...)
+  const ini = texto.indexOf('(');
+  const fin = texto.lastIndexOf(')');
+  if (ini === -1 || fin === -1) throw new Error(`Respuesta inesperada al leer ${nombre}. ¿Está la hoja compartida como "Cualquier persona con el enlace: Lector"?`);
+  const json = JSON.parse(texto.slice(ini + 1, fin));
+  if (json.status === 'error') {
+    throw new Error(`Google Sheets devolvió un error al leer ${nombre}: ${(json.errors || []).map(e => e.detailed_message || e.message).join('; ')}`);
+  }
+  const etiquetas = json.table.cols.map(c => String(c.label || '').trim());
+  return json.table.rows.map(fila => {
+    const obj = {};
+    etiquetas.forEach((et, i) => {
+      if (!et) return;
+      const celda = fila.c && fila.c[i];
+      let v = celda ? celda.v : null;
+      if (v === null || v === undefined) v = '';
+      else if (typeof v === 'boolean') v = v ? 'TRUE' : 'FALSE';
+      else if (typeof v === 'string' && v.startsWith('Date(')) v = (celda.f || v); // fechas: usar el formato visible
+      obj[et] = v;
+    });
+    return obj;
+  }).filter(obj => Object.values(obj).some(v => v !== ''));
+}
+
+async function cargarDatos() {
+  const [configFilas, alumnos, equipos, jornadas, registros] = await Promise.all([
+    leerPestana('CONFIG'), leerPestana('ALUMNOS'), leerPestana('EQUIPOS'),
+    leerPestana('JORNADAS'), leerPestana('REGISTROS'),
+  ]);
+  const config = {};
+  configFilas.forEach(f => { config[String(f.clave)] = f.valor; });
+  return { config, alumnos, equipos, jornadas, registros };
+}
+
+/* =========================================================================
+   Clasificaciones (solo jornadas con estado_publicacion = publicada)
+   ========================================================================= */
+
+const num = v => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+const activo = x => String(x.activo).toUpperCase() !== 'FALSE' && String(x.activo) !== '0';
+const fmtMedia = n => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function jornadasPublicadas(jornadas, trimestre) {
+  return jornadas.filter(j => {
+    if (String(j.estado_publicacion).toLowerCase() !== 'publicada') return false;
+    return trimestre === 'curso' || String(j.trimestre) === String(trimestre);
+  });
+}
+
+function registrosValidos(datos, trimestre) {
+  const ids = new Set(jornadasPublicadas(datos.jornadas, trimestre).map(j => String(j.id_jornada)));
+  return datos.registros.filter(r => ids.has(String(r.id_jornada)));
+}
+
+function clasIndividual(datos, trimestre) {
+  const acc = new Map();
+  for (const r of registrosValidos(datos, trimestre)) {
+    const id = String(r.id_alumno);
+    if (!acc.has(id)) acc.set(id, { puntos: 0, jornadas: 0 });
+    const a = acc.get(id); a.puntos += num(r.total); a.jornadas += 1;
+  }
+  const eqById = new Map(datos.equipos.map(e => [String(e.id_equipo), e]));
+  const filas = datos.alumnos.filter(activo).map(a => {
+    const s = acc.get(String(a.id_alumno)) || { puntos: 0, jornadas: 0 };
+    const eq = eqById.get(String(a.id_equipo_actual));
+    return {
+      nombre: a.nombre_publico || '—',
+      equipo: eq ? eq.nombre_equipo : '—',
+      color: eq ? eq.color : null,
+      puntos: s.puntos, jornadas: s.jornadas,
+      media: s.jornadas > 0 ? s.puntos / s.jornadas : 0,
+    };
+  });
+  filas.sort((a, b) => b.puntos - a.puntos || b.media - a.media || a.nombre.localeCompare(b.nombre, 'es'));
+  filas.forEach((f, i) => f.pos = i + 1);
+  return filas;
+}
+
+function clasEquipos(datos, trimestre) {
+  const acc = new Map();
+  for (const r of registrosValidos(datos, trimestre)) {
+    const id = String(r.id_equipo_en_jornada);
+    if (!id) continue;
+    if (!acc.has(id)) acc.set(id, { puntos: 0, registros: 0 });
+    const e = acc.get(id); e.puntos += num(r.total); e.registros += 1;
+  }
+  const filas = datos.equipos.filter(activo).map(e => {
+    const s = acc.get(String(e.id_equipo)) || { puntos: 0, registros: 0 };
+    const n = datos.alumnos.filter(a => activo(a) && String(a.id_equipo_actual) === String(e.id_equipo)).length;
+    return {
+      equipo: e.nombre_equipo, color: e.color,
+      puntos: s.puntos, registros: s.registros, alumnos: n,
+      media: s.registros > 0 ? s.puntos / s.registros : 0,
+    };
+  });
+  filas.sort((a, b) => b.media - a.media || b.puntos - a.puntos || a.equipo.localeCompare(b.equipo, 'es'));
+  filas.forEach((f, i) => f.pos = i + 1);
+  return filas;
+}
+
+/* =========================================================================
+   Interfaz
+   ========================================================================= */
+
+const $ = s => document.querySelector(s);
+const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let DATOS = null;
+let VISTA = 'dashboard';
+let TRIMESTRE = '1';
+
+const TRIMESTRES = [['1','1.º trimestre'],['2','2.º trimestre'],['3','3.º trimestre'],['curso','Curso completo']];
+
+function badgePos(p) {
+  const cls = p === 1 ? 'p1' : p === 2 ? 'p2' : p === 3 ? 'p3' : '';
+  return `<span class="pos ${cls}">${p}</span>`;
+}
+const dot = c => `<span class="dot" style="background:${esc(c || '#666')}"></span>`;
+
+function pills() {
+  return `<div class="pills">${TRIMESTRES.map(([v, l]) =>
+    `<button data-tri="${v}" class="${TRIMESTRE === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+}
+
+function tablaIndividual(filas, compacta) {
+  if (!filas.some(f => f.jornadas > 0) && filas.length === 0) filas = [];
+  if (filas.length === 0) return `<p class="nota">Todavía no hay registros publicados en este trimestre.</p>`;
+  return `<table><thead><tr>
+      <th>Pos</th><th>Alumno/a</th><th>Equipo</th><th class="num">Puntos</th>
+      ${compacta ? '' : '<th class="num">Media</th><th class="num">Jornadas</th>'}
+    </tr></thead><tbody>${filas.map(f => `
+    <tr class="${f.pos <= 3 ? 'podio' : ''}">
+      <td>${badgePos(f.pos)}</td>
+      <td><strong>${esc(f.nombre)}</strong></td>
+      <td>${dot(f.color)}${esc(f.equipo)}</td>
+      <td class="num pts">${f.puntos}</td>
+      ${compacta ? '' : `<td class="num">${fmtMedia(f.media)}</td><td class="num" style="color:var(--muted)">${f.jornadas}</td>`}
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function tablaEquipos(filas, compacta) {
+  if (filas.length === 0) return `<p class="nota">Todavía no hay registros publicados en este trimestre.</p>`;
+  return `<table><thead><tr>
+      <th>Pos</th><th>Equipo</th><th class="num">Media</th><th class="num">Puntos</th>
+      ${compacta ? '' : '<th class="num">Alumnos</th>'}
+    </tr></thead><tbody>${filas.map(f => `
+    <tr class="${f.pos === 1 ? 'podio' : ''}">
+      <td>${badgePos(f.pos)}</td>
+      <td><strong>${dot(f.color)}${esc(f.equipo)}</strong></td>
+      <td class="num pts">${fmtMedia(f.media)}</td>
+      <td class="num">${f.puntos}</td>
+      ${compacta ? '' : `<td class="num" style="color:var(--muted)">${f.alumnos}</td>`}
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function tarjetaLider(etiqueta, icono, principal, secundario, color) {
+  return `<div class="card lider">
+    <div class="etiqueta"><span>${icono}</span>${etiqueta}</div>
+    <p class="principal">${color ? dot(color) : ''}${esc(principal)}</p>
+    <p class="secundario">${esc(secundario)}</p>
+  </div>`;
+}
+
+function render() {
+  if (VISTA === 'admin') { renderAdmin(); return; }
+  const main = $('#main');
+  const ind = clasIndividual(DATOS, TRIMESTRE);
+  const eq = clasEquipos(DATOS, TRIMESTRE);
+
+  let html = '';
+  if (VISTA === 'dashboard') {
+    const liderEq = eq.find(e => e.registros > 0);
+    const liderAl = ind.find(a => a.jornadas > 0);
+    const pubs = jornadasPublicadas(DATOS.jornadas, TRIMESTRE);
+    const idActual = String(DATOS.config.jornada_actual || '');
+    const jAct = DATOS.jornadas.find(j => String(j.id_jornada) === idActual) || pubs[pubs.length - 1];
+
+    html = `
+      <div class="fila-titulo"><h2>Marcador de la liga</h2>${pills()}</div>
+      <div class="grid3">
+        ${tarjetaLider('Equipo líder', '🛡️', liderEq ? liderEq.equipo : '—',
+          liderEq ? `${fmtMedia(liderEq.media)} de media · ${liderEq.puntos} pts` : 'Sin datos', liderEq && liderEq.color)}
+        ${tarjetaLider('Alumno/a líder', '🏆', liderAl ? liderAl.nombre : '—',
+          liderAl ? `${liderAl.puntos} pts · media ${fmtMedia(liderAl.media)}` : 'Sin datos')}
+        ${tarjetaLider('Jornada actual', '⚽', jAct ? `J${jAct.numero_jornada}` : '—',
+          jAct ? `${jAct.titulo || 'Jornada'}${jAct.fecha ? ' · ' + jAct.fecha : ''}` : 'Sin jornadas publicadas')}
+      </div>
+      <div class="grid2">
+        <div class="card"><a class="vermas" href="#" data-ir="equipos">Ver completa →</a><h3>Clasificación por equipos</h3>${tablaEquipos(eq, true)}</div>
+        <div class="card"><a class="vermas" href="#" data-ir="individual">Ver completa →</a><h3>Top individual</h3>${tablaIndividual(ind.slice(0, 8), true)}</div>
+      </div>`;
+  } else if (VISTA === 'individual') {
+    html = `<div class="fila-titulo"><h2>Clasificación individual</h2>${pills()}</div>
+      <div class="card">${tablaIndividual(ind, false)}</div>`;
+  } else {
+    html = `<div class="fila-titulo"><h2>Clasificación por equipos</h2>${pills()}</div>
+      <div class="card">${tablaEquipos(eq, false)}
+      <p class="nota">Orden principal: media de puntos por alumno y jornada (solo jornadas publicadas).</p></div>`;
+  }
+  main.innerHTML = html;
+
+  main.querySelectorAll('[data-tri]').forEach(b =>
+    b.addEventListener('click', () => { TRIMESTRE = b.dataset.tri; render(); }));
+  main.querySelectorAll('[data-ir]').forEach(a =>
+    a.addEventListener('click', e => { e.preventDefault(); cambiarVista(a.dataset.ir); }));
+}
+
+function cambiarVista(v) {
+  VISTA = v;
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.vista === v));
+  render();
+}
+
+document.querySelectorAll('#nav button').forEach(b =>
+  b.addEventListener('click', () => cambiarVista(b.dataset.vista)));
+
+function mostrarError(titulo, cuerpo) {
+  $('#main').innerHTML = `<div class="aviso card"><h2>${titulo}</h2><p>${cuerpo}</p></div>`;
+}
+
+/* =========================================================================
+   Panel de administración (escritura vía Apps Script)
+   Secciones: Puntuar · Jornadas · Alumnos · Equipos · Liga
+   ========================================================================= */
+
+const ESTADOS_ENTREGA = ['En plazo', 'Justificado', 'Fuera de plazo', 'No entregado'];
+const GENEROS = ['Masculino', 'Femenino', 'No especificado'];
+const INSTRUMENTOS = ['Piano', 'Violín', 'Viola', 'Violonchelo', 'Contrabajo', 'Flauta',
+  'Oboe', 'Clarinete', 'Fagot', 'Saxofón', 'Trompeta', 'Trompa', 'Trombón', 'Tuba',
+  'Guitarra', 'Percusión', 'Canto', 'Otro'];
+
+const ADMIN = {
+  token: sessionStorage.getItem('liga_admin_token') || '',
+  seccion: 'puntuar',
+  jornadaSel: '',
+  filas: {},          // id_alumno -> valores editables de la jornada
+  editJornada: null,  // id en edición (null = crear nueva)
+  editAlumno: null,
+  editEquipo: null,
+  ocupado: false,
+};
+
+async function postScript(action, payload = {}) {
+  // Cuerpo como texto plano (sin cabecera Content-Type) para evitar el
+  // preflight de CORS, que Apps Script no gestiona. No lo "arregles".
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action, token: ADMIN.token, ...payload }),
+  });
+  if (!res.ok) throw new Error(`Error de red (HTTP ${res.status}).`);
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error || 'Operación rechazada.');
+  return data;
+}
+
+const alumnosActivos = () => DATOS.alumnos.filter(activo);
+const valorDe = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+const marcado = id => { const el = document.getElementById(id); return el ? el.checked : true; };
+
+function totalLocal(f) {
+  if (f.estado_entrega === 'No entregado') return 0;
+  const cal = f.calidad === '' ? 0 : Number(f.calidad) || 0;
+  return Math.min(7, cal + (Number(f.entrega) || 0) + (Number(f.correccion) || 0));
+}
+
+function prepararFilas() {
+  const existentes = new Map(
+    DATOS.registros
+      .filter(r => String(r.id_jornada) === String(ADMIN.jornadaSel))
+      .map(r => [String(r.id_alumno), r])
+  );
+  ADMIN.filas = {};
+  for (const a of alumnosActivos()) {
+    const r = existentes.get(String(a.id_alumno));
+    ADMIN.filas[a.id_alumno] = r ? {
+      estado_entrega: r.estado_entrega || 'En plazo',
+      calidad: (r.calidad === '' || r.calidad == null) ? '' : String(r.calidad),
+      entrega: String(num(r.entrega_puntualidad)),
+      correccion: String(num(r.correccion)),
+      racha: (r.racha_manual === '' || r.racha_manual == null) ? '' : String(r.racha_manual),
+    } : { estado_entrega: 'En plazo', calidad: '', entrega: '0', correccion: '0', racha: '' };
+  }
+}
+
+/* ---------- Render principal del panel ---------- */
+
+function renderAdmin(mensaje = '', esError = false) {
+  const main = $('#main');
+
+  if (!SCRIPT_URL || SCRIPT_URL.startsWith('PEGA_AQUI')) {
+    main.innerHTML = `<div class="aviso card"><h2>Falta el script de escritura</h2>
+      <p>Las vistas públicas ya funcionan. Para gestionar la liga desde la web, instala el
+      script <code>Code-escritura.gs</code> en tu hoja (Extensiones → Apps Script), define
+      <code>ADMIN_TOKEN</code> en Propiedades del script, impleméntalo como aplicación web
+      y pega la URL en la constante <code>SCRIPT_URL</code> de este <code>index.html</code>.</p></div>`;
+    return;
+  }
+  if (!DATOS) {
+    main.innerHTML = `<div class="aviso card"><h2>Sin datos</h2>
+      <p>No se han podido cargar los datos de la hoja. Recarga la página.</p></div>`;
+    return;
+  }
+
+  // --- Acceso ---
+  if (!ADMIN.token) {
+    main.innerHTML = `<div class="card login-caja">
+      <h2 style="color:var(--gold)">Zona técnica</h2>
+      <p class="secundario">Introduce el token de administrador. Se comprueba en el servidor
+      y solo se guarda en esta pestaña del navegador.</p>
+      <input type="password" id="token-input" placeholder="Token de administrador" autocomplete="off" />
+      <button class="btn-oro" id="token-btn">Entrar</button>
+      <p id="token-msg" class="msg-error" style="margin-top:10px"></p>
+    </div>`;
+    const input = $('#token-input');
+    const entrar = async () => {
+      const t = input.value.trim();
+      if (!t) return;
+      $('#token-btn').disabled = true;
+      try {
+        ADMIN.token = t;
+        await postScript('verifyToken');
+        sessionStorage.setItem('liga_admin_token', t);
+        renderAdmin();
+      } catch (err) {
+        ADMIN.token = '';
+        $('#token-msg').textContent = err.message;
+        $('#token-btn').disabled = false;
+      }
+    };
+    $('#token-btn').addEventListener('click', entrar);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
+    input.focus();
+    return;
+  }
+
+  // --- Estructura común: cabecera + subnavegación + sección ---
+  const SECCIONES = [
+    ['puntuar', 'Puntuar'], ['jornadas', 'Jornadas'], ['alumnos', 'Alumnos'],
+    ['equipos', 'Equipos'], ['liga', 'Liga'],
+  ];
+  const subnav = `<div class="pills" style="margin-bottom:16px">
+    ${SECCIONES.map(([v, l]) =>
+      `<button data-seccion="${v}" class="${ADMIN.seccion === v ? 'on' : ''}">${l}</button>`).join('')}
+  </div>`;
+
+  const cuerpo =
+    ADMIN.seccion === 'jornadas' ? seccionJornadas() :
+    ADMIN.seccion === 'alumnos' ? seccionAlumnos() :
+    ADMIN.seccion === 'equipos' ? seccionEquipos() :
+    ADMIN.seccion === 'liga' ? seccionLiga() :
+    seccionPuntuar();
+
+  main.innerHTML = `
+    <div class="fila-titulo">
+      <h2 style="color:var(--gold)">Zona técnica</h2>
+      <button class="btn-borde" id="salir-btn">Salir</button>
+    </div>
+    ${subnav}
+    <p id="admin-aviso" class="${esError ? 'msg-error' : 'msg-ok'}" style="margin:0 0 12px">${esc(mensaje)}</p>
+    ${cuerpo}`;
+
+  $('#salir-btn').addEventListener('click', () => {
+    sessionStorage.removeItem('liga_admin_token');
+    ADMIN.token = '';
+    renderAdmin();
+  });
+  main.querySelectorAll('[data-seccion]').forEach(b =>
+    b.addEventListener('click', () => { ADMIN.seccion = b.dataset.seccion; renderAdmin(); }));
+
+  if (ADMIN.seccion === 'puntuar') wirePuntuar();
+  else if (ADMIN.seccion === 'jornadas') wireJornadas();
+  else if (ADMIN.seccion === 'alumnos') wireAlumnos();
+  else if (ADMIN.seccion === 'equipos') wireEquipos();
+  else if (ADMIN.seccion === 'liga') wireLiga();
+}
+
+/** Envuelve un guardado: deshabilita el botón, ejecuta y muestra el resultado. */
+async function operar(boton, fn, okMsg) {
+  if (ADMIN.ocupado) return;
+  ADMIN.ocupado = true;
+  if (boton) boton.disabled = true;
+  try {
+    const msg = await fn();
+    ADMIN.ocupado = false;
+    renderAdmin(msg || okMsg || 'Guardado.');
+  } catch (err) {
+    ADMIN.ocupado = false;
+    renderAdmin(err.message, true);
+  }
+}
+
+/* ---------- Sección: Puntuar ---------- */
+
+function seccionPuntuar() {
+  if (DATOS.jornadas.length === 0) {
+    return `<div class="card"><p class="nota">Todavía no hay jornadas. Crea la primera en la
+      pestaña <strong>Jornadas</strong>.</p></div>`;
+  }
+  if (!ADMIN.jornadaSel || !DATOS.jornadas.some(j => String(j.id_jornada) === String(ADMIN.jornadaSel))) {
+    ADMIN.jornadaSel = String(DATOS.jornadas[DATOS.jornadas.length - 1].id_jornada);
+    prepararFilas();
+  }
+  if (Object.keys(ADMIN.filas).length === 0) prepararFilas();
+
+  const jornada = DATOS.jornadas.find(j => String(j.id_jornada) === String(ADMIN.jornadaSel));
+  const publicada = jornada && String(jornada.estado_publicacion).toLowerCase() === 'publicada';
+
+  return `
+    <div class="card admin-barra" style="margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)">
+        Jornada
+        <select id="jornada-sel">
+          ${DATOS.jornadas.map(j => `<option value="${esc(j.id_jornada)}" ${String(j.id_jornada) === String(ADMIN.jornadaSel) ? 'selected' : ''}>
+            J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Sin título')} (${esc(j.estado_publicacion)})
+          </option>`).join('')}
+        </select>
+      </label>
+      <span class="estado-chip ${publicada ? 'chip-pub' : 'chip-borr'}">${publicada ? 'Publicada' : 'Borrador'}</span>
+      <div class="derecha">
+        ${publicada
+          ? `<button class="btn-borde" id="pub-btn" data-estado="borrador">Devolver a borrador</button>`
+          : `<button class="btn-oro" id="pub-btn" data-estado="publicada">Publicar jornada</button>`}
+      </div>
+    </div>
+    <div class="card tabla-scroll">
+      ${alumnosActivos().length === 0 ? `<p class="nota">No hay alumnos activos. Créalos en la pestaña <strong>Alumnos</strong>.</p>` : `
+      <table class="tabla-admin">
+        <thead><tr>
+          <th>Alumno/a</th><th>Estado</th><th>Calidad</th><th>Entrega</th>
+          <th>Corrección</th><th style="text-align:center">Total</th><th>Racha</th>
+        </tr></thead>
+        <tbody>
+          ${alumnosActivos().map(a => {
+            const f = ADMIN.filas[a.id_alumno];
+            const off = f.estado_entrega === 'No entregado' ? 'disabled' : '';
+            return `<tr data-alumno="${esc(a.id_alumno)}">
+              <td><strong>${esc(a.nombre_publico)}</strong></td>
+              <td><select data-campo="estado_entrega">
+                ${ESTADOS_ENTREGA.map(s => `<option ${f.estado_entrega === s ? 'selected' : ''}>${s}</option>`).join('')}
+              </select></td>
+              <td><select data-campo="calidad" ${off}>
+                ${['', '0', '1', '2', '3', '4', '5'].map(c =>
+                  `<option value="${c}" ${f.calidad === c ? 'selected' : ''}>${c === '' ? '—' : c}</option>`).join('')}
+              </select></td>
+              <td><select data-campo="entrega" ${off}>
+                <option value="0" ${f.entrega === '0' ? 'selected' : ''}>0</option>
+                <option value="1" ${f.entrega === '1' ? 'selected' : ''}>1</option>
+              </select></td>
+              <td><select data-campo="correccion" ${off}>
+                <option value="0" ${f.correccion === '0' ? 'selected' : ''}>0</option>
+                <option value="1" ${f.correccion === '1' ? 'selected' : ''}>1</option>
+              </select></td>
+              <td class="total-celda">${totalLocal(f)}</td>
+              <td><input type="number" min="0" data-campo="racha" value="${esc(f.racha)}" /></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div class="admin-barra" style="margin-top:16px">
+        <button class="btn-oro" id="guardar-btn">Guardar toda la jornada</button>
+      </div>
+      <p class="nota">El total definitivo lo calcula la fórmula de la hoja al guardar (máximo 7;
+      «No entregado» = 0). Guardar no duplica: actualiza el registro de cada alumno en esta jornada.
+      La vista para otros visitantes tarda unos minutos en refrescarse.</p>`}
+    </div>`;
+}
+
+function wirePuntuar() {
+  const sel = $('#jornada-sel');
+  if (!sel) return;
+  sel.addEventListener('change', e => {
+    ADMIN.jornadaSel = e.target.value;
+    prepararFilas();
+    renderAdmin();
+  });
+
+  const jornada = DATOS.jornadas.find(j => String(j.id_jornada) === String(ADMIN.jornadaSel));
+  $('#pub-btn').addEventListener('click', e =>
+    operar(e.target, async () => {
+      const estado = e.target.dataset.estado;
+      await postScript('setPublicacion', { id_jornada: ADMIN.jornadaSel, estado_publicacion: estado });
+      jornada.estado_publicacion = estado;
+      return estado === 'publicada' ? 'Jornada publicada.' : 'Jornada devuelta a borrador.';
+    }));
+
+  document.querySelectorAll('#main [data-campo]').forEach(el => {
+    el.addEventListener('change', () => {
+      const tr = el.closest('tr');
+      const id = tr.dataset.alumno;
+      ADMIN.filas[id][el.dataset.campo] = el.value;
+      const f = ADMIN.filas[id];
+      if (el.dataset.campo === 'estado_entrega') {
+        const off = f.estado_entrega === 'No entregado';
+        tr.querySelectorAll('[data-campo="calidad"],[data-campo="entrega"],[data-campo="correccion"]')
+          .forEach(s => s.disabled = off);
+      }
+      tr.querySelector('.total-celda').textContent = totalLocal(f);
+    });
+  });
+
+  const btnGuardar = $('#guardar-btn');
+  if (btnGuardar) btnGuardar.addEventListener('click', e =>
+    operar(e.target, async () => {
+      const registros = alumnosActivos().map(a => {
+        const f = ADMIN.filas[a.id_alumno];
+        return {
+          id_alumno: a.id_alumno,
+          id_equipo_en_jornada: a.id_equipo_actual,
+          estado_entrega: f.estado_entrega,
+          calidad: f.calidad,
+          entrega_puntualidad: Number(f.entrega) || 0,
+          correccion: Number(f.correccion) || 0,
+          racha_manual: f.racha,
+        };
+      });
+      const res = await postScript('saveJornada', { id_jornada: ADMIN.jornadaSel, registros });
+      // Reflejo local inmediato (la copia pública de Google tarda unos minutos)
+      registros.forEach(reg => {
+        const f = ADMIN.filas[reg.id_alumno];
+        const nuevo = {
+          id_jornada: ADMIN.jornadaSel, id_alumno: reg.id_alumno,
+          id_equipo_en_jornada: reg.id_equipo_en_jornada,
+          estado_entrega: reg.estado_entrega, calidad: reg.calidad,
+          entrega_puntualidad: reg.entrega_puntualidad, correccion: reg.correccion,
+          total: totalLocal(f), racha_manual: reg.racha_manual,
+        };
+        const i = DATOS.registros.findIndex(r =>
+          String(r.id_jornada) === String(ADMIN.jornadaSel) &&
+          String(r.id_alumno) === String(reg.id_alumno));
+        if (i >= 0) DATOS.registros[i] = nuevo; else DATOS.registros.push(nuevo);
+      });
+      return `Guardado: ${res.creados} nuevos, ${res.actualizados} actualizados.`;
+    }));
+}
+
+/* ---------- Sección: Jornadas ---------- */
+
+function seccionJornadas() {
+  const ed = ADMIN.editJornada
+    ? DATOS.jornadas.find(j => String(j.id_jornada) === String(ADMIN.editJornada))
+    : null;
+  const maxNum = DATOS.jornadas.reduce((m, j) => Math.max(m, num(j.numero_jornada)), 0);
+
+  return `
+    <div class="card" style="margin-bottom:14px">
+      <h3>${ed ? `Editar jornada J${esc(ed.numero_jornada)}` : 'Nueva jornada'}</h3>
+      <div class="form-grid">
+        <label>N.º de jornada<input type="number" id="j-numero" min="1" value="${ed ? esc(ed.numero_jornada) : maxNum + 1}" /></label>
+        <label>Título<input type="text" id="j-titulo" value="${ed ? esc(ed.titulo) : ''}" placeholder="p. ej. Enlace de acordes I-IV-V" /></label>
+        <label>Fecha<input type="date" id="j-fecha" value="${ed ? esc(fechaISO(ed.fecha)) : ''}" /></label>
+        <label>Trimestre<select id="j-trimestre">
+          ${['1', '2', '3'].map(t => `<option value="${t}" ${String(ed ? ed.trimestre : DATOS.config.trimestre_activo || '1') === t ? 'selected' : ''}>${t}.º</option>`).join('')}
+        </select></label>
+        <label style="grid-column:1/-1">Descripción<input type="text" id="j-descripcion" value="${ed ? esc(ed.descripcion) : ''}" /></label>
+      </div>
+      <div class="admin-barra" style="margin-top:14px">
+        <button class="btn-oro" id="j-guardar">${ed ? 'Guardar cambios' : 'Crear jornada'}</button>
+        ${ed ? `<button class="btn-borde" id="j-cancelar">Cancelar</button>` : ''}
+      </div>
+      ${ed ? '' : `<p class="nota">La jornada se crea en estado <strong>borrador</strong>: no cuenta en
+        la clasificación pública hasta que la publiques desde la pestaña Puntuar.</p>`}
+    </div>
+    <div class="card tabla-scroll">
+      <h3>Jornadas del curso</h3>
+      ${DATOS.jornadas.length === 0 ? `<p class="nota">Todavía no hay jornadas.</p>` : `
+      <table>
+        <thead><tr><th>N.º</th><th>Título</th><th>Fecha</th><th>Trim.</th><th>Estado</th><th></th></tr></thead>
+        <tbody>${[...DATOS.jornadas].sort((a, b) => num(a.numero_jornada) - num(b.numero_jornada)).map(j => `
+          <tr>
+            <td class="num">J${esc(j.numero_jornada)}</td>
+            <td><strong>${esc(j.titulo || '—')}</strong></td>
+            <td>${esc(j.fecha || '—')}</td>
+            <td class="num">${esc(j.trimestre)}</td>
+            <td><span class="estado-chip ${String(j.estado_publicacion).toLowerCase() === 'publicada' ? 'chip-pub' : 'chip-borr'}">${esc(j.estado_publicacion)}</span></td>
+            <td style="text-align:right"><button class="btn-borde btn-mini" data-editar="${esc(j.id_jornada)}">Editar</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+
+function wireJornadas() {
+  document.querySelectorAll('[data-editar]').forEach(b =>
+    b.addEventListener('click', () => { ADMIN.editJornada = b.dataset.editar; renderAdmin(); }));
+  const cancelar = $('#j-cancelar');
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editJornada = null; renderAdmin(); });
+
+  $('#j-guardar').addEventListener('click', e =>
+    operar(e.target, async () => {
+      const datos = {
+        id_jornada: ADMIN.editJornada || '',
+        numero_jornada: valorDe('j-numero') || '1',
+        titulo: valorDe('j-titulo'),
+        fecha: valorDe('j-fecha'),
+        trimestre: valorDe('j-trimestre'),
+        descripcion: valorDe('j-descripcion'),
+      };
+      if (!datos.titulo) throw new Error('La jornada necesita un título.');
+      const esEdicion = !!ADMIN.editJornada;
+      if (esEdicion) {
+        const j = DATOS.jornadas.find(x => String(x.id_jornada) === String(ADMIN.editJornada));
+        datos.estado_publicacion = j.estado_publicacion; // se conserva
+        const res = await postScript('saveJornadaMeta', { datos });
+        Object.assign(j, datos, { id_jornada: res.id_jornada });
+      } else {
+        datos.estado_publicacion = 'borrador';
+        const res = await postScript('saveJornadaMeta', { datos });
+        DATOS.jornadas.push({ ...datos, id_jornada: res.id_jornada });
+        ADMIN.jornadaSel = String(res.id_jornada);
+        prepararFilas();
+      }
+      ADMIN.editJornada = null;
+      return esEdicion ? 'Jornada actualizada.' : 'Jornada creada (en borrador).';
+    }));
+}
+
+/* ---------- Sección: Alumnos ---------- */
+
+function seccionAlumnos() {
+  const ed = ADMIN.editAlumno
+    ? DATOS.alumnos.find(a => String(a.id_alumno) === String(ADMIN.editAlumno))
+    : null;
+  const equiposActivos = DATOS.equipos.filter(activo);
+  const nombreEquipo = id => {
+    const e = DATOS.equipos.find(x => String(x.id_equipo) === String(id));
+    return e ? e.nombre_equipo : '—';
+  };
+
+  return `
+    <div class="card" style="margin-bottom:14px">
+      <h3>${ed ? `Editar: ${esc(ed.nombre_publico)}` : 'Nuevo alumno/a'}</h3>
+      <div class="form-grid">
+        <label>Nombre público<input type="text" id="a-nombre" value="${ed ? esc(ed.nombre_publico) : ''}" placeholder="Lo que se verá en la web" /></label>
+        <label>Género<select id="a-genero">
+          ${GENEROS.map(g => `<option ${(ed ? ed.genero : 'No especificado') === g ? 'selected' : ''}>${g}</option>`).join('')}
+        </select></label>
+        <label>Instrumento<select id="a-instrumento">
+          <option value=""></option>
+          ${INSTRUMENTOS.map(i => `<option ${(ed && ed.instrumento === i) ? 'selected' : ''}>${i}</option>`).join('')}
+        </select></label>
+        <label>Equipo<select id="a-equipo">
+          <option value="">— Sin equipo —</option>
+          ${equiposActivos.map(e => `<option value="${esc(e.id_equipo)}" ${ed && String(ed.id_equipo_actual) === String(e.id_equipo) ? 'selected' : ''}>${esc(e.nombre_equipo)}</option>`).join('')}
+        </select></label>
+        <label class="check"><input type="checkbox" id="a-activo" ${!ed || activo(ed) ? 'checked' : ''} /> Activo (aparece en clasificaciones y al puntuar)</label>
+      </div>
+      <div class="admin-barra" style="margin-top:14px">
+        <button class="btn-oro" id="a-guardar">${ed ? 'Guardar cambios' : 'Crear alumno/a'}</button>
+        ${ed ? `<button class="btn-borde" id="a-cancelar">Cancelar</button>` : ''}
+      </div>
+      <p class="nota">Recuerda: la hoja es legible con el enlace, así que en «nombre público» pon
+      exactamente lo que quieras exponer (nombre de pila, alias o iniciales).</p>
+    </div>
+    <div class="card tabla-scroll">
+      <h3>Plantilla (${DATOS.alumnos.length})</h3>
+      ${DATOS.alumnos.length === 0 ? `<p class="nota">Todavía no hay alumnos.</p>` : `
+      <table>
+        <thead><tr><th>Nombre</th><th>Instrumento</th><th>Equipo</th><th>Estado</th><th></th></tr></thead>
+        <tbody>${DATOS.alumnos.map(a => `
+          <tr style="${activo(a) ? '' : 'opacity:0.45'}">
+            <td><strong>${esc(a.nombre_publico)}</strong></td>
+            <td>${esc(a.instrumento || '—')}</td>
+            <td>${esc(nombreEquipo(a.id_equipo_actual))}</td>
+            <td>${activo(a) ? 'Activo' : 'Inactivo'}</td>
+            <td style="text-align:right"><button class="btn-borde btn-mini" data-editar="${esc(a.id_alumno)}">Editar</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+
+function wireAlumnos() {
+  document.querySelectorAll('[data-editar]').forEach(b =>
+    b.addEventListener('click', () => { ADMIN.editAlumno = b.dataset.editar; renderAdmin(); }));
+  const cancelar = $('#a-cancelar');
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editAlumno = null; renderAdmin(); });
+
+  $('#a-guardar').addEventListener('click', e =>
+    operar(e.target, async () => {
+      const datos = {
+        id_alumno: ADMIN.editAlumno || '',
+        nombre_publico: valorDe('a-nombre'),
+        genero: valorDe('a-genero'),
+        instrumento: valorDe('a-instrumento'),
+        id_equipo_actual: valorDe('a-equipo'),
+        activo: marcado('a-activo'),
+      };
+      if (!datos.nombre_publico) throw new Error('El alumno necesita un nombre público.');
+      const res = await postScript('saveAlumno', { datos });
+      const local = { ...datos, id_alumno: res.id_alumno, activo: datos.activo ? 'TRUE' : 'FALSE' };
+      const i = DATOS.alumnos.findIndex(a => String(a.id_alumno) === String(res.id_alumno));
+      if (i >= 0) DATOS.alumnos[i] = { ...DATOS.alumnos[i], ...local }; else DATOS.alumnos.push(local);
+      prepararFilas(); // la lista de la pantalla Puntuar cambia
+      const esEdicion = !!ADMIN.editAlumno;
+      ADMIN.editAlumno = null;
+      return esEdicion ? 'Alumno/a actualizado.' : 'Alumno/a creado.';
+    }));
+}
+
+/* ---------- Sección: Equipos ---------- */
+
+function seccionEquipos() {
+  const ed = ADMIN.editEquipo
+    ? DATOS.equipos.find(e => String(e.id_equipo) === String(ADMIN.editEquipo))
+    : null;
+  const nAlumnos = id => DATOS.alumnos.filter(a => activo(a) && String(a.id_equipo_actual) === String(id)).length;
+
+  return `
+    <div class="card" style="margin-bottom:14px">
+      <h3>${ed ? `Editar: ${esc(ed.nombre_equipo)}` : 'Nuevo equipo'}</h3>
+      <div class="form-grid">
+        <label>Nombre del equipo<input type="text" id="e-nombre" value="${ed ? esc(ed.nombre_equipo) : ''}" placeholder="p. ej. Napolitana FC" /></label>
+        <label>Color<input type="color" id="e-color" value="${ed && /^#[0-9a-fA-F]{6}$/.test(String(ed.color)) ? esc(ed.color) : '#C8102E'}" style="height:38px;padding:2px" /></label>
+        <label class="check"><input type="checkbox" id="e-activo" ${!ed || activo(ed) ? 'checked' : ''} /> Activo (aparece en la clasificación)</label>
+      </div>
+      <div class="admin-barra" style="margin-top:14px">
+        <button class="btn-oro" id="e-guardar">${ed ? 'Guardar cambios' : 'Crear equipo'}</button>
+        ${ed ? `<button class="btn-borde" id="e-cancelar">Cancelar</button>` : ''}
+      </div>
+    </div>
+    <div class="card tabla-scroll">
+      <h3>Equipos (${DATOS.equipos.length})</h3>
+      ${DATOS.equipos.length === 0 ? `<p class="nota">Todavía no hay equipos.</p>` : `
+      <table>
+        <thead><tr><th>Equipo</th><th class="num">Alumnos activos</th><th>Estado</th><th></th></tr></thead>
+        <tbody>${DATOS.equipos.map(eq => `
+          <tr style="${activo(eq) ? '' : 'opacity:0.45'}">
+            <td><strong>${dot(eq.color)}${esc(eq.nombre_equipo)}</strong></td>
+            <td class="num">${nAlumnos(eq.id_equipo)}</td>
+            <td>${activo(eq) ? 'Activo' : 'Inactivo'}</td>
+            <td style="text-align:right"><button class="btn-borde btn-mini" data-editar="${esc(eq.id_equipo)}">Editar</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+
+function wireEquipos() {
+  document.querySelectorAll('[data-editar]').forEach(b =>
+    b.addEventListener('click', () => { ADMIN.editEquipo = b.dataset.editar; renderAdmin(); }));
+  const cancelar = $('#e-cancelar');
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editEquipo = null; renderAdmin(); });
+
+  $('#e-guardar').addEventListener('click', e =>
+    operar(e.target, async () => {
+      const datos = {
+        id_equipo: ADMIN.editEquipo || '',
+        nombre_equipo: valorDe('e-nombre'),
+        color: valorDe('e-color') || '#888888',
+        activo: marcado('e-activo'),
+      };
+      if (!datos.nombre_equipo) throw new Error('El equipo necesita un nombre.');
+      const res = await postScript('saveEquipo', { datos });
+      const local = { ...datos, id_equipo: res.id_equipo, activo: datos.activo ? 'TRUE' : 'FALSE' };
+      const i = DATOS.equipos.findIndex(x => String(x.id_equipo) === String(res.id_equipo));
+      if (i >= 0) DATOS.equipos[i] = { ...DATOS.equipos[i], ...local }; else DATOS.equipos.push(local);
+      const esEdicion = !!ADMIN.editEquipo;
+      ADMIN.editEquipo = null;
+      return esEdicion ? 'Equipo actualizado.' : 'Equipo creado.';
+    }));
+}
+
+/* ---------- Sección: Liga (configuración) ---------- */
+
+function seccionLiga() {
+  const c = DATOS.config;
+  return `
+    <div class="card">
+      <h3>Configuración de la liga</h3>
+      <div class="form-grid">
+        <label>Nombre de la liga<input type="text" id="c-nombre" value="${esc(c.nombre_liga || '')}" /></label>
+        <label>Curso<input type="text" id="c-curso" value="${esc(c.curso || '')}" placeholder="2026/2027" /></label>
+        <label>Profesor/a<input type="text" id="c-profesor" value="${esc(c.profesor || '')}" /></label>
+        <label>Trimestre activo<select id="c-trimestre">
+          ${['1', '2', '3'].map(t => `<option value="${t}" ${String(c.trimestre_activo) === t ? 'selected' : ''}>${t}.º</option>`).join('')}
+        </select></label>
+        <label>Jornada actual (Dashboard)<select id="c-jornada">
+          <option value=""></option>
+          ${DATOS.jornadas.map(j => `<option value="${esc(j.id_jornada)}" ${String(c.jornada_actual) === String(j.id_jornada) ? 'selected' : ''}>
+            J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Sin título')}</option>`).join('')}
+        </select></label>
+      </div>
+      <div class="admin-barra" style="margin-top:14px">
+        <button class="btn-oro" id="c-guardar">Guardar configuración</button>
+      </div>
+      <p class="nota">El «trimestre activo» es el que se muestra por defecto al abrir la web.
+      Al empezar un trimestre nuevo, cámbialo aquí: la clasificación principal se reinicia sola
+      porque cada trimestre cuenta únicamente sus jornadas (el histórico sigue en «Curso completo»).</p>
+    </div>`;
+}
+
+function wireLiga() {
+  $('#c-guardar').addEventListener('click', e =>
+    operar(e.target, async () => {
+      const config = {
+        nombre_liga: valorDe('c-nombre'),
+        curso: valorDe('c-curso'),
+        profesor: valorDe('c-profesor'),
+        trimestre_activo: valorDe('c-trimestre'),
+        jornada_actual: valorDe('c-jornada'),
+      };
+      await postScript('saveConfig', { config });
+      Object.assign(DATOS.config, config);
+      // Refrescar cabecera
+      if (config.nombre_liga) { $('#titulo').textContent = config.nombre_liga; document.title = config.nombre_liga; }
+      if (config.curso) { $('#curso').textContent = config.curso; $('#temporada').hidden = false; }
+      return 'Configuración guardada.';
+    }));
+}
+
+/** Normaliza una fecha mostrada (dd/mm/aaaa o aaaa-mm-dd) al formato del input date. */
+function fechaISO(f) {
+  const s = String(f || '');
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
+}
+
+(async function iniciar() {
+  if (!SPREADSHEET_ID || SPREADSHEET_ID.startsWith('PEGA_AQUI')) {
+    mostrarError('Falta configurar la hoja',
+      `Abre este archivo <code>index.html</code> con un editor de texto y pega el ID de tu hoja de
+       Google Sheets en la constante <code>SPREADSHEET_ID</code> (al principio del archivo).
+       Recuerda compartir la hoja como «Cualquier persona con el enlace: Lector».`);
+    return;
+  }
+  try {
+    DATOS = await cargarDatos();
+    TRIMESTRE = String(DATOS.config.trimestre_activo || '1');
+    if (!TRIMESTRES.some(([v]) => v === TRIMESTRE)) TRIMESTRE = '1';
+    if (DATOS.config.nombre_liga) { $('#titulo').textContent = DATOS.config.nombre_liga; document.title = DATOS.config.nombre_liga; }
+    if (DATOS.config.curso) { $('#curso').textContent = DATOS.config.curso; $('#temporada').hidden = false; }
+    if (DATOS.config.profesor) { $('#pie').textContent += ' · ' + DATOS.config.profesor; }
+    render();
+  } catch (err) {
+    mostrarError('No se pudieron cargar los datos',
+      `${esc(err.message)}<br><br>Comprueba que el ID de la hoja es correcto, que está compartida como
+       «Cualquier persona con el enlace: Lector» y que las pestañas se llaman CONFIG, ALUMNOS,
+       EQUIPOS, JORNADAS y REGISTROS.`);
+  }
+})();
+</script>
+</body>
+</html>
