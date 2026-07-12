@@ -474,7 +474,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   <div class="splash-fila"><span class="splash-linea l4" aria-hidden="true"></span></div>
   <div class="splash-fila"><span class="splash-linea l5" aria-hidden="true"></span></div>
 </div>
-<audio id="splash-audio" preload="none" loop></audio>
+<audio id="splash-audio" preload="none"></audio>
 <button id="musica-btn" class="musica-btn" hidden aria-label="Silenciar música">🔊</button>
 <div class="wrap">
   <header>
@@ -2105,9 +2105,14 @@ const ADMIN = {
   filas: {},          // id_alumno -> valores editables de la jornada
   insigniasFilas: {}, // id_alumno -> { id_insignia: true } insignias asignadas en esta jornada
   editJornada: null,  // id en edición (null = crear nueva)
+  nuevaJornada: false, // true = mostrar el formulario en blanco tras pulsar "Nueva jornada"
+  jornadasOrden: { campo: 'fecha', dir: 'desc' }, // columna y sentido de la tabla de Jornadas
   jornadaCursoSel: '', // curso elegido en el formulario de "Nueva jornada"
   jornadaGrupoSel: '', // grupo elegido en el formulario de "Nueva jornada" ('' = todo el curso)
   editAlumno: null,
+  nuevoAlumno: false, // true = mostrar el formulario en blanco tras pulsar "Nuevo alumno/a"
+  verAlumno: null,   // id_alumno cuya ficha de solo lectura se está viendo (sin editar)
+  alumnosFiltro: { nombre: '', id_curso: '', id_grupo: '', instrumento: '', id_equipo: '', estado: '' }, // filtros de la Plantilla
   editCurso: null,
   editGrupo: null,
   asignacionesGrupo: {}, // id_alumno -> id_grupo editable (asignación masiva en Admin → Grupos)
@@ -2164,7 +2169,8 @@ function prepararFilas() {
       entrega: String(num(r.entrega_puntualidad)),
       correccion: String(num(r.correccion)),
       racha: (r.racha_manual === '' || r.racha_manual == null) ? '' : String(r.racha_manual),
-    } : { estado_entrega: 'En plazo', calidad: '', entrega: '0', correccion: '0', racha: '' };
+      comentario: String(r.comentario || ''),
+    } : { estado_entrega: 'En plazo', calidad: '', entrega: '0', correccion: '0', racha: '', comentario: '' };
   }
   prepararInsigniasFilas();
 }
@@ -2353,7 +2359,7 @@ function seccionPuntuar() {
         <thead><tr>
           <th>Alumno/a</th><th>Estado</th><th>Calidad</th><th>Entrega</th>
           <th>Corrección</th><th style="text-align:center">Total</th><th>Racha</th>
-          ${insignias.length ? '<th>Insignias</th>' : ''}
+          ${insignias.length ? '<th>Insignias</th>' : ''}<th>Comentarios</th>
         </tr></thead>
         <tbody>
           ${alumnosVisibles.map(a => {
@@ -2383,6 +2389,7 @@ function seccionPuntuar() {
                 <option value="">— Ninguna —</option>
                 ${insignias.map(i => `<option value="${esc(i.id_insignia)}" ${insAlumno === String(i.id_insignia) ? 'selected' : ''}>${esc(i.nombre)}</option>`).join('')}
               </select></td>` : ''}
+              <td><input type="text" data-campo="comentario" value="${esc(f.comentario)}" placeholder="Comentario…" style="min-width:160px" /></td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -2462,6 +2469,7 @@ function wirePuntuar() {
           entrega_puntualidad: Number(f.entrega) || 0,
           correccion: Number(f.correccion) || 0,
           racha_manual: f.racha,
+          comentario: f.comentario,
         };
       });
       const res = await postScript('saveJornada', { id_jornada: ADMIN.jornadaSel, registros });
@@ -2473,7 +2481,7 @@ function wirePuntuar() {
           id_equipo_en_jornada: reg.id_equipo_en_jornada,
           estado_entrega: reg.estado_entrega, calidad: reg.calidad,
           entrega_puntualidad: reg.entrega_puntualidad, correccion: reg.correccion,
-          total: totalLocal(f), racha_manual: reg.racha_manual,
+          total: totalLocal(f), racha_manual: reg.racha_manual, comentario: reg.comentario,
         };
         const i = DATOS.registros.findIndex(r =>
           String(r.id_jornada) === String(ADMIN.jornadaSel) &&
@@ -2516,12 +2524,31 @@ function seccionJornadas() {
   const ed = ADMIN.editJornada
     ? DATOS.jornadas.find(j => String(j.id_jornada) === String(ADMIN.editJornada))
     : null;
+  const mostrarForm = !!ed || ADMIN.nuevaJornada;
   const cursos = cursosActivos(DATOS);
   const cursoSel = ed ? ed.id_curso : (ADMIN.jornadaCursoSel || (cursos[0] || {}).id_curso || '');
   const grupoSel = ed ? (ed.id_grupo || '') : (ADMIN.jornadaGrupoSel || '');
 
+  const CAMPOS_ORDEN_JORNADAS = {
+    numero: j => num(j.numero_jornada),
+    curso: j => String((cursoDe(DATOS, j.id_curso) || {}).nombre_curso || ''),
+    grupo: j => j.id_grupo ? String((grupoDe(DATOS, j.id_grupo) || {}).nombre_grupo || '') : '',
+    titulo: j => String(j.titulo || ''),
+    tareas: j => String(j.tareas || ''),
+    fecha: j => String(j.fecha || ''),
+    trimestre: j => num(j.trimestre),
+    estado: j => String(j.estado_publicacion || ''),
+  };
+  const ordenValor = CAMPOS_ORDEN_JORNADAS[ADMIN.jornadasOrden.campo] || CAMPOS_ORDEN_JORNADAS.fecha;
+  const jornadasOrdenadas = [...DATOS.jornadas].sort((a, b) => {
+    const va = ordenValor(a), vb = ordenValor(b);
+    let cmp = typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va).localeCompare(String(vb), 'es');
+    if (cmp === 0) cmp = compararFechaJornada(a, b); // desempate estable
+    return ADMIN.jornadasOrden.dir === 'desc' ? -cmp : cmp;
+  });
+
   return `
-    <div class="card" style="margin-bottom:14px">
+    ${mostrarForm ? `<div class="card" style="margin-bottom:14px">
       <h3>${ed ? `Editar jornada J${esc(ed.numero_jornada)}` : 'Nueva jornada'}</h3>
       <div class="form-grid">
         <label>Curso<select id="j-curso">
@@ -2545,20 +2572,27 @@ function seccionJornadas() {
       </div>
       <div class="admin-barra" style="margin-top:14px">
         <button class="btn-oro" id="j-guardar">${ed ? 'Guardar cambios' : 'Crear jornada'}</button>
-        ${ed ? `<button class="btn-borde" id="j-cancelar">Cancelar</button>` : ''}
+        <button class="btn-borde" id="j-cancelar">Cancelar</button>
       </div>
       ${ed ? '' : `<p class="nota">Las jornadas son propias de cada curso (no se comparten). Si dejas «Grupo» en
         todo el curso, cuenta para todos sus grupos; si eliges un grupo concreto, solo se puntúa (y solo cuenta
         para la clasificación) ese grupo — así cada grupo puede tener un número distinto de jornadas y su propia
         numeración J1, J2... Se crea en estado <strong>borrador</strong>: no cuenta en la clasificación pública
         hasta que la publiques desde la pestaña Puntuar.</p>`}
-    </div>
+    </div>` : ''}
     <div class="card tabla-scroll">
       <h3>Jornadas (${DATOS.jornadas.length})</h3>
       ${DATOS.jornadas.length === 0 ? `<p class="nota">Todavía no hay jornadas.</p>` : `
       <table>
-        <thead><tr><th>N.º</th><th>Curso</th><th>Grupo</th><th>Título</th><th>Tareas</th><th>Fecha</th><th>Trim.</th><th>Estado</th><th></th></tr></thead>
-        <tbody>${[...DATOS.jornadas].sort((a, b) => compararFechaJornada(b, a)).map(j => `
+        <thead><tr>${[
+          ['numero', 'N.º'], ['curso', 'Curso'], ['grupo', 'Grupo'], ['titulo', 'Título'],
+          ['tareas', 'Tareas'], ['fecha', 'Fecha'], ['trimestre', 'Trim.'], ['estado', 'Estado'],
+        ].map(([campo, etiqueta]) => {
+          const activo_ = ADMIN.jornadasOrden.campo === campo;
+          const flecha = activo_ ? (ADMIN.jornadasOrden.dir === 'asc' ? ' ▲' : ' ▼') : '';
+          return `<th data-orden-campo="${campo}" style="cursor:pointer;user-select:none" title="Ordenar por ${etiqueta.toLowerCase()}">${etiqueta}${flecha}</th>`;
+        }).join('')}<th></th></tr></thead>
+        <tbody>${jornadasOrdenadas.map(j => `
           <tr>
             <td class="num">J${esc(j.numero_jornada)}</td>
             <td>${esc((cursoDe(DATOS, j.id_curso) || {}).nombre_curso || '—')}</td>
@@ -2572,14 +2606,30 @@ function seccionJornadas() {
           </tr>`).join('')}
         </tbody>
       </table>`}
+      <div class="admin-barra" style="margin-top:14px;justify-content:flex-end">
+        <button class="btn-oro" id="j-nuevo">+ Nueva jornada</button>
+      </div>
     </div>`;
 }
 
 function wireJornadas() {
   document.querySelectorAll('[data-editar]').forEach(b =>
-    b.addEventListener('click', () => { ADMIN.editJornada = b.dataset.editar; renderAdmin(); }));
+    b.addEventListener('click', () => { ADMIN.editJornada = b.dataset.editar; ADMIN.nuevaJornada = false; renderAdmin(); }));
   const cancelar = $('#j-cancelar');
-  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editJornada = null; renderAdmin(); });
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editJornada = null; ADMIN.nuevaJornada = false; renderAdmin(); });
+
+  const nuevo = $('#j-nuevo');
+  if (nuevo) nuevo.addEventListener('click', () => { ADMIN.nuevaJornada = true; ADMIN.editJornada = null; renderAdmin(); });
+
+  document.querySelectorAll('[data-orden-campo]').forEach(th => th.addEventListener('click', () => {
+    const campo = th.dataset.ordenCampo;
+    if (ADMIN.jornadasOrden.campo === campo) {
+      ADMIN.jornadasOrden.dir = ADMIN.jornadasOrden.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      ADMIN.jornadasOrden = { campo, dir: 'asc' };
+    }
+    renderAdmin();
+  }));
 
   const selCurso = $('#j-curso');
   const selGrupo = $('#j-grupo');
@@ -2607,7 +2657,8 @@ function wireJornadas() {
     }
   });
 
-  $('#j-guardar').addEventListener('click', e =>
+  const btnGuardar = $('#j-guardar');
+  if (btnGuardar) btnGuardar.addEventListener('click', e =>
     operar(e.target, async () => {
       const datos = {
         id_jornada: ADMIN.editJornada || '',
@@ -2636,6 +2687,7 @@ function wireJornadas() {
         prepararFilas();
       }
       ADMIN.editJornada = null;
+      ADMIN.nuevaJornada = false;
       return esEdicion ? 'Jornada actualizada.' : 'Jornada creada (en borrador).';
     }));
 }
@@ -2644,17 +2696,32 @@ function wireJornadas() {
 
 function seccionAlumnos() {
   if (ADMIN.editDianaAlumno) return seccionDianaAlumno();
+  if (ADMIN.verAlumno) return seccionFichaAlumno();
   const ed = ADMIN.editAlumno
     ? DATOS.alumnos.find(a => String(a.id_alumno) === String(ADMIN.editAlumno))
     : null;
+  const mostrarForm = !!ed || ADMIN.nuevoAlumno;
   const equiposActivos = DATOS.equipos.filter(activo);
   const nombreEquipo = id => {
     const e = DATOS.equipos.find(x => String(x.id_equipo) === String(id));
     return e ? e.nombre_equipo : '—';
   };
 
+  const filtro = ADMIN.alumnosFiltro;
+  const hayFiltro = Object.values(filtro).some(v => v !== '');
+  const alumnosFiltrados = DATOS.alumnos.filter(a => {
+    if (filtro.nombre && !a.nombre_publico.toLowerCase().includes(filtro.nombre.trim().toLowerCase())) return false;
+    if (filtro.id_curso && String(idCursoDeAlumno(DATOS, a)) !== String(filtro.id_curso)) return false;
+    if (filtro.id_grupo && String(a.id_grupo) !== String(filtro.id_grupo)) return false;
+    if (filtro.instrumento && a.instrumento !== filtro.instrumento) return false;
+    if (filtro.id_equipo && String(a.id_equipo_actual) !== String(filtro.id_equipo)) return false;
+    if (filtro.estado === 'activo' && !activo(a)) return false;
+    if (filtro.estado === 'inactivo' && activo(a)) return false;
+    return true;
+  });
+
   return `
-    <div class="card" style="margin-bottom:14px">
+    ${mostrarForm ? `<div class="card" style="margin-bottom:14px">
       <h3>${ed ? `Editar: ${esc(ed.nombre_publico)}` : 'Nuevo alumno/a'}</h3>
       <div class="form-grid">
         <label>Nombre público<input type="text" id="a-nombre" value="${ed ? esc(ed.nombre_publico) : ''}" placeholder="Lo que se verá en la web" /></label>
@@ -2692,17 +2759,45 @@ function seccionAlumnos() {
         color de pelo, equipo o instrumento y guarda para verlo actualizado.</p></div>` : ''}
       <div class="admin-barra" style="margin-top:14px">
         <button class="btn-oro" id="a-guardar">${ed ? 'Guardar cambios' : 'Crear alumno/a'}</button>
-        ${ed ? `<button class="btn-borde" id="a-cancelar">Cancelar</button>` : ''}
+        <button class="btn-borde" id="a-cancelar">Cancelar</button>
       </div>
       <p class="nota">Recuerda: la hoja es legible con el enlace, así que en «nombre público» pon
       exactamente lo que quieras exponer (nombre de pila, alias o iniciales).</p>
-    </div>
+    </div>` : ''}
     <div class="card tabla-scroll">
-      <h3>Plantilla (${DATOS.alumnos.length})</h3>
-      ${DATOS.alumnos.length === 0 ? `<p class="nota">Todavía no hay alumnos.</p>` : `
+      <h3>Plantilla (${alumnosFiltrados.length}${hayFiltro ? ` de ${DATOS.alumnos.length}` : ''})</h3>
+      <div class="admin-barra" style="margin-bottom:14px">
+        <input type="text" id="af-nombre" value="${esc(filtro.nombre)}" placeholder="Buscar por nombre…" style="min-width:180px" />
+        <select id="af-curso">
+          <option value="">Todos los cursos</option>
+          ${cursosActivos(DATOS).map(c => `<option value="${esc(c.id_curso)}" ${filtro.id_curso === c.id_curso ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+        </select>
+        <select id="af-grupo">
+          <option value="">Todos los grupos</option>
+          ${cursosActivos(DATOS).map(c => `<optgroup label="${esc(c.nombre_curso)}">
+            ${gruposDeCurso(DATOS, c.id_curso).map(g => `<option value="${esc(g.id_grupo)}" ${filtro.id_grupo === g.id_grupo ? 'selected' : ''}>${esc(g.nombre_grupo)}</option>`).join('')}
+          </optgroup>`).join('')}
+        </select>
+        <select id="af-instrumento">
+          <option value="">Todos los instrumentos</option>
+          ${INSTRUMENTOS.map(i => `<option ${filtro.instrumento === i ? 'selected' : ''}>${i}</option>`).join('')}
+        </select>
+        <select id="af-equipo">
+          <option value="">Todos los equipos</option>
+          ${DATOS.equipos.map(e => `<option value="${esc(e.id_equipo)}" ${filtro.id_equipo === e.id_equipo ? 'selected' : ''}>${esc(e.nombre_equipo)}</option>`).join('')}
+        </select>
+        <select id="af-estado">
+          <option value="">Todos los estados</option>
+          <option value="activo" ${filtro.estado === 'activo' ? 'selected' : ''}>Activo</option>
+          <option value="inactivo" ${filtro.estado === 'inactivo' ? 'selected' : ''}>Inactivo</option>
+        </select>
+        ${hayFiltro ? `<button class="btn-borde btn-mini" id="af-limpiar">Quitar filtros</button>` : ''}
+      </div>
+      ${DATOS.alumnos.length === 0 ? `<p class="nota">Todavía no hay alumnos.</p>` :
+        alumnosFiltrados.length === 0 ? `<p class="nota">Ningún alumno coincide con el filtro.</p>` : `
       <table>
         <thead><tr><th>Nombre</th><th>Curso/grupo</th><th>Instrumento</th><th>Equipo</th><th>Estado</th><th></th></tr></thead>
-        <tbody>${DATOS.alumnos.map(a => `
+        <tbody>${alumnosFiltrados.map(a => `
           <tr style="${activo(a) ? '' : 'opacity:0.45'}">
             <td><strong>${esc(a.nombre_publico)}</strong></td>
             <td>${esc(lugarDeAlumno(DATOS, a) || '—')}</td>
@@ -2710,17 +2805,25 @@ function seccionAlumnos() {
             <td>${esc(nombreEquipo(a.id_equipo_actual))}</td>
             <td>${activo(a) ? 'Activo' : 'Inactivo'}</td>
             <td style="text-align:right">
+              <button class="btn-borde btn-mini" data-ver-ficha="${esc(a.id_alumno)}" style="margin-right:6px">Ver ficha</button>
               <button class="btn-borde btn-mini" data-diana="${esc(a.id_alumno)}" style="margin-right:6px">Diana</button>
               <button class="btn-borde btn-mini" data-editar="${esc(a.id_alumno)}">Editar</button>
             </td>
           </tr>`).join('')}
         </tbody>
       </table>`}
+      <div class="admin-barra" style="margin-top:14px;justify-content:flex-end">
+        <button class="btn-oro" id="a-nuevo">+ Nuevo alumno/a</button>
+      </div>
     </div>`;
 }
 
 function wireAlumnos() {
   if (ADMIN.editDianaAlumno) { wireDianaAlumno(); return; }
+  if (ADMIN.verAlumno) { wireFichaAlumno(); return; }
+
+  document.querySelectorAll('[data-ver-ficha]').forEach(b =>
+    b.addEventListener('click', () => { ADMIN.verAlumno = b.dataset.verFicha; renderAdmin(); }));
 
   document.querySelectorAll('[data-diana]').forEach(b =>
     b.addEventListener('click', () => {
@@ -2729,9 +2832,39 @@ function wireAlumnos() {
       renderAdmin();
     }));
   document.querySelectorAll('[data-editar]').forEach(b =>
-    b.addEventListener('click', () => { ADMIN.editAlumno = b.dataset.editar; renderAdmin(); }));
+    b.addEventListener('click', () => { ADMIN.editAlumno = b.dataset.editar; ADMIN.nuevoAlumno = false; renderAdmin(); }));
+
+  const nuevo = $('#a-nuevo');
+  if (nuevo) nuevo.addEventListener('click', () => { ADMIN.nuevoAlumno = true; ADMIN.editAlumno = null; renderAdmin(); });
+
+  // Filtros de la Plantilla. El de nombre se filtra mientras se escribe, así
+  // que hay que devolverle el foco y la posición del cursor a mano: al
+  // volver a montar toda la tabla con renderAdmin(), el <input> de antes se
+  // destruye y se crea uno nuevo, y si no se restaura el cursor solo se
+  // podría escribir una letra cada vez.
+  const inputNombreFiltro = $('#af-nombre');
+  if (inputNombreFiltro) inputNombreFiltro.addEventListener('input', () => {
+    const cursor = inputNombreFiltro.selectionStart;
+    ADMIN.alumnosFiltro.nombre = inputNombreFiltro.value;
+    renderAdmin();
+    const nuevoInput = $('#af-nombre');
+    if (nuevoInput) { nuevoInput.focus(); nuevoInput.setSelectionRange(cursor, cursor); }
+  });
+
+  const mapaFiltros = { 'af-curso': 'id_curso', 'af-grupo': 'id_grupo', 'af-instrumento': 'instrumento', 'af-equipo': 'id_equipo', 'af-estado': 'estado' };
+  Object.keys(mapaFiltros).forEach(idEl => {
+    const el = $('#' + idEl);
+    if (el) el.addEventListener('change', () => { ADMIN.alumnosFiltro[mapaFiltros[idEl]] = el.value; renderAdmin(); });
+  });
+
+  const limpiarFiltros = $('#af-limpiar');
+  if (limpiarFiltros) limpiarFiltros.addEventListener('click', () => {
+    ADMIN.alumnosFiltro = { nombre: '', id_curso: '', id_grupo: '', instrumento: '', id_equipo: '', estado: '' };
+    renderAdmin();
+  });
+
   const cancelar = $('#a-cancelar');
-  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editAlumno = null; renderAdmin(); });
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editAlumno = null; ADMIN.nuevoAlumno = false; renderAdmin(); });
 
   const selGrupoForm = $('#a-grupo');
   if (selGrupoForm) selGrupoForm.addEventListener('change', () => {
@@ -2741,7 +2874,8 @@ function wireAlumnos() {
     if (g && selCursoForm) selCursoForm.value = g.id_curso;
   });
 
-  $('#a-guardar').addEventListener('click', e =>
+  const btnGuardar = $('#a-guardar');
+  if (btnGuardar) btnGuardar.addEventListener('click', e =>
     operar(e.target, async () => {
       const datos = {
         id_alumno: ADMIN.editAlumno || '',
@@ -2763,6 +2897,7 @@ function wireAlumnos() {
       prepararFilas(); // la lista de la pantalla Puntuar cambia
       const esEdicion = !!ADMIN.editAlumno;
       ADMIN.editAlumno = null;
+      ADMIN.nuevoAlumno = false;
       return esEdicion ? 'Alumno/a actualizado.' : 'Alumno/a creado.';
     }));
 }
@@ -2872,6 +3007,112 @@ function wireDianaAlumno() {
       aplicarEvaluacionesLocal(valoraciones);
       return `Guardado: ${res.creados} nuevas, ${res.actualizados} actualizadas.`;
     }));
+}
+
+/* ---------- Panel: Ficha de un alumno (resumen de solo lectura, sin editar) ---------- */
+
+/**
+ * Ficha de solo lectura de un alumno para Admin: los mismos datos "vistosos"
+ * que ya tiene su perfil público (posición, insignias, diana), más lo que
+ * NO se ve en público — historial fila a fila de todas sus jornadas
+ * (incluidas las que aún están en borrador) con el comentario del profesor
+ * en cada una. Se calcula siempre sobre el curso completo (no un trimestre
+ * concreto), para tener de un vistazo todo el histórico del alumno.
+ */
+function seccionFichaAlumno() {
+  const a = DATOS.alumnos.find(x => String(x.id_alumno) === String(ADMIN.verAlumno));
+  if (!a) { ADMIN.verAlumno = null; return seccionAlumnos(); }
+
+  const eq = DATOS.equipos.find(e => String(e.id_equipo) === String(a.id_equipo_actual));
+  const idCurso = idCursoDeAlumno(DATOS, a);
+  const st = statsAlumno(DATOS, a.id_alumno, 'curso');
+  const ind = clasIndividual(DATOS, 'curso', a.id_grupo, idCurso);
+  const posActual = ind.find(f => f.id === String(a.id_alumno));
+  const equipoStats = eq ? clasEquipos(DATOS, 'curso', eq.id_curso).find(e2 => e2.id === String(eq.id_equipo)) : null;
+  const insigniasDetalle = insigniasAlumnoDetalle(DATOS, a.id_alumno, 'curso');
+  const crits = criteriosActivos(DATOS);
+
+  const jornadasPorId = new Map(DATOS.jornadas.map(j => [String(j.id_jornada), j]));
+  const historial = DATOS.registros
+    .filter(r => String(r.id_alumno) === String(a.id_alumno))
+    .map(r => ({ r, j: jornadasPorId.get(String(r.id_jornada)) }))
+    .filter(x => x.j)
+    .sort((x, y) => compararFechaJornada(y.j, x.j)); // más reciente primero
+
+  return `
+    <div class="fila-titulo">
+      <h3 style="margin:0">Ficha de ${esc(a.nombre_publico)}</h3>
+      <button class="btn-borde btn-mini" id="ficha-volver">← Volver a alumnos</button>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="card">
+        <div class="perfil-cabecera">
+          ${svgAvatar(a, eq, 'grande')}
+          <div>
+            <p class="principal" style="margin:0 0 8px">${esc(a.nombre_publico)}</p>
+            <p class="secundario" style="margin-top:6px">${esc(lugarDeAlumno(DATOS, a) || 'Sin curso/grupo')}</p>
+            <p class="secundario" style="margin-top:6px">${eq ? `${escudoEquipoHTML(eq, 16)}${esc(eq.nombre_equipo)}` : 'Sin equipo'}</p>
+            ${a.instrumento ? `<p class="secundario" style="display:flex;align-items:center;gap:6px;margin-top:6px">${iconoInstrumento(a.instrumento, 16)} ${esc(a.instrumento)}</p>` : ''}
+            <p class="secundario" style="margin-top:6px">${activo(a) ? 'Activo' : 'Inactivo'}</p>
+          </div>
+        </div>
+      </div>
+      <div class="card lider">
+        <div class="etiqueta"><span>🏅</span>Resumen (curso completo)</div>
+        <p class="principal">${posActual ? '#' + posActual.pos : '—'}</p>
+        <p class="secundario" style="font-size:16px">${st.puntos} pts en ${st.jornadas} jornada(s) · media ${fmtMedia(st.media)}</p>
+        ${equipoStats ? `<p class="secundario" style="margin-top:8px">Equipo: #${equipoStats.pos} · media ${fmtMedia(equipoStats.media)}</p>` : ''}
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>Insignias conseguidas</h3>
+      ${insigniasDetalle.length > 0
+        ? `<div class="grid-insignias">${insigniasDetalle.map(tarjetaInsigniaAlumnoHTML).join('')}</div>`
+        : `<p class="nota">Todavía no ha conseguido ninguna insignia.</p>`}
+    </div>
+    <div class="card tabla-scroll" style="margin-top:14px">
+      <h3>Historial de jornadas (${historial.length})</h3>
+      ${historial.length === 0 ? `<p class="nota">Todavía no tiene ningún registro de puntuación.</p>` : `
+      <table class="tabla-admin">
+        <thead><tr>
+          <th>Jornada</th><th>Publicación</th><th>Estado</th><th>Calidad</th>
+          <th>Entrega</th><th>Corrección</th><th style="text-align:center">Total</th><th>Racha</th><th>Comentario</th>
+        </tr></thead>
+        <tbody>${historial.map(({ r, j }) => `
+          <tr>
+            <td><strong>J${esc(j.numero_jornada)}</strong> · ${esc(j.titulo || 'Sin título')}</td>
+            <td><span class="estado-chip ${String(j.estado_publicacion).toLowerCase() === 'publicada' ? 'chip-pub' : 'chip-borr'}">${esc(j.estado_publicacion)}</span></td>
+            <td>${esc(r.estado_entrega || '—')}</td>
+            <td>${r.calidad === '' || r.calidad == null ? '—' : esc(r.calidad)}</td>
+            <td>${esc(r.entrega_puntualidad)}</td>
+            <td>${esc(r.correccion)}</td>
+            <td style="text-align:center"><strong>${esc(r.total)}</strong></td>
+            <td>${r.racha_manual === '' || r.racha_manual == null ? '—' : esc(r.racha_manual)}</td>
+            <td>${r.comentario ? esc(r.comentario) : '<span class="secundario">—</span>'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>
+    ${crits.length > 0 ? `<div class="card tabla-scroll" style="margin-top:14px">
+      <h3>Diana de evaluación</h3>
+      <table class="tabla-admin">
+        <thead><tr><th>Criterio</th>${PERIODOS_DIANA.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead>
+        <tbody>${crits.map(c => `
+          <tr>
+            <td><strong>${esc(c.nombre)}</strong></td>
+            ${PERIODOS_DIANA.map(([p]) => {
+              const eje = dianaAlumno(DATOS, a.id_alumno, p).find(e => e.id === String(c.id_criterio));
+              return `<td>${eje && eje.evaluado ? eje.valor : '—'}</td>`;
+            }).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}`;
+}
+
+function wireFichaAlumno() {
+  const volver = $('#ficha-volver');
+  if (volver) volver.addEventListener('click', () => { ADMIN.verAlumno = null; renderAdmin(); });
 }
 
 /* ---------- Sección: Grupos (cursos + grupos reales, y asignación de alumnos) ---------- */
