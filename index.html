@@ -81,6 +81,23 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   nav button:hover { background: rgba(16, 64, 44, 0.6); color: var(--chalk); }
   nav button.on, .pills button.on { background: var(--gold); color: var(--night); }
 
+  /* Botón hamburguesa y velo de fondo del menú lateral (solo se ven en móvil) */
+  .menu-btn {
+    display: none; position: fixed; top: 18px; right: 16px; z-index: 60;
+    width: 44px; height: 44px; border-radius: 10px; padding: 0;
+    border: 1px solid rgba(201, 153, 47, 0.4); background: rgba(12, 23, 40, 0.75);
+    flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    cursor: pointer;
+  }
+  .menu-btn span {
+    display: block; width: 20px; height: 2px; border-radius: 2px;
+    background: var(--gold-light); transition: transform 0.25s ease, opacity 0.2s ease;
+  }
+  .menu-btn[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .menu-btn[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+  .menu-btn[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  .menu-overlay { display: none; }
+
   main { margin-top: 28px; }
   .fila-titulo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
   h2 {
@@ -102,9 +119,10 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     width: 70%; height: 160%; transform: rotate(18deg); pointer-events: none;
     background: linear-gradient(90deg, transparent, rgba(229, 185, 78, 0.09), transparent);
   }
-  .grid3 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 20px; }
-  .grid2 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
-  .grid-insignias { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 8px; }
+  .grid3 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); margin-bottom: 20px; }
+  .grid2 { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
+  .grid-insignias { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); margin-bottom: 8px; }
+  .perfil-grid { margin-bottom: 14px; grid-template-columns: auto 1fr; }
   .tarjeta-fama { text-align: center; }
   .imagen-fama {
     width: 140px; height: 140px; margin: 0 auto 12px; border-radius: 16px;
@@ -115,16 +133,22 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     position: relative; display: inline-block; flex-shrink: 0;
     filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
   }
+  .avatar-alumno.avatar-grande { width: 168px; height: 168px; }
+  .avatar-alumno.avatar-pequeno { width: 40px; height: 40px; }
   .avatar-retrato {
     display: block; width: 100%; height: 100%; border-radius: 50%;
     border-style: solid; background: var(--night-2); overflow: hidden;
   }
+  .avatar-grande .avatar-retrato { border-width: 6px; }
+  .avatar-pequeno .avatar-retrato { border-width: 3px; }
   .avatar-retrato svg { display: block; width: 100%; height: 100%; }
   .avatar-instrumento {
     position: absolute; right: -6px; bottom: -6px;
     border-radius: 50%; background: var(--night); border-style: solid;
     display: flex; align-items: center; justify-content: center; line-height: 1;
   }
+  .avatar-grande .avatar-instrumento { width: 57px; height: 57px; border-width: 3px; }
+  .avatar-instrumento img { width: 60%; height: 60%; }
   .avatar-mini-fila { display: flex; align-items: center; gap: 10px; }
   .perfil-cabecera { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
   .lista-ganadores { text-align: left; margin: 10px 0 0; padding: 0; list-style: none; }
@@ -196,7 +220,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   }
   .grafico-tooltip.on { opacity: 1; }
   .grafico-tooltip b { color: var(--gold-light); }
-  svg.grafico .barra, svg.grafico .punto { cursor: pointer; }
+  svg.grafico .barra, svg.grafico .punto, svg.grafico [data-tip] { cursor: pointer; }
   svg.grafico text { font-family: 'Barlow', sans-serif; }
   svg.grafico .eje-txt { fill: var(--muted); font-size: 11px; }
   svg.grafico .diana-eje-txt { font-size: 13px; fill: var(--chalk); }
@@ -296,7 +320,50 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   .icono-opcion:hover { border-color: var(--gold); }
   .icono-opcion.on { background: var(--gold); border-color: var(--gold); }
 
-  @media (prefers-reduced-motion: reduce) { .carga-anillo, .carga-iniciales { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .carga-anillo, .carga-iniciales { animation: none; } nav, .menu-overlay { transition: none; } }
+
+  /* --- Mobile --- */
+  @media (max-width: 640px) {
+    .wrap { padding: 22px 14px 48px; }
+    header { display: flex; flex-direction: column; }
+    .eyebrow { order: 1; }
+    h1 { order: 2; }
+    .temporada { order: 3; float: none; align-self: flex-start; text-align: left; margin: 10px 0 0; }
+
+    /* La navegación se contrae en un menú lateral con velo y animación de entrada. */
+    .menu-btn { display: flex; }
+    .menu-overlay {
+      display: block; position: fixed; inset: 0; z-index: 45;
+      background: rgba(4, 9, 16, 0.55); backdrop-filter: blur(2px);
+      opacity: 0; pointer-events: none; transition: opacity 0.28s ease;
+    }
+    .menu-overlay.on { opacity: 1; pointer-events: auto; }
+    nav {
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 50;
+      width: min(78vw, 300px); flex-direction: column; align-items: stretch; flex-wrap: nowrap;
+      margin: 0; padding: 88px 18px 24px; overflow-y: auto;
+      background: rgba(10, 20, 34, 0.86); backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border-left: 1px solid rgba(201, 153, 47, 0.35);
+      box-shadow: -14px 0 40px rgba(0, 0, 0, 0.5);
+      transform: translateX(105%);
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    nav.nav-abierto { transform: translateX(0); }
+    nav button { width: 100%; text-align: left; padding: 13px 14px; font-size: 18px; }
+    nav button + button { margin-top: 2px; }
+    .perfil-grid { grid-template-columns: 1fr; }
+    .avatar-alumno.avatar-grande { width: 116px; height: 116px; }
+    .avatar-grande .avatar-retrato { border-width: 4px; }
+    .avatar-grande .avatar-instrumento { width: 40px; height: 40px; border-width: 2px; }
+    .card { padding: 16px; }
+    table { font-size: 13px; }
+    th, td { padding: 6px 7px; }
+    svg.grafico .diana-eje-txt { font-size: 11px; }
+    .principal { font-size: 28px; }
+    .vermas { float: none; display: block; margin-bottom: 6px; }
+    .admin-barra .derecha { margin-left: 0; }
+  }
 </style>
 </head>
 <body>
@@ -305,6 +372,9 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     <div class="temporada" id="temporada" hidden><small>Temporada</small><strong id="curso"></strong></div>
     <p class="eyebrow">Conservatorio · Armonía</p>
     <h1 id="titulo">Liga Armónica</h1>
+    <button id="menu-btn" class="menu-btn" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav">
+      <span></span><span></span><span></span>
+    </button>
     <nav id="nav">
       <button data-vista="dashboard" class="on">Dashboard</button>
       <button data-vista="individual">Individual</button>
@@ -314,6 +384,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
       <button data-vista="admin">Admin</button>
     </nav>
   </header>
+  <div id="menu-overlay" class="menu-overlay"></div>
   <main id="main">
     <div class="carga-liga">
       <div class="carga-marca">
@@ -692,8 +763,13 @@ function svgDiana(ejes) {
   if (ejes.length < 3) return `<p class="grafico-vacio">Se necesitan al menos 3 criterios activos para dibujar la diana.</p>`;
   if (!ejes.some(e => e.evaluado)) return `<p class="grafico-vacio">Todavía no hay ninguna valoración guardada para este periodo.</p>`;
 
+  // En móvil el SVG ocupa todo el ancho de la tarjeta (sin margen sobrante),
+  // así que ahí se dibuja el anillo más pequeño dentro del mismo viewBox:
+  // deja más espacio para las etiquetas y hace que el texto se lea mejor.
+  const movil = window.matchMedia('(max-width: 640px)').matches;
   const n = ejes.length, max = 5;
-  const cx = 180, cy = 180, R = 108;
+  const cx = 180, cy = 180, R = movil ? 96 : 108;
+  const margenEtiqueta = movil ? 18 : 20;
   const anguloIni = -Math.PI / 2;
   const paso = (Math.PI * 2) / n;
   const punto = (i, valor) => {
@@ -718,10 +794,17 @@ function svgDiana(ejes) {
   ejes.forEach((e, i) => {
     const ang = anguloIni + i * paso;
     const cosv = Math.cos(ang), sinv = Math.sin(ang);
-    const lx = cx + (R + 20) * cosv;
-    const ly = cy + (R + 20) * sinv;
+    const lx = cx + (R + margenEtiqueta) * cosv;
+    const ly = cy + (R + margenEtiqueta) * sinv;
     const anchor = Math.abs(cosv) < 0.25 ? 'middle' : (cosv > 0 ? 'start' : 'end');
-    etiquetas += `<text class="eje-txt diana-eje-txt" x="${lx}" y="${ly + (sinv > 0.6 ? 11 : sinv < -0.6 ? -3 : 4)}" text-anchor="${anchor}">${esc(e.nombre)}</text>`;
+    // En escritorio la tarjeta suele ser más ancha que el propio SVG (que
+    // tiene max-width:380px), así que ese margen sobrante absorbe el
+    // desbordamiento y el nombre se ve completo, como siempre. En móvil el
+    // SVG ocupa toda la tarjeta, así que en vez de arriesgarse a que un
+    // nombre largo se corte contra el borde, se muestra el código corto del
+    // criterio (p. ej. "C01") y el nombre completo se ve al tocarlo.
+    const nombreMostrado = movil ? e.id : e.nombre;
+    etiquetas += `<text class="eje-txt diana-eje-txt"${movil ? ` data-tip="<b>${esc(e.id)}</b><br>${esc(e.nombre)}"` : ''} x="${lx}" y="${ly + (sinv > 0.6 ? 11 : sinv < -0.6 ? -3 : 4)}" text-anchor="${anchor}">${esc(nombreMostrado)}</text>`;
   });
 
   const puntosDatos = ejes.map((e, i) => punto(i, e.valor));
@@ -734,7 +817,7 @@ function svgDiana(ejes) {
   });
 
   return `<div class="grafico-wrap"><div class="grafico-tooltip"></div>
-    <svg class="grafico" width="100%" height="320" viewBox="0 0 360 360" style="max-width:380px; display:block; margin:0 auto; overflow:visible">
+    <svg class="grafico" width="100%" height="${movil ? 300 : 320}" viewBox="0 0 360 360" style="max-width:380px; display:block; margin:0 auto; overflow:visible">
       ${anillos}
       ${radios}
       <polygon points="${dPoly}" fill="var(--gold)" fill-opacity="0.18" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round" />
@@ -843,15 +926,29 @@ function wireTooltips(root) {
   root.querySelectorAll('.grafico-wrap').forEach(wrap => {
     const tip = wrap.querySelector('.grafico-tooltip');
     if (!tip) return;
+    let tocado = null;
+    const posicionar = (x, y) => {
+      const r = wrap.getBoundingClientRect();
+      tip.style.left = (x - r.left) + 'px';
+      tip.style.top = (y - r.top - 10) + 'px';
+    };
     wrap.querySelectorAll('[data-tip]').forEach(el => {
       el.addEventListener('mouseenter', () => { tip.innerHTML = el.dataset.tip; tip.classList.add('on'); });
-      el.addEventListener('mousemove', e => {
-        const r = wrap.getBoundingClientRect();
-        tip.style.left = (e.clientX - r.left) + 'px';
-        tip.style.top = (e.clientY - r.top - 10) + 'px';
-      });
+      el.addEventListener('mousemove', e => posicionar(e.clientX, e.clientY));
       el.addEventListener('mouseleave', () => tip.classList.remove('on'));
+      // En pantallas táctiles no hay "hover": un toque muestra el tooltip
+      // junto al elemento, y volver a tocarlo (o tocar fuera) lo cierra.
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        if (tocado === el) { tip.classList.remove('on'); tocado = null; return; }
+        tocado = el;
+        tip.innerHTML = el.dataset.tip;
+        const er = el.getBoundingClientRect();
+        posicionar(er.left + er.width / 2, er.top);
+        tip.classList.add('on');
+      });
     });
+    wrap.addEventListener('click', () => { tip.classList.remove('on'); tocado = null; });
   });
 }
 
@@ -1011,7 +1108,7 @@ function renderAlumno(id) {
       <h2><a class="vermas" href="#" data-ir="individual" style="float:none;margin-right:14px">← Volver</a>${esc(a.nombre_publico)}</h2>
       ${pills()}
     </div>
-    <div class="grid2" style="margin-bottom:14px;grid-template-columns:auto 1fr">
+    <div class="grid2 perfil-grid">
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="card">
           <div class="perfil-cabecera">
@@ -1157,7 +1254,7 @@ function renderEquipo(id) {
       <h2><a class="vermas" href="#" data-ir="equipos" style="float:none;margin-right:14px">← Volver</a>${e.escudo ? '' : escudoEquipoHTML(e, 34)}${esc(e.nombre_equipo)}</h2>
       ${pills()}
     </div>
-    <div class="grid2" style="margin-bottom:14px;grid-template-columns:auto 1fr">
+    <div class="grid2 perfil-grid">
       <div style="display:flex;flex-direction:column;gap:14px">
         ${e.escudo ? `<div class="card" style="display:flex;align-items:center;justify-content:center;padding:28px">${escudoGrandeHTML(e)}</div>` : ''}
         <div class="card lider">
@@ -1420,14 +1517,14 @@ function render() {
           jAct && jAct.fecha ? fmtFecha(jAct.fecha) : null)}
       </div>
       <div class="grid2">
-        <div class="card"><a class="vermas" href="#" data-ir="equipos">Ver completa →</a><h3>Clasificación por equipos</h3>${tablaEquipos(eq, true, tendEq)}</div>
-        <div class="card"><a class="vermas" href="#" data-ir="individual">Ver completa →</a><h3>Top individual</h3>${tablaIndividual(ind.slice(0, 8), true, tendAl)}</div>
+        <div class="card tabla-scroll"><a class="vermas" href="#" data-ir="equipos">Ver completa →</a><h3>Clasificación por equipos</h3>${tablaEquipos(eq, true, tendEq)}</div>
+        <div class="card tabla-scroll"><a class="vermas" href="#" data-ir="individual">Ver completa →</a><h3>Top individual</h3>${tablaIndividual(ind.slice(0, 8), true, tendAl)}</div>
       </div>`;
   } else if (VISTA === 'individual') {
     html = `<div class="fila-titulo"><h2>Clasificación individual</h2>${pills()}</div>
       ${pillsCursos() ? `<div style="margin-bottom:${pillsGrupos(CURSO_SEL) ? '10px' : '20px'}">${pillsCursos()}</div>` : ''}
       ${pillsGrupos(CURSO_SEL) ? `<div style="margin-bottom:20px">${pillsGrupos(CURSO_SEL)}</div>` : ''}
-      <div class="card">${tablaIndividual(ind, false, tendAl)}</div>`;
+      <div class="card tabla-scroll">${tablaIndividual(ind, false, tendAl)}</div>`;
   } else if (VISTA === 'jornadas') {
     html = `<div class="fila-titulo"><h2>Jornadas</h2>${pills()}</div>
       ${pillsCursos() ? `<div style="margin-bottom:${pillsGrupos(CURSO_SEL) ? '10px' : '20px'}">${pillsCursos()}</div>` : ''}
@@ -1439,7 +1536,7 @@ function render() {
   } else {
     html = `<div class="fila-titulo"><h2>Clasificación por equipos</h2>${pills()}</div>
       ${pillsCursos()}
-      <div class="card">${tablaEquipos(eq, false, tendEq)}
+      <div class="card"><div class="tabla-scroll">${tablaEquipos(eq, false, tendEq)}</div>
       <p class="nota">Orden principal: media de puntos por alumno y jornada (solo jornadas publicadas). Equilibrio:
       desviación entre las medias de los integrantes con jornadas puntuadas — cuanto más bajo, más parejo el equipo.</p></div>`;
   }
@@ -1466,10 +1563,34 @@ function cambiarVista(v) {
   VISTA = v;
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.vista === v));
   render();
+  cerrarMenu();
 }
 
 document.querySelectorAll('#nav button').forEach(b =>
   b.addEventListener('click', () => cambiarVista(b.dataset.vista)));
+
+/* ---------- Menú lateral (móvil) ---------- */
+const menuBtn = $('#menu-btn');
+const menuOverlay = $('#menu-overlay');
+const navEl = $('#nav');
+
+function abrirMenu() {
+  navEl.classList.add('nav-abierto');
+  menuOverlay.classList.add('on');
+  menuBtn.setAttribute('aria-expanded', 'true');
+  document.body.style.overflow = 'hidden';
+}
+function cerrarMenu() {
+  navEl.classList.remove('nav-abierto');
+  menuOverlay.classList.remove('on');
+  menuBtn.setAttribute('aria-expanded', 'false');
+  document.body.style.overflow = '';
+}
+menuBtn.addEventListener('click', () => {
+  if (navEl.classList.contains('nav-abierto')) cerrarMenu(); else abrirMenu();
+});
+menuOverlay.addEventListener('click', cerrarMenu);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMenu(); });
 
 function mostrarError(titulo, cuerpo) {
   $('#main').innerHTML = `<div class="aviso card"><h2>${titulo}</h2><p>${cuerpo}</p></div>`;
@@ -1613,8 +1734,7 @@ function svgAvatar(alumno, equipo, tamano = 'grande') {
   const grande = tamano === 'grande';
   const colorEquipo = (equipo && equipo.color) || '#5c6b73';
   const colorCamiseta = alumno.color_camiseta || colorEquipo;
-  const lado = grande ? 168 : 40;
-  const borde = grande ? 6 : 3;
+  const claseTam = grande ? 'avatar-grande' : 'avatar-pequeno';
 
   const retrato = (DB_createAvatar && DB_micah) ? DB_createAvatar(DB_micah, {
     seed: String(alumno.id_alumno || 'alumno'),
@@ -1628,12 +1748,16 @@ function svgAvatar(alumno, equipo, tamano = 'grande') {
     earringsProbability: 0,
   }).toString() : '';
 
-  const tamBadge = Math.round(lado * 0.34);
+  // El tamaño del recuadro, el borde y la insignia del instrumento se
+  // controlan por CSS (según la clase avatar-grande/avatar-pequeno) para que
+  // puedan encogerse juntos y en proporción en la versión móvil; aquí solo
+  // se fija el tamaño "de referencia" del icono, que luego el CSS reescala
+  // al 60% de la insignia sea cual sea su tamaño real en pantalla.
   const badge = grande ? `
-    <span class="avatar-instrumento" style="border-color:${esc(colorEquipo)};border-width:3px;width:${tamBadge}px;height:${tamBadge}px">${iconoInstrumento(alumno.instrumento, Math.round(tamBadge * 0.6))}</span>` : '';
+    <span class="avatar-instrumento" style="border-color:${esc(colorEquipo)}">${iconoInstrumento(alumno.instrumento, 34)}</span>` : '';
 
-  return `<span class="avatar-alumno" style="width:${lado}px;height:${lado}px">
-    <span class="avatar-retrato" style="border-color:${esc(colorEquipo)};border-width:${borde}px">${retrato}</span>
+  return `<span class="avatar-alumno ${claseTam}">
+    <span class="avatar-retrato" style="border-color:${esc(colorEquipo)}">${retrato}</span>
     ${badge}
   </span>`;
 }
