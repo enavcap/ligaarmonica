@@ -173,6 +173,15 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px;
     text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 12px;
   }
+  .reglas-texto p { line-height: 1.6; font-size: 15px; color: var(--chalk); margin: 0 0 16px; }
+  .reglas-texto p:last-child { margin-bottom: 0; }
+  .reglas-texto table { margin: 0 0 16px; }
+  .reglas-texto table:last-child { margin-bottom: 0; }
+  /* Color por defecto de los títulos de Reglas (Título grande/mediano/pequeño); el
+     profesor puede cambiarlo con el swatch «Títulos» del editor. Se repite en
+     .editor-caja para que el editor de Admin se vea igual que la pestaña pública. */
+  .reglas-texto h1, .reglas-texto h2, .reglas-texto h3, .reglas-texto h4,
+  .editor-caja h1, .editor-caja h2, .editor-caja h3, .editor-caja h4 { color: var(--gold-light); }
 
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th {
@@ -263,6 +272,25 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   textarea { width: 100%; min-height: 64px; resize: vertical; }
   input:focus, select:focus, textarea:focus { border-color: var(--gold); }
   select option { background: var(--night-2); }
+  .editor-barra {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    margin-bottom: 8px; padding: 8px; border-radius: 8px;
+    background: rgba(8, 15, 28, 0.5); border: 1px solid rgba(30, 92, 65, 0.5);
+  }
+  .editor-barra select { padding: 5px 8px; font-size: 13px; }
+  .editor-caja {
+    width: 100%; min-height: 220px; max-height: 60vh; overflow-y: auto;
+    font-family: 'Barlow', sans-serif; font-size: 14px; color: var(--chalk); line-height: 1.5;
+    background: rgba(8, 15, 28, 0.7); border: 1px solid rgba(30, 92, 65, 0.6);
+    border-radius: 8px; padding: 10px 12px; outline: none; transition: 0.15s;
+  }
+  .editor-caja:focus { border-color: var(--gold); }
+  .editor-caja:empty::before { content: attr(data-placeholder); color: var(--muted); }
+  .editor-caja h1, .editor-caja h2, .editor-caja h3, .editor-caja h4 {
+    font-family: 'Barlow Condensed', sans-serif; color: var(--gold-light); margin: 0.6em 0 0.3em;
+  }
+  .editor-caja p { margin: 0 0 0.6em; }
+  .editor-caja ul, .editor-caja ol { margin: 0 0 0.6em; padding-left: 1.4em; }
   .btn-oro, .btn-borde {
     font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 17px;
     letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;
@@ -364,9 +392,90 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     .vermas { float: none; display: block; margin-bottom: 6px; }
     .admin-barra .derecha { margin-left: 0; }
   }
+
+  /* --- Pantalla de bienvenida --- */
+  .splash {
+    position: fixed; inset: 0; z-index: 300;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0;
+    background:
+      radial-gradient(ellipse 80% 55% at 50% 20%, rgba(30, 92, 65, 0.4), transparent),
+      linear-gradient(180deg, #080f1c 0%, #0b2e20 160%);
+    text-align: center; padding: 24px; opacity: 1; transition: opacity 0.5s ease; overflow: hidden;
+  }
+  .splash[hidden] { display: none; }
+  .splash.saliendo { opacity: 0; pointer-events: none; }
+  /* Líneas de un pentagrama musical (5) intercaladas con el «Bienvenido/a
+     a», el título y el botón —una encima del eyebrow, otra encima del
+     título, otra debajo, y dos más debajo del botón— entrando desde fuera
+     de la pantalla hacia el centro, una sola vez (sin bucle). Cada fila
+     (línea o elemento) mide exactamente lo mismo, así que la distancia
+     entre una línea y la siguiente es siempre idéntica pase lo que pase en
+     medio; el contenido se centra dentro de su fila. La altura de fila es
+     fija y compacta a propósito: si un elemento (el título) es más alto
+     que su fila, sencillamente sobresale un poco por encima y por debajo
+     sin mover de sitio a las líneas ni separarlas más entre sí. */
+  .splash-fila { display: flex; align-items: center; justify-content: center; height: clamp(34px, 6.5vh, 44px); }
+  .splash-linea {
+    display: block; height: 2px; width: min(560px, 80vw); opacity: 0;
+    background: linear-gradient(90deg, transparent, rgba(229, 185, 78, 0.55) 15%, rgba(229, 185, 78, 0.55) 85%, transparent);
+    pointer-events: none;
+  }
+  .splash-linea.l1, .splash-linea.l3, .splash-linea.l5 { transform: translateX(-70vw); }
+  .splash-linea.l2, .splash-linea.l4 { transform: translateX(70vw); }
+  /* No arrancan solas al aparecer la pantalla: solo cuando se añade esta
+     clase (al pulsar «Entrar»), a la vez que empieza la música. Las líneas
+     centrales llegan las últimas, para que converjan hacia el título. */
+  .splash.animar .splash-linea {
+    animation: pentagrama-entra 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .splash.animar .splash-linea.l1 { animation-delay: 0.1s; }
+  .splash.animar .splash-linea.l2 { animation-delay: 0.3s; }
+  .splash.animar .splash-linea.l3 { animation-delay: 0.5s; }
+  .splash.animar .splash-linea.l4 { animation-delay: 0.3s; }
+  .splash.animar .splash-linea.l5 { animation-delay: 0.1s; }
+  @keyframes pentagrama-entra { to { transform: translateX(0); opacity: 1; } }
+  .splash-eyebrow {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 19px;
+    letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin: 0;
+  }
+  .splash-titulo {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+    font-size: clamp(38px, 9vw, 62px); text-transform: uppercase; line-height: 1;
+    color: var(--chalk); margin: 0;
+  }
+  .splash-entrar { min-width: 200px; }
+  .musica-btn {
+    position: fixed; bottom: 18px; right: 18px; z-index: 55;
+    width: 44px; height: 44px; border-radius: 50%; padding: 0;
+    border: 1px solid rgba(201, 153, 47, 0.4); background: rgba(12, 23, 40, 0.75);
+    color: var(--gold-light); font-size: 18px; cursor: pointer; transition: 0.15s;
+  }
+  .musica-btn:hover { border-color: var(--gold); }
+  .toast-audio {
+    position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); z-index: 70;
+    background: rgba(12, 23, 40, 0.94); border: 1px solid rgba(224, 82, 79, 0.5);
+    color: #f87171; padding: 10px 16px; border-radius: 10px; font-size: 13px;
+    max-width: min(90vw, 420px); text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .splash-linea, .splash.animar .splash-linea { animation: none; opacity: 1; transform: none; }
+  }
 </style>
 </head>
 <body>
+<div id="splash" class="splash">
+  <div class="splash-fila"><span class="splash-linea l1" aria-hidden="true"></span></div>
+  <div class="splash-fila"><p class="splash-eyebrow">Bienvenido/a a la</p></div>
+  <div class="splash-fila"><span class="splash-linea l2" aria-hidden="true"></span></div>
+  <div class="splash-fila"><h2 class="splash-titulo" id="splash-nombre">Liga Armónica</h2></div>
+  <div class="splash-fila"><span class="splash-linea l3" aria-hidden="true"></span></div>
+  <div class="splash-fila"><button class="btn-oro splash-entrar" id="splash-entrar" disabled>Cargando…</button></div>
+  <div class="splash-fila"><span class="splash-linea l4" aria-hidden="true"></span></div>
+  <div class="splash-fila"><span class="splash-linea l5" aria-hidden="true"></span></div>
+</div>
+<audio id="splash-audio" preload="none" loop></audio>
+<button id="musica-btn" class="musica-btn" hidden aria-label="Silenciar música">🔊</button>
 <div class="wrap">
   <header>
     <div class="temporada" id="temporada" hidden><small>Temporada</small><strong id="curso"></strong></div>
@@ -381,6 +490,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
       <button data-vista="equipos">Equipos</button>
       <button data-vista="jornadas">Jornadas</button>
       <button data-vista="salon">Salón de la Fama</button>
+      <button data-vista="reglas">Reglas</button>
       <button data-vista="admin">Admin</button>
     </nav>
   </header>
@@ -1414,6 +1524,146 @@ function listaJornadas(jornadas, trimestre, idCurso, idGrupo) {
     </div>`).join('');
 }
 
+/**
+ * Convierte un texto plano (con líneas y párrafos separados por saltos de
+ * línea normales) en HTML sencillo: los párrafos se separan por líneas en
+ * blanco, y dentro de cada uno los saltos de línea sueltos se respetan.
+ * Es el formato "antiguo" de las Reglas (de cuando el campo era un textarea
+ * simple); se sigue reconociendo para no perder lo que ya hubiera escrito.
+ */
+function textoAParrafos(texto) {
+  return String(texto || '').split(/\n{2,}/).map(parrafo => parrafo.trim()).filter(Boolean)
+    .map(parrafo => `<p>${esc(parrafo).replace(/\n/g, '<br>')}</p>`).join('');
+}
+
+/** ¿Este texto ya parece HTML (del editor con formato) en vez de texto plano antiguo? */
+function pareceHTML(texto) {
+  return /<[a-z][\s\S]*>/i.test(String(texto || ''));
+}
+
+/** Etiquetas y propiedades de estilo que puede producir el editor de Reglas; todo lo demás se descarta. */
+const ETIQUETAS_REGLAS_PERMITIDAS = new Set(['H1', 'H2', 'H3', 'H4', 'P', 'BR', 'B', 'STRONG', 'I', 'EM', 'U', 'UL', 'OL', 'LI', 'SPAN', 'DIV', 'BLOCKQUOTE', 'TABLE', 'TBODY', 'THEAD', 'TR', 'TH', 'TD']);
+const ESTILOS_REGLAS_PERMITIDOS = new Set(['font-size', 'color', 'background-color', 'text-align', 'font-weight', 'font-style', 'text-decoration']);
+
+const TAMANOS_FONT_LEGACY = { '1': 'xx-small', '2': 'x-small', '3': 'small', '4': 'medium', '5': 'large', '6': 'x-large', '7': 'xx-large' };
+
+/**
+ * Reemplaza en el propio editor (en vivo, sin volver a montar todo el HTML
+ * ni perder el cursor) cualquier <font> que haya podido insertar el
+ * navegador al aplicar un color, por un <span style="..."> equivalente.
+ * Es la misma conversión que hace sanitizarHTML() al guardar; se repite
+ * aquí para que lo que ve el profesor en el editor ya sea exactamente lo
+ * que se va a guardar y publicar, sin depender de que styleWithCSS se haya
+ * respetado (varía entre navegadores y versiones).
+ */
+function convertirFontASpanEnVivo(raiz) {
+  raiz.querySelectorAll('font').forEach(f => {
+    const span = document.createElement('span');
+    const estilos = [];
+    if (f.hasAttribute('color')) estilos.push(`color: ${f.getAttribute('color')}`);
+    const tam = TAMANOS_FONT_LEGACY[f.getAttribute('size')];
+    if (tam) estilos.push(`font-size: ${tam}`);
+    if (estilos.length) span.setAttribute('style', estilos.join('; '));
+    while (f.firstChild) span.appendChild(f.firstChild);
+    f.replaceWith(span);
+  });
+}
+
+/** De un valor de "style" (p. ej. pegado de Word/Google Docs/una web), se queda solo con las propiedades permitidas. */
+function filtrarEstiloPermitido(valor) {
+  return String(valor || '').split(';').map(p => p.trim()).filter(p => {
+    const prop = p.split(':')[0].trim().toLowerCase();
+    return ESTILOS_REGLAS_PERMITIDOS.has(prop) && !/url\(|expression\(|javascript:/i.test(p);
+  }).join('; ');
+}
+
+/**
+ * Limpia el HTML que escribe el profesor en el editor de Reglas antes de
+ * guardarlo, y otra vez antes de mostrarlo a cualquier visitante: solo deja
+ * pasar unas pocas etiquetas de texto/formato (nada de <script>, <img>,
+ * enlaces ni atributos sueltos como onclick), para que ese contenido nunca
+ * pueda colarse como código en la página pública, aunque el texto viniera
+ * de otro sitio (p. ej. editando la hoja a mano).
+ */
+function sanitizarHTML(html) {
+  const contenedor = document.createElement('div');
+  contenedor.innerHTML = String(html || '');
+  const limpiar = nodo => {
+    [...nodo.childNodes].forEach(hijo => {
+      if (hijo.nodeType === Node.ELEMENT_NODE) {
+        // <font color/size> es una etiqueta de presentación obsoleta que
+        // SIEMPRE pierde frente a cualquier CSS de la página (aunque en el
+        // editor se vea bien, p. ej. el color de párrafo de la pestaña
+        // pública Reglas la tapa): se convierte a <span style="..."> antes
+        // de seguir, que sí tiene prioridad sobre el CSS del sitio.
+        if (hijo.tagName === 'FONT') {
+          const span = document.createElement('span');
+          const estilos = [];
+          if (hijo.hasAttribute('color')) estilos.push(`color: ${hijo.getAttribute('color')}`);
+          const tam = TAMANOS_FONT_LEGACY[hijo.getAttribute('size')];
+          if (tam) estilos.push(`font-size: ${tam}`);
+          if (estilos.length) span.setAttribute('style', estilos.join('; '));
+          while (hijo.firstChild) span.appendChild(hijo.firstChild);
+          hijo.parentNode.replaceChild(span, hijo);
+          limpiar(span);
+          return;
+        }
+        if (!ETIQUETAS_REGLAS_PERMITIDAS.has(hijo.tagName)) {
+          // Antes de tirar la etiqueta (p. ej. <a>, <mark>, o los <span
+          // class="..."> con los que Word/Google Docs envuelven cada
+          // palabra al copiar), si traía color u otro formato permitido en
+          // su "style" se conserva envolviendo el contenido en un <span>
+          // equivalente — si no, ese formato se perdía sin más al pegar.
+          const conservado = hijo.hasAttribute('style') ? filtrarEstiloPermitido(hijo.getAttribute('style')) : '';
+          if (conservado) {
+            const span = document.createElement('span');
+            span.setAttribute('style', conservado);
+            while (hijo.firstChild) span.appendChild(hijo.firstChild);
+            hijo.parentNode.replaceChild(span, hijo);
+            limpiar(span);
+            return;
+          }
+          while (hijo.firstChild) hijo.parentNode.insertBefore(hijo.firstChild, hijo);
+          hijo.parentNode.removeChild(hijo);
+          return;
+        }
+        [...hijo.attributes].forEach(attr => {
+          const nombre = attr.name.toLowerCase();
+          if (nombre === 'style') {
+            const limpio = filtrarEstiloPermitido(attr.value);
+            if (limpio) hijo.setAttribute('style', limpio); else hijo.removeAttribute('style');
+          } else {
+            hijo.removeAttribute(attr.name);
+          }
+        });
+        limpiar(hijo);
+      } else if (hijo.nodeType !== Node.TEXT_NODE) {
+        hijo.parentNode.removeChild(hijo);
+      }
+    });
+  };
+  limpiar(contenedor);
+  return contenedor.innerHTML;
+}
+
+/** HTML con el que se rellena el editor de Reglas al abrir Admin → Liga. */
+function contenidoInicialReglas(texto) {
+  texto = String(texto || '');
+  if (!texto.trim()) return '';
+  return pareceHTML(texto) ? sanitizarHTML(texto) : textoAParrafos(texto);
+}
+
+/** Pestaña pública «Reglas»: qué es la liga y sus reglas, con el formato que le haya dado el profesor. */
+function renderReglas() {
+  const texto = String(DATOS.config.reglas_texto || '').trim();
+  if (!texto) {
+    return `<div class="card aviso"><h2>Todavía no hay reglas publicadas</h2>
+      <p class="secundario">El profesor puede escribirlas en Admin → Liga.</p></div>`;
+  }
+  const html = pareceHTML(texto) ? sanitizarHTML(texto) : textoAParrafos(texto);
+  return `<div class="card reglas-texto" style="text-align:left;max-width:760px;margin:0 auto">${html}</div>`;
+}
+
 /** Salón de la Fama: una vitrina por insignia activa, agrupadas por periodicidad, con quién la tiene. */
 function renderSalonFama() {
   const activas = insigniasActivas();
@@ -1533,6 +1783,9 @@ function render() {
   } else if (VISTA === 'salon') {
     html = `<div class="fila-titulo"><h2>Salón de la Fama</h2></div>
       ${renderSalonFama()}`;
+  } else if (VISTA === 'reglas') {
+    html = `<div class="fila-titulo"><h2>Reglas</h2></div>
+      ${renderReglas()}`;
   } else {
     html = `<div class="fila-titulo"><h2>Clasificación por equipos</h2>${pills()}</div>
       ${pillsCursos()}
@@ -1594,6 +1847,88 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMenu()
 
 function mostrarError(titulo, cuerpo) {
   $('#main').innerHTML = `<div class="aviso card"><h2>${titulo}</h2><p>${cuerpo}</p></div>`;
+}
+
+/**
+ * Pantalla de bienvenida a pantalla completa que tapa la app ya renderizada
+ * detrás; al pulsar «Entrar» (gesto que los navegadores exigen para poder
+ * reproducir audio) arranca la música configurada, si hay, y se desvanece.
+ */
+function ocultarSplash() {
+  const splash = $('#splash');
+  splash.classList.add('saliendo');
+  setTimeout(() => { splash.hidden = true; }, 500);
+}
+
+/** Aviso flotante y breve para errores de audio que si no se verían (la consola no la mira nadie). */
+function avisarErrorAudio(mensaje) {
+  const existente = document.querySelector('.toast-audio');
+  if (existente) existente.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast-audio';
+  toast.textContent = mensaje;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 7000);
+}
+
+/**
+ * La pantalla de bienvenida es lo primero que se ve (ya está en el HTML
+ * desde el principio, con el botón «Cargando…» deshabilitado, mientras se
+ * leen los datos de la hoja). Esta función se llama en cuanto terminan de
+ * cargarse: si la bienvenida está activada, rellena el nombre de la liga y
+ * activa el botón «Entrar» (el gesto que exigen los navegadores para poder
+ * reproducir audio); si no lo está, se retira ella sola sin esperar a nada.
+ */
+function finalizarSplash(activa) {
+  if (!activa) { ocultarSplash(); return; }
+
+  const nombre = DATOS.config.nombre_liga || 'Liga Armónica';
+  $('#splash-nombre').textContent = nombre;
+
+  const musicaBtn = $('#musica-btn');
+  const audio = $('#splash-audio');
+  const url = String(DATOS.config.bienvenida_musica_url || '').trim();
+  const musicaActiva = configActivo(DATOS.config.bienvenida_musica_activa, true);
+
+  audio.addEventListener('error', () => {
+    const codigo = audio.error ? audio.error.code : null;
+    console.warn('Error al cargar el audio de bienvenida (code ' + codigo + '):', url);
+    avisarErrorAudio('No se pudo cargar el audio de bienvenida (código ' + codigo + '). Prueba a abrir la URL directamente en una pestaña nueva.');
+  });
+
+  const boton = $('#splash-entrar');
+  boton.disabled = false;
+  boton.textContent = 'Entrar';
+
+  const entrar = () => {
+    boton.disabled = true;
+    // Al pulsar «Entrar» arrancan a la vez la animación de las líneas del
+    // pentagrama (hasta ahora quietas) y la música; se espera a que la
+    // animación termine y un poco más antes de entrar en la pantalla
+    // principal, para que la bienvenida se vea y se oiga completa.
+    $('#splash').classList.add('animar');
+
+    if (url && musicaActiva) {
+      audio.src = url;
+      audio.volume = 0.6;
+      audio.play().then(() => { musicaBtn.hidden = false; })
+        .catch(err => {
+          console.warn('No se pudo reproducir la música de bienvenida:', err);
+          avisarErrorAudio('No se pudo reproducir la música de bienvenida (' + err.name + ').');
+        });
+    }
+
+    const sinAnimacion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const duracionAnimacion = sinAnimacion ? 0 : 2700; // 0.5s de retraso máximo + 2.2s de duración
+    const pausaExtra = 900;
+    setTimeout(ocultarSplash, duracionAnimacion + pausaExtra);
+  };
+  boton.addEventListener('click', entrar, { once: true });
+
+  musicaBtn.addEventListener('click', () => {
+    if (audio.paused) { audio.play().catch(() => {}); musicaBtn.textContent = '🔊'; }
+    else { audio.pause(); musicaBtn.textContent = '🔇'; }
+  });
 }
 
 /* =========================================================================
@@ -1779,6 +2114,7 @@ const ADMIN = {
   asignacionesCurso: {}, // id_alumno -> id_curso editable (asignación masiva en Admin → Grupos)
   editEquipo: null,
   imagenEscudo: null, // data URI recién elegida en el formulario de equipo (null = sin cambios)
+  audioBienvenida: null, // data URI del audio recién elegido en Liga → Configuración (null = sin cambios)
   editCriterio: null,
   editDianaAlumno: null,   // id_alumno cuya diana se está rellenando (solo Admin)
   filasDianaAlumno: {},    // periodo -> { id_criterio: valor editable }
@@ -2954,6 +3290,18 @@ function leerImagenRedimensionada(file, maxLado = 800) {
   });
 }
 
+/** Lee un archivo de audio como data URI, sin transformarlo (solo valida tipo y tamaño). */
+function leerAudioComoDataURI(file, maxMB = 15) {
+  return new Promise((resolve, reject) => {
+    if (!file.type || !file.type.startsWith('audio/')) { reject(new Error('El archivo elegido no es un audio.')); return; }
+    if (file.size > maxMB * 1024 * 1024) { reject(new Error(`El audio no puede pesar más de ${maxMB} MB.`)); return; }
+    const lector = new FileReader();
+    lector.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+    lector.onload = () => resolve(lector.result);
+    lector.readAsDataURL(file);
+  });
+}
+
 /**
  * Quita el fondo de una imagen tipo logo/escudo: asume que el fondo es del
  * color de las esquinas y lo vuelve transparente por inundación desde los
@@ -3170,6 +3518,22 @@ function seccionLiga() {
           Mostrar en la clasificación de equipos si cada equipo sube, baja o se mantiene respecto a la última jornada</label>
         <label class="check"><input type="checkbox" id="c-todos-cursos" ${configActivo(c.mostrar_todos_cursos) ? 'checked' : ''} />
           Permitir la opción «Todos los cursos» en los selectores de curso (si la desactivas, siempre hay que elegir uno concreto)</label>
+        <label class="check"><input type="checkbox" id="c-bienvenida" ${configActivo(c.bienvenida_activa, false) ? 'checked' : ''} />
+          Mostrar una pantalla de bienvenida cada vez que se entra en la web</label>
+        <label class="check"><input type="checkbox" id="c-bienvenida-musica-activa" ${configActivo(c.bienvenida_musica_activa, true) ? 'checked' : ''} />
+          Reproducir música en la pantalla de bienvenida (si la desactivas, se queda solo la animación, sin sonido)</label>
+        <label style="grid-column:1/-1">URL de la música de bienvenida (enlace directo a un mp3 u otro audio)
+          <input type="text" id="c-bienvenida-musica" value="${esc(c.bienvenida_musica_url || '')}" placeholder="https://.../cancion.mp3" ${ADMIN.audioBienvenida ? 'disabled' : ''} /></label>
+        <label style="grid-column:1/-1">O sube directamente un archivo de audio
+          <div class="admin-barra" style="margin-top:6px;align-items:flex-start">
+            <input type="file" id="c-bienvenida-archivo" accept="audio/*" />
+            ${ADMIN.audioBienvenida ? `<button type="button" class="btn-borde btn-mini" id="c-bienvenida-archivo-quitar">Quitar archivo elegido</button>` : ''}
+          </div>
+          ${ADMIN.audioBienvenida
+            ? `<audio controls src="${esc(ADMIN.audioBienvenida)}" style="margin-top:8px;width:100%;max-width:420px;display:block"></audio>
+               <p class="nota" style="margin-top:4px">Archivo nuevo listo: se subirá a tu Google Drive al guardar y sustituirá la URL de arriba.</p>`
+            : (c.bienvenida_musica_url ? `<audio controls src="${esc(c.bienvenida_musica_url)}" style="margin-top:8px;width:100%;max-width:420px;display:block"></audio>` : '')}
+        </label>
       </div>
       <div class="admin-barra" style="margin-top:14px">
         <button class="btn-oro" id="c-guardar">Guardar configuración</button>
@@ -3179,14 +3543,194 @@ function seccionLiga() {
       porque cada trimestre cuenta únicamente sus jornadas (el histórico sigue en «Curso completo»).
       La «jornada actual» no hace falta tocarla normalmente: si la dejas en automático, el Dashboard
       siempre enseña la última jornada publicada que hayas creado. Solo elige una a mano aquí si
-      quieres forzar que se muestre otra distinta.</p>
+      quieres forzar que se muestre otra distinta. Para la música de bienvenida, o pegas un enlace
+      directo al propio archivo de audio (que termine en .mp3 o similar, no a una página que lo
+      reproduce), o subes el archivo directamente (máximo 15 MB; se guarda en tu Google Drive, en la
+      carpeta «Liga Armónica — Música», igual que los escudos e insignias); si subes un archivo, se usa
+      ese en vez de la URL. Si no hay ni URL ni archivo, la pantalla de bienvenida se muestra igualmente
+      pero sin sonido. Los navegadores no dejan reproducir audio sin que la persona pulse antes algo, así
+      que la música empieza justo al pulsar «Entrar».</p>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>Reglas de la liga</h3>
+      <p class="nota" style="margin-top:0">Este texto (con el formato que le des) se muestra tal cual en la
+      pestaña pública «Reglas» (entre Salón de la Fama y Admin). Se guarda con el mismo botón «Guardar
+      configuración» de arriba.</p>
+      <div class="editor-barra" id="c-reglas-barra">
+        <select id="c-reglas-bloque" title="Encabezado">
+          <option value="P">Párrafo</option>
+          <option value="H2">Título grande</option>
+          <option value="H3">Título mediano</option>
+          <option value="H4">Título pequeño</option>
+        </select>
+        <select id="c-reglas-tamano" title="Tamaño de letra">
+          <option value="">Tamaño…</option>
+          <option value="2">Pequeño</option>
+          <option value="3">Normal</option>
+          <option value="5">Grande</option>
+          <option value="7">Muy grande</option>
+        </select>
+        <button type="button" class="btn-borde btn-mini" data-cmd="bold"><b>N</b></button>
+        <button type="button" class="btn-borde btn-mini" data-cmd="italic"><i>K</i></button>
+        <button type="button" class="btn-borde btn-mini" data-cmd="underline"><u>S</u></button>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)" title="Color de letra">
+          Letra <input type="color" id="c-reglas-color" value="#f4f6f3" style="width:30px;height:30px;padding:2px" />
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)" title="Color de los títulos (Título grande/mediano/pequeño)">
+          Títulos <input type="color" id="c-reglas-color-titulos" value="#f3d98b" style="width:30px;height:30px;padding:2px" />
+        </label>
+        <button type="button" class="btn-borde btn-mini" data-cmd="insertUnorderedList">• Lista</button>
+        <button type="button" class="btn-borde btn-mini" id="c-reglas-tabla">▦ Tabla</button>
+        <button type="button" class="btn-borde btn-mini" data-cmd="removeFormat">Quitar formato</button>
+      </div>
+      <div id="c-reglas-editor" class="editor-caja" contenteditable="true"
+        data-placeholder="Explica aquí qué es la liga y sus reglas: cómo se puntúa cada jornada, cómo funcionan las clasificaciones individual y por equipos, las insignias..."
+      >${contenidoInicialReglas(c.reglas_texto)}</div>
     </div>`;
 }
 
 function wireLiga() {
+  const inputAudio = $('#c-bienvenida-archivo');
+  if (inputAudio) inputAudio.addEventListener('change', async () => {
+    const file = inputAudio.files[0];
+    if (!file) return;
+    try {
+      ADMIN.audioBienvenida = await leerAudioComoDataURI(file);
+      renderAdmin();
+    } catch (err) {
+      alert(err.message);
+      inputAudio.value = '';
+    }
+  });
+  const quitarAudio = $('#c-bienvenida-archivo-quitar');
+  if (quitarAudio) quitarAudio.addEventListener('click', () => { ADMIN.audioBienvenida = null; renderAdmin(); });
+
+  // Editor de Reglas: una barra mínima sobre document.execCommand (sin
+  // librerías externas) para negrita/cursiva/subrayado, encabezados,
+  // tamaño de letra, colores y listas.
+  const editorReglas = $('#c-reglas-editor');
+  if (editorReglas) {
+    // Sin esto, el navegador aplica los colores con la etiqueta antigua
+    // <font color="...">, y un atributo de presentación como ese SIEMPRE
+    // pierde frente a cualquier regla CSS de la página (p. ej. la que fija
+    // el color de párrafo en la pestaña pública Reglas), aunque en el
+    // editor se vea bien: el color "desaparece" al guardar. Con styleWithCSS
+    // activado, el color se aplica como <span style="color:...">, que sí
+    // tiene prioridad sobre el CSS del sitio y además ya está permitido por
+    // el sanitizador.
+    document.execCommand('styleWithCSS', false, true);
+
+    // Los <select> y los selectores de color nativos "roban" el foco del
+    // editor al abrirse (y con él, el texto seleccionado); se guarda la
+    // selección mientras se escribe y se restaura justo antes de aplicar
+    // el comando, para que el color/tamaño se aplique a lo que se había
+    // seleccionado y no a donde quedara el cursor por última vez.
+    let ultimaSeleccion = null;
+    const guardarSeleccion = () => {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && editorReglas.contains(sel.anchorNode)) {
+        ultimaSeleccion = sel.getRangeAt(0);
+      }
+    };
+    const restaurarSeleccion = () => {
+      if (!ultimaSeleccion) return;
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(ultimaSeleccion);
+    };
+    editorReglas.addEventListener('mouseup', guardarSeleccion);
+    editorReglas.addEventListener('keyup', guardarSeleccion);
+
+    // Color de los títulos (Título grande/mediano/pequeño): se aplica a
+    // todos los encabezados del documento a la vez, tanto al elegir un
+    // color nuevo como cada vez que se crea un encabezado, para que todos
+    // usen siempre el mismo color sin tener que repetirlo uno a uno.
+    const aplicarColorTitulos = () => {
+      const input = $('#c-reglas-color-titulos');
+      if (!input) return;
+      editorReglas.querySelectorAll('h1, h2, h3, h4').forEach(h => { h.style.color = input.value; });
+    };
+
+    // Al pegar de Word/Google Docs/una web, el navegador por defecto mete
+    // tal cual todo el HTML de origen (fuentes, clases, márgenes, tablas
+    // anidadas...), que luego se recorta de golpe al guardar y da la
+    // sensación de que el color o el formato "se pierden". En vez de eso,
+    // se limpia el HTML pegado al vuelo con el mismo saneador de guardar,
+    // así lo que se ve al pegar ya es exactamente lo que se va a publicar.
+    editorReglas.addEventListener('paste', e => {
+      e.preventDefault();
+      const portapapeles = e.clipboardData || window.clipboardData;
+      const html = portapapeles.getData('text/html');
+      editorReglas.focus();
+      if (html && pareceHTML(html)) {
+        document.execCommand('insertHTML', false, sanitizarHTML(html));
+      } else {
+        document.execCommand('insertText', false, portapapeles.getData('text/plain'));
+      }
+      convertirFontASpanEnVivo(editorReglas);
+    });
+
+    document.querySelectorAll('#c-reglas-barra [data-cmd]').forEach(boton => {
+      // Evita que el propio botón robe el foco al pulsarlo (si no, se
+      // perdería la selección antes de que el click llegue a ejecutarse).
+      boton.addEventListener('mousedown', e => e.preventDefault());
+      boton.addEventListener('click', () => {
+        editorReglas.focus();
+        document.execCommand(boton.dataset.cmd, false, null);
+      });
+    });
+    const selBloque = $('#c-reglas-bloque');
+    if (selBloque) selBloque.addEventListener('change', () => {
+      editorReglas.focus();
+      restaurarSeleccion();
+      document.execCommand('formatBlock', false, selBloque.value);
+      aplicarColorTitulos();
+      selBloque.value = 'P';
+    });
+    const selTamano = $('#c-reglas-tamano');
+    if (selTamano) selTamano.addEventListener('change', () => {
+      if (!selTamano.value) return;
+      editorReglas.focus();
+      restaurarSeleccion();
+      document.execCommand('fontSize', false, selTamano.value);
+      selTamano.value = '';
+    });
+    const inputColor = $('#c-reglas-color');
+    if (inputColor) inputColor.addEventListener('input', () => {
+      editorReglas.focus();
+      restaurarSeleccion();
+      document.execCommand('styleWithCSS', false, true);
+      document.execCommand('foreColor', false, inputColor.value);
+      convertirFontASpanEnVivo(editorReglas);
+    });
+    const inputTitulos = $('#c-reglas-color-titulos');
+    if (inputTitulos) inputTitulos.addEventListener('input', aplicarColorTitulos);
+    const btnTabla = $('#c-reglas-tabla');
+    if (btnTabla) {
+      // Como con el resto de botones de la barra: sin este preventDefault,
+      // el propio click le quita el foco al editor y se pierde la selección
+      // guardada antes de llegar a insertar la tabla.
+      btnTabla.addEventListener('mousedown', e => e.preventDefault());
+      btnTabla.addEventListener('click', () => {
+        const filas = parseInt(prompt('¿Cuántas filas (la primera será la cabecera)?', '3'), 10);
+        if (!filas || filas < 1 || filas > 30) return;
+        const columnas = parseInt(prompt('¿Cuántas columnas?', '3'), 10);
+        if (!columnas || columnas < 1 || columnas > 10) return;
+        editorReglas.focus();
+        restaurarSeleccion();
+        let filasHtml = '';
+        for (let f = 0; f < filas; f++) {
+          const etiqueta = f === 0 ? 'th' : 'td';
+          filasHtml += `<tr>${`<${etiqueta}>&nbsp;</${etiqueta}>`.repeat(columnas)}</tr>`;
+        }
+        document.execCommand('insertHTML', false, `<table><tbody>${filasHtml}</tbody></table><p><br></p>`);
+      });
+    }
+  }
+
   $('#c-guardar').addEventListener('click', e =>
     operar(e.target, async () => {
-      const config = {
+      const candidato = {
         nombre_liga: valorDe('c-nombre'),
         curso: valorDe('c-curso'),
         profesor: valorDe('c-profesor'),
@@ -3195,13 +3739,40 @@ function wireLiga() {
         mostrar_tendencia_alumnos: marcado('c-tend-alumnos') ? 'TRUE' : 'FALSE',
         mostrar_tendencia_equipos: marcado('c-tend-equipos') ? 'TRUE' : 'FALSE',
         mostrar_todos_cursos: marcado('c-todos-cursos') ? 'TRUE' : 'FALSE',
+        bienvenida_activa: marcado('c-bienvenida') ? 'TRUE' : 'FALSE',
+        bienvenida_musica_activa: marcado('c-bienvenida-musica-activa') ? 'TRUE' : 'FALSE',
+        bienvenida_musica_url: ADMIN.audioBienvenida !== null ? ADMIN.audioBienvenida : valorDe('c-bienvenida-musica'),
+        reglas_texto: editorReglas ? sanitizarHTML(editorReglas.innerHTML).trim() : '',
       };
-      await postScript('saveConfig', { config });
+      // Solo se manda (y por tanto solo se toca en la hoja) lo que de verdad
+      // ha cambiado respecto a lo último que se sabe que hay guardado: así
+      // una modificación puntual no arrastra ni vuelve a escribir el resto
+      // de ajustes con lo que ya había (evita pisar algo con una copia local
+      // desactualizada, p. ej. justo después de una subida de audio).
+      const config = {};
+      Object.keys(candidato).forEach(clave => {
+        const huboArchivoNuevo = clave === 'bienvenida_musica_url' && ADMIN.audioBienvenida !== null;
+        if (huboArchivoNuevo || String(candidato[clave] || '') !== String(DATOS.config[clave] || '')) {
+          config[clave] = candidato[clave];
+        }
+      });
+      if (Object.keys(config).length === 0) {
+        ADMIN.audioBienvenida = null;
+        return 'No había ningún cambio que guardar.';
+      }
+
+      const res = await postScript('saveConfig', { config });
+      // Si la subida del audio falló en el servidor, la respuesta no trae
+      // bienvenida_musica_url a propósito: no hay que pisar el valor local
+      // que ya teníamos (para no hacerlo desaparecer también en esta pestaña).
+      if ('bienvenida_musica_url' in res) config.bienvenida_musica_url = res.bienvenida_musica_url;
+      else delete config.bienvenida_musica_url;
       Object.assign(DATOS.config, config);
+      ADMIN.audioBienvenida = null;
       // Refrescar cabecera
-      if (config.nombre_liga) { $('#titulo').textContent = config.nombre_liga; document.title = config.nombre_liga; }
-      if (config.curso) { $('#curso').textContent = config.curso; $('#temporada').hidden = false; }
-      return 'Configuración guardada.';
+      if (config.nombre_liga) { $('#titulo').textContent = DATOS.config.nombre_liga; document.title = DATOS.config.nombre_liga; }
+      if (config.curso) { $('#curso').textContent = DATOS.config.curso; $('#temporada').hidden = false; }
+      return res.aviso || 'Configuración guardada.';
     }));
 }
 
@@ -3235,6 +3806,7 @@ function fmtFecha(f) {
 
 (async function iniciar() {
   if (!SPREADSHEET_ID || SPREADSHEET_ID.startsWith('PEGA_AQUI')) {
+    ocultarSplash();
     mostrarError('Falta configurar la hoja',
       `Abre este archivo <code>index.html</code> con un editor de texto y pega el ID de tu hoja de
        Google Sheets en la constante <code>SPREADSHEET_ID</code> (al principio del archivo).
@@ -3251,7 +3823,9 @@ function fmtFecha(f) {
     if (DATOS.config.curso) { $('#curso').textContent = DATOS.config.curso; $('#temporada').hidden = false; }
     if (DATOS.config.profesor) { $('#pie').textContent += ' · ' + DATOS.config.profesor; }
     render();
+    finalizarSplash(configActivo(DATOS.config.bienvenida_activa, false));
   } catch (err) {
+    ocultarSplash();
     mostrarError('No se pudieron cargar los datos',
       `${esc(err.message)}<br><br>Comprueba que el ID de la hoja es correcto, que está compartida como
        «Cualquier persona con el enlace: Lector» y que las pestañas se llaman CONFIG, ALUMNOS,
