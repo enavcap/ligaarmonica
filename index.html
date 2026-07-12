@@ -361,14 +361,15 @@ async function leerPestana(nombre) {
 }
 
 async function cargarDatos() {
-  const [configFilas, alumnos, equipos, jornadas, registros, criterios, evaluaciones, insignias, insigniasAlumnos] = await Promise.all([
+  const [configFilas, alumnos, equipos, jornadas, registros, criterios, evaluaciones, insignias, insigniasAlumnos, cursos, grupos] = await Promise.all([
     leerPestana('CONFIG'), leerPestana('ALUMNOS'), leerPestana('EQUIPOS'),
     leerPestana('JORNADAS'), leerPestana('REGISTROS'),
     leerPestana('CRITERIOS'), leerPestana('EVALUACIONES'), leerPestana('INSIGNIAS'), leerPestana('INSIGNIAS_ALUMNOS'),
+    leerPestana('CURSOS'), leerPestana('GRUPOS'),
   ]);
   const config = {};
   configFilas.forEach(f => { config[String(f.clave)] = f.valor; });
-  return { config, alumnos, equipos, jornadas, registros, criterios, evaluaciones, insignias, insigniasAlumnos };
+  return { config, alumnos, equipos, jornadas, registros, criterios, evaluaciones, insignias, insigniasAlumnos, cursos, grupos };
 }
 
 /* =========================================================================
@@ -379,43 +380,128 @@ const num = v => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
 const activo = x => String(x.activo).toUpperCase() !== 'FALSE' && String(x.activo) !== '0';
 const fmtMedia = n => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function jornadasPublicadas(jornadas, trimestre) {
+/* ---------- Cursos y grupos (estructura de clase real, aparte de los equipos de la liga) ---------- */
+
+function cursosActivos(datos) {
+  return datos.cursos.filter(activo).slice().sort((a, b) => a.nombre_curso.localeCompare(b.nombre_curso, 'es'));
+}
+function gruposActivos(datos) {
+  return datos.grupos.filter(activo).slice().sort((a, b) => a.nombre_grupo.localeCompare(b.nombre_grupo, 'es'));
+}
+function gruposDeCurso(datos, idCurso) {
+  return gruposActivos(datos).filter(g => String(g.id_curso) === String(idCurso));
+}
+function cursoDe(datos, idCurso) {
+  return datos.cursos.find(c => String(c.id_curso) === String(idCurso)) || null;
+}
+function grupoDe(datos, idGrupo) {
+  return datos.grupos.find(g => String(g.id_grupo) === String(idGrupo)) || null;
+}
+/** El id de curso del alumno: el asignado directamente, o si no tiene, el de su grupo. */
+function idCursoDeAlumno(datos, alumno) {
+  if (alumno.id_curso) return alumno.id_curso;
+  const g = grupoDe(datos, alumno.id_grupo);
+  return g ? g.id_curso : null;
+}
+/** El curso del alumno (objeto completo). */
+function cursoDeAlumno(datos, alumno) {
+  const idCurso = idCursoDeAlumno(datos, alumno);
+  return idCurso ? cursoDe(datos, idCurso) : null;
+}
+/** "1º ESO A" — nombre del curso + nombre del grupo, o solo el grupo si no tiene curso. */
+function nombreGrupoCompleto(datos, idGrupo) {
+  const g = grupoDe(datos, idGrupo);
+  if (!g) return '';
+  const c = cursoDe(datos, g.id_curso);
+  return c ? `${c.nombre_curso} ${g.nombre_grupo}` : g.nombre_grupo;
+}
+/** "1º ESO A", o solo "1º ESO" si el alumno tiene curso pero todavía no un grupo concreto. */
+function lugarDeAlumno(datos, alumno) {
+  if (alumno.id_grupo) return nombreGrupoCompleto(datos, alumno.id_grupo);
+  const c = cursoDeAlumno(datos, alumno);
+  return c ? c.nombre_curso : '';
+}
+
+/**
+ * Las jornadas son sesiones propias de cada curso (no se comparten entre
+ * cursos), así que además del trimestre se pueden filtrar por idCurso.
+ * idCurso vacío/omitido = sin filtrar por curso (todas mezcladas).
+ *
+ * Dentro de un curso, una jornada puede ser además propia de un solo grupo
+ * (id_grupo) — por ejemplo porque ese grupo ha tenido más o menos sesiones
+ * que los demás — o compartida por todo el curso si no tiene grupo. Si se
+ * indica idGrupo, se incluyen las jornadas de todo el curso MÁS las propias
+ * de ese grupo, pero no las de otros grupos del mismo curso.
+ */
+function jornadasPublicadas(jornadas, trimestre, idCurso, idGrupo) {
   return jornadas.filter(j => {
     if (String(j.estado_publicacion).toLowerCase() !== 'publicada') return false;
+    if (idCurso && String(j.id_curso) !== String(idCurso)) return false;
+    if (idGrupo && j.id_grupo && String(j.id_grupo) !== String(idGrupo)) return false;
     return trimestre === 'curso' || String(j.trimestre) === String(trimestre);
   });
 }
 
 /**
- * Jornada que se muestra en la tarjeta "Jornada actual" del Dashboard.
- * Si hay una jornada elegida a mano en Liga → Configuración, se respeta;
- * si no, se usa siempre la última creada (mayor número) entre las publicadas.
+ * La "más reciente" de una lista de jornadas. Como cada grupo puede tener su
+ * propia numeración independiente (y las jornadas de todo el curso otra
+ * distinta), el número por sí solo no sirve para comparar jornadas de
+ * distinto grupo: se ordena por fecha y solo se usa el número como
+ * desempate si la fecha coincide o falta.
  */
-function jornadaActual(datos, idManual) {
-  if (idManual) {
-    const manual = datos.jornadas.find(j => String(j.id_jornada) === String(idManual));
-    if (manual) return manual;
-  }
-  const publicadas = datos.jornadas.filter(j => String(j.estado_publicacion).toLowerCase() === 'publicada');
-  if (publicadas.length === 0) return null;
-  return publicadas.reduce((mejor, j) => num(j.numero_jornada) > num(mejor.numero_jornada) ? j : mejor, publicadas[0]);
+function jornadaMasRecienteDeLista(lista) {
+  if (!lista || lista.length === 0) return null;
+  return lista.reduce((mejor, j) => {
+    const fj = String(j.fecha || ''), fm = String(mejor.fecha || '');
+    if (fj !== fm) return fj > fm ? j : mejor;
+    return num(j.numero_jornada) > num(mejor.numero_jornada) ? j : mejor;
+  }, lista[0]);
 }
 
-function registrosValidos(datos, trimestre) {
-  const ids = new Set(jornadasPublicadas(datos.jornadas, trimestre).map(j => String(j.id_jornada)));
+/** Orden cronológico ascendente (por fecha, número como desempate) para listas de jornadas mezclando alcances. */
+function compararFechaJornada(a, b) {
+  const fa = String(a.fecha || ''), fb = String(b.fecha || '');
+  if (fa !== fb) return fa < fb ? -1 : 1;
+  return num(a.numero_jornada) - num(b.numero_jornada);
+}
+
+/**
+ * Jornada que se muestra en la tarjeta "Jornada actual" del Dashboard, para
+ * el curso (y grupo, si se indica) seleccionados. Si hay una jornada elegida
+ * a mano en Liga → Configuración y encaja en ese alcance, se respeta; si no,
+ * se usa siempre la más reciente entre las publicadas del alcance.
+ */
+function jornadaActual(datos, idManual, idCurso, idGrupo) {
+  if (idManual) {
+    const manual = datos.jornadas.find(j => String(j.id_jornada) === String(idManual));
+    if (manual && (!idCurso || String(manual.id_curso) === String(idCurso)) &&
+        (!idGrupo || !manual.id_grupo || String(manual.id_grupo) === String(idGrupo))) return manual;
+  }
+  const publicadas = datos.jornadas.filter(j =>
+    String(j.estado_publicacion).toLowerCase() === 'publicada' &&
+    (!idCurso || String(j.id_curso) === String(idCurso)) &&
+    (!idGrupo || !j.id_grupo || String(j.id_grupo) === String(idGrupo)));
+  return jornadaMasRecienteDeLista(publicadas);
+}
+
+function registrosValidos(datos, trimestre, idCurso) {
+  const ids = new Set(jornadasPublicadas(datos.jornadas, trimestre, idCurso).map(j => String(j.id_jornada)));
   return datos.registros.filter(r => ids.has(String(r.id_jornada)));
 }
 
-function clasIndividual(datos, trimestre) {
+function clasIndividual(datos, trimestre, idGrupo, idCursoDirecto) {
+  // Las jornadas son propias de cada curso: el del grupo elegido si hay uno,
+  // o si no el curso indicado directamente (p. ej. el del selector del dashboard).
+  const idCurso = idGrupo ? (grupoDe(datos, idGrupo) || {}).id_curso : (idCursoDirecto || null);
+
   const acc = new Map();
-  for (const r of registrosValidos(datos, trimestre)) {
+  for (const r of registrosValidos(datos, trimestre, idCurso)) {
     const id = String(r.id_alumno);
     if (!acc.has(id)) acc.set(id, { puntos: 0, jornadas: 0 });
     const a = acc.get(id); a.puntos += num(r.total); a.jornadas += 1;
   }
 
-  const pubs = jornadasPublicadas(datos.jornadas, trimestre);
-  const ultima = pubs.length ? pubs.reduce((m, j) => num(j.numero_jornada) > num(m.numero_jornada) ? j : m, pubs[0]) : null;
+  const ultima = jornadaMasRecienteDeLista(jornadasPublicadas(datos.jornadas, trimestre, idCurso, idGrupo));
   const puntosUltima = new Map();
   if (ultima) {
     datos.registros.forEach(r => {
@@ -424,7 +510,11 @@ function clasIndividual(datos, trimestre) {
   }
 
   const eqById = new Map(datos.equipos.map(e => [String(e.id_equipo), e]));
-  const filas = datos.alumnos.filter(activo).map(a => {
+  const filas = datos.alumnos
+    .filter(activo)
+    .filter(a => !idGrupo || String(a.id_grupo) === String(idGrupo))
+    .filter(a => !idCurso || String(idCursoDeAlumno(datos, a)) === String(idCurso))
+    .map(a => {
     const s = acc.get(String(a.id_alumno)) || { puntos: 0, jornadas: 0 };
     const eq = eqById.get(String(a.id_equipo_actual));
     return {
@@ -444,10 +534,10 @@ function clasIndividual(datos, trimestre) {
   return filas;
 }
 
-function clasEquipos(datos, trimestre) {
+function clasEquipos(datos, trimestre, idCurso) {
   const acc = new Map();
   const accAlumno = new Map();
-  for (const r of registrosValidos(datos, trimestre)) {
+  for (const r of registrosValidos(datos, trimestre, idCurso)) {
     const id = String(r.id_equipo_en_jornada);
     if (id) {
       if (!acc.has(id)) acc.set(id, { puntos: 0, registros: 0 });
@@ -458,8 +548,7 @@ function clasEquipos(datos, trimestre) {
     const al = accAlumno.get(idAl); al.puntos += num(r.total); al.jornadas += 1;
   }
 
-  const pubs = jornadasPublicadas(datos.jornadas, trimestre);
-  const ultima = pubs.length ? pubs.reduce((m, j) => num(j.numero_jornada) > num(m.numero_jornada) ? j : m, pubs[0]) : null;
+  const ultima = jornadaMasRecienteDeLista(jornadasPublicadas(datos.jornadas, trimestre, idCurso));
   const accUltima = new Map();
   if (ultima) {
     datos.registros.forEach(r => {
@@ -471,7 +560,10 @@ function clasEquipos(datos, trimestre) {
     });
   }
 
-  const filas = datos.equipos.filter(activo).map(e => {
+  const filas = datos.equipos
+    .filter(activo)
+    .filter(e => !idCurso || String(e.id_curso) === String(idCurso))
+    .map(e => {
     const s = acc.get(String(e.id_equipo)) || { puntos: 0, registros: 0 };
     const n = datos.alumnos.filter(a => activo(a) && String(a.id_equipo_actual) === String(e.id_equipo)).length;
     const sUltima = accUltima.get(String(e.id_equipo));
@@ -514,11 +606,9 @@ const configActivo = (valor, porDefecto = true) => {
   return String(valor).toUpperCase() !== 'FALSE';
 };
 
-/** La jornada publicada con mayor número dentro del alcance (trimestre o curso completo). */
-function jornadaMasReciente(jornadas, trimestre) {
-  const pubs = jornadasPublicadas(jornadas, trimestre);
-  if (pubs.length === 0) return null;
-  return pubs.reduce((mejor, j) => num(j.numero_jornada) > num(mejor.numero_jornada) ? j : mejor, pubs[0]);
+/** La jornada publicada más reciente dentro del alcance (trimestre, curso y grupo). */
+function jornadaMasReciente(jornadas, trimestre, idCurso, idGrupo) {
+  return jornadaMasRecienteDeLista(jornadasPublicadas(jornadas, trimestre, idCurso, idGrupo));
 }
 
 /**
@@ -526,12 +616,17 @@ function jornadaMasReciente(jornadas, trimestre) {
  * actual con la que había antes de contar la última jornada publicada del
  * alcance. `tipo` es 'individual' o 'equipos'.
  */
-function tendencias(datos, trimestre, filasActuales, tipo) {
+function tendencias(datos, trimestre, filasActuales, tipo, idFiltro, idCursoDirecto) {
   const mapa = new Map();
-  const ultima = jornadaMasReciente(datos.jornadas, trimestre);
+  // Las jornadas son propias de cada curso: para 'equipos' idFiltro ya es el
+  // curso; para 'individual' es un grupo, del que hay que sacar su curso (o,
+  // si no hay grupo elegido, el curso indicado directamente).
+  const idCurso = tipo === 'equipos' ? idFiltro : (idFiltro ? (grupoDe(datos, idFiltro) || {}).id_curso : (idCursoDirecto || null));
+  const idGrupoTend = tipo === 'individual' ? idFiltro : null;
+  const ultima = jornadaMasReciente(datos.jornadas, trimestre, idCurso, idGrupoTend);
   if (!ultima) return mapa;
   const datosAntes = { ...datos, jornadas: datos.jornadas.filter(j => String(j.id_jornada) !== String(ultima.id_jornada)) };
-  const filasAntes = tipo === 'equipos' ? clasEquipos(datosAntes, trimestre) : clasIndividual(datosAntes, trimestre);
+  const filasAntes = tipo === 'equipos' ? clasEquipos(datosAntes, trimestre, idFiltro) : clasIndividual(datosAntes, trimestre, idFiltro, idCursoDirecto);
   const posAntes = new Map(filasAntes.map(f => [f.id, f.pos]));
   filasActuales.forEach(f => {
     const antes = posAntes.get(f.id);
@@ -658,7 +753,9 @@ function svgDiana(ejes) {
  * publicadas).
  */
 function insigniasAlumnoDetalle(datos, idAlumno, trimestre) {
-  const idsJornadas = new Set(jornadasPublicadas(datos.jornadas, trimestre).map(j => String(j.id_jornada)));
+  const alumno = datos.alumnos.find(a => String(a.id_alumno) === String(idAlumno));
+  const idCurso = alumno ? idCursoDeAlumno(datos, alumno) : null;
+  const idsJornadas = new Set(jornadasPublicadas(datos.jornadas, trimestre, idCurso, alumno ? alumno.id_grupo : null).map(j => String(j.id_jornada)));
   const jornadasPorId = new Map(datos.jornadas.map(j => [String(j.id_jornada), j]));
   const porInsignia = new Map();
   datos.insigniasAlumnos.forEach(x => {
@@ -707,17 +804,21 @@ function datosAlumno(datos, id) {
 }
 
 function statsAlumno(datos, id, trimestre) {
-  const filas = registrosValidos(datos, trimestre).filter(r => String(r.id_alumno) === String(id));
+  const alumno = datos.alumnos.find(a => String(a.id_alumno) === String(id));
+  const idCurso = alumno ? idCursoDeAlumno(datos, alumno) : null;
+  const filas = registrosValidos(datos, trimestre, idCurso).filter(r => String(r.id_alumno) === String(id));
   const puntos = filas.reduce((s, r) => s + num(r.total), 0);
   const jornadas = filas.length;
   return { puntos, jornadas, media: jornadas > 0 ? puntos / jornadas : 0 };
 }
 
-/** Puntos del alumno en cada jornada publicada del periodo, en orden cronológico. */
+/** Puntos del alumno en cada jornada publicada de su curso en el periodo, en orden cronológico. */
 function serieJornadas(datos, id, trimestre) {
-  const js = jornadasPublicadas(datos.jornadas, trimestre)
+  const alumno = datos.alumnos.find(a => String(a.id_alumno) === String(id));
+  const idCurso = alumno ? idCursoDeAlumno(datos, alumno) : null;
+  const js = jornadasPublicadas(datos.jornadas, trimestre, idCurso, alumno ? alumno.id_grupo : null)
     .slice()
-    .sort((a, b) => num(a.numero_jornada) - num(b.numero_jornada));
+    .sort(compararFechaJornada);
   const regs = new Map(
     datos.registros
       .filter(r => String(r.id_alumno) === String(id))
@@ -886,8 +987,9 @@ function renderAlumno(id) {
       <a class="vermas" href="#" data-ir="individual" style="float:none">← Volver a individual</a></div>`;
   }
   const { a, eq } = info;
-  const ind = clasIndividual(DATOS, TRIMESTRE);
-  const eqClas = clasEquipos(DATOS, TRIMESTRE);
+  const idCursoAlumno = idCursoDeAlumno(DATOS, a);
+  const ind = clasIndividual(DATOS, TRIMESTRE, a.id_grupo, idCursoAlumno);
+  const eqClas = clasEquipos(DATOS, TRIMESTRE, eq ? eq.id_curso : null);
   const posActual = ind.find(f => f.id === String(id));
   const st = statsAlumno(DATOS, id, TRIMESTRE);
   const serie = serieJornadas(DATOS, id, TRIMESTRE);
@@ -901,7 +1003,7 @@ function renderAlumno(id) {
     { etiqueta: 'Media liga', valor: mediaLiga },
   ];
 
-  const tendAl = configActivo(DATOS.config.mostrar_tendencia_alumnos) ? tendencias(DATOS, TRIMESTRE, ind, 'individual') : null;
+  const tendAl = configActivo(DATOS.config.mostrar_tendencia_alumnos) ? tendencias(DATOS, TRIMESTRE, ind, 'individual', a.id_grupo, idCursoAlumno) : null;
   const insigniasDetalle = insigniasAlumnoDetalle(DATOS, id, TRIMESTRE);
 
   return `
@@ -917,7 +1019,7 @@ function renderAlumno(id) {
             <div>
               <p class="principal" style="margin:0 0 8px">${esc(a.nombre_publico)}</p>
               <p class="secundario" style="margin-top:10px">${eq ? `<a class="enlace" href="#" data-equipo="${esc(eq.id_equipo)}">${escudoEquipoHTML(eq, 18)}${esc(eq.nombre_equipo)}</a>` : 'Sin equipo'}</p>
-              ${a.grupo ? `<p class="secundario" style="margin-top:10px">${esc(a.grupo)}</p>` : ''}
+              ${lugarDeAlumno(DATOS, a) ? `<p class="secundario" style="margin-top:10px">${esc(lugarDeAlumno(DATOS, a))}</p>` : ''}
               ${a.instrumento ? `<p class="secundario" style="display:flex;align-items:center;gap:6px;margin-top:10px">${iconoInstrumento(a.instrumento, 16)} ${esc(a.instrumento)}</p>` : ''}
             </div>
           </div>
@@ -939,7 +1041,7 @@ function renderAlumno(id) {
           </div>
         </div>
       </div>
-      <div class="card tabla-scroll"><h3>Clasificación individual</h3>${tablaIndividual(ind, false, tendAl)}</div>
+      <div class="card tabla-scroll"><h3>Clasificación individual${a.id_grupo ? ` — ${esc(nombreGrupoCompleto(DATOS, a.id_grupo))}` : ''}</h3>${tablaIndividual(ind, false, tendAl)}</div>
     </div>
     <div class="card" style="margin-bottom:14px">
       <h3>Insignias conseguidas</h3>
@@ -979,11 +1081,13 @@ function datosEquipo(datos, id) {
   return { e, integrantes };
 }
 
-/** Suma de puntos del equipo en cada jornada publicada del periodo, en orden cronológico. */
+/** Suma de puntos del equipo en cada jornada publicada de su curso en el periodo, en orden cronológico. */
 function serieJornadasEquipo(datos, id, trimestre) {
-  const js = jornadasPublicadas(datos.jornadas, trimestre)
+  const equipo = datos.equipos.find(e => String(e.id_equipo) === String(id));
+  const idCurso = equipo ? equipo.id_curso : null;
+  const js = jornadasPublicadas(datos.jornadas, trimestre, idCurso)
     .slice()
-    .sort((a, b) => num(a.numero_jornada) - num(b.numero_jornada));
+    .sort(compararFechaJornada);
   const porJornada = new Map();
   datos.registros.forEach(r => {
     if (String(r.id_equipo_en_jornada) !== String(id)) return;
@@ -1029,7 +1133,7 @@ function renderEquipo(id) {
       <a class="vermas" href="#" data-ir="equipos" style="float:none">← Volver a equipos</a></div>`;
   }
   const { e, integrantes } = info;
-  const eqClas = clasEquipos(DATOS, TRIMESTRE);
+  const eqClas = clasEquipos(DATOS, TRIMESTRE, e.id_curso);
   const posActual = eqClas.find(f => f.id === String(id));
   const serie = serieJornadasEquipo(DATOS, id, TRIMESTRE);
 
@@ -1065,7 +1169,7 @@ function renderEquipo(id) {
       <div class="card tabla-scroll"><h3>Plantilla (${integrantes.length})</h3>${tablaIntegrantes(reparto)}</div>
     </div>
     <div class="card tabla-scroll" style="margin-bottom:14px">
-      <h3>Clasificación de equipos</h3>${tablaEquipos(eqClas, false, null)}
+      <h3>Clasificación de equipos${e.id_curso ? ` — ${esc((cursoDe(DATOS, e.id_curso) || {}).nombre_curso || '')}` : ''}</h3>${tablaEquipos(eqClas, false, null)}
     </div>
     <div class="card" style="margin-bottom:14px">
       <h3>Puntos por jornada</h3>
@@ -1101,8 +1205,28 @@ let TRIMESTRE = '1';
 let ALUMNO_SEL = null;
 let EQUIPO_SEL = null;
 let DIANA_PERIODO = '1';
+let CURSO_SEL = '';  // clasificación por equipos: '' = todos los cursos
+let GRUPO_SEL = '';  // clasificación individual: '' = todos los grupos
 
 const TRIMESTRES = [['1','1.º trimestre'],['2','2.º trimestre'],['3','3.º trimestre'],['curso','Curso completo']];
+
+function pillsCursos() {
+  const cursos = cursosActivos(DATOS);
+  if (cursos.length === 0) return '';
+  const mostrarTodos = configActivo(DATOS.config.mostrar_todos_cursos);
+  return `<div class="pills">
+    ${mostrarTodos ? `<button data-curso="" class="${CURSO_SEL === '' ? 'on' : ''}">Todos los cursos</button>` : ''}
+    ${cursos.map(c => `<button data-curso="${esc(c.id_curso)}" class="${CURSO_SEL === c.id_curso ? 'on' : ''}">${esc(c.nombre_curso)}</button>`).join('')}
+  </div>`;
+}
+function pillsGrupos(idCurso) {
+  const grupos = idCurso ? gruposDeCurso(DATOS, idCurso) : gruposActivos(DATOS);
+  if (grupos.length === 0) return '';
+  return `<div class="pills">
+    <button data-grupo="" class="${GRUPO_SEL === '' ? 'on' : ''}">Todos los grupos</button>
+    ${grupos.map(g => `<button data-grupo="${esc(g.id_grupo)}" class="${GRUPO_SEL === g.id_grupo ? 'on' : ''}">${esc(nombreGrupoCompleto(DATOS, g.id_grupo))}</button>`).join('')}
+  </div>`;
+}
 
 function badgePos(p) {
   const cls = p === 1 ? 'p1' : p === 2 ? 'p2' : p === 3 ? 'p3' : '';
@@ -1177,15 +1301,15 @@ function tablaEquipos(filas, compacta, tendMap) {
 }
 
 /** Histórico público de jornadas publicadas: qué se hizo y qué tareas había en cada una. */
-function listaJornadas(jornadas, trimestre) {
-  const pubs = jornadasPublicadas(jornadas, trimestre)
+function listaJornadas(jornadas, trimestre, idCurso, idGrupo) {
+  const pubs = jornadasPublicadas(jornadas, trimestre, idCurso, idGrupo)
     .slice()
-    .sort((a, b) => num(b.numero_jornada) - num(a.numero_jornada));
-  if (pubs.length === 0) return `<p class="nota">Todavía no hay jornadas publicadas en este periodo.</p>`;
+    .sort((a, b) => compararFechaJornada(b, a));
+  if (pubs.length === 0) return `<p class="nota">Todavía no hay jornadas publicadas en este periodo${idCurso ? ' para este curso' : ''}.</p>`;
   return pubs.map(j => `
     <div class="card" style="margin-bottom:14px">
       <div class="fila-titulo" style="margin-bottom:${j.descripcion || j.tareas ? '10px' : '0'}">
-        <h3 style="margin:0">J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Jornada')}</h3>
+        <h3 style="margin:0">J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Jornada')}${j.id_grupo ? ` <span class="secundario" style="font-weight:400">· ${esc(nombreGrupoCompleto(DATOS, j.id_grupo))}</span>` : ''}</h3>
         <span class="secundario" style="white-space:nowrap">${j.fecha ? esc(fmtFecha(j.fecha)) : ''}</span>
       </div>
       ${j.descripcion ? `<p class="secundario">${esc(j.descripcion)}</p>` : ''}
@@ -1257,10 +1381,14 @@ function tarjetaLider(etiqueta, icono, principal, secundario, color, idAlumno, i
 function render() {
   if (VISTA === 'admin') { renderAdmin(); return; }
   const main = $('#main');
-  const ind = clasIndividual(DATOS, TRIMESTRE);
-  const eq = clasEquipos(DATOS, TRIMESTRE);
-  const tendAl = configActivo(DATOS.config.mostrar_tendencia_alumnos) ? tendencias(DATOS, TRIMESTRE, ind, 'individual') : null;
-  const tendEq = configActivo(DATOS.config.mostrar_tendencia_equipos) ? tendencias(DATOS, TRIMESTRE, eq, 'equipos') : null;
+  if (!CURSO_SEL && !configActivo(DATOS.config.mostrar_todos_cursos)) {
+    const cursos = cursosActivos(DATOS);
+    if (cursos.length > 0) CURSO_SEL = cursos[0].id_curso;
+  }
+  const ind = clasIndividual(DATOS, TRIMESTRE, GRUPO_SEL, CURSO_SEL);
+  const eq = clasEquipos(DATOS, TRIMESTRE, CURSO_SEL);
+  const tendAl = configActivo(DATOS.config.mostrar_tendencia_alumnos) ? tendencias(DATOS, TRIMESTRE, ind, 'individual', GRUPO_SEL, CURSO_SEL) : null;
+  const tendEq = configActivo(DATOS.config.mostrar_tendencia_equipos) ? tendencias(DATOS, TRIMESTRE, eq, 'equipos', CURSO_SEL) : null;
 
   let html = '';
   if (VISTA === 'alumno') {
@@ -1274,10 +1402,12 @@ function render() {
     const avatarLiderHTML = alumnoLider ? svgAvatar(alumnoLider, { color: liderAl.color }, 'grande') : '';
     const escudoLiderHTML = liderEq ? escudoEsquinaHTML(liderEq, 230) : '';
     const idActual = String(DATOS.config.jornada_actual || '');
-    const jAct = jornadaActual(DATOS, idActual);
+    const jAct = jornadaActual(DATOS, idActual, CURSO_SEL, GRUPO_SEL);
 
     html = `
       <div class="fila-titulo"><h2>Marcador de la liga</h2>${pills()}</div>
+      ${pillsCursos() ? `<div style="margin-bottom:${pillsGrupos(CURSO_SEL) ? '10px' : '20px'}">${pillsCursos()}</div>` : ''}
+      ${pillsGrupos(CURSO_SEL) ? `<div style="margin-bottom:20px">${pillsGrupos(CURSO_SEL)}</div>` : ''}
       <div class="grid3">
         ${tarjetaLider('Equipo líder', '🛡️', liderEq ? liderEq.equipo : '—',
           liderEq ? `${fmtMedia(liderEq.media)} de media · ${liderEq.puntos} pts` : 'Sin datos', liderEq && liderEq.color, null, liderEq ? liderEq.id : null, null, null, escudoLiderHTML)}
@@ -1295,15 +1425,20 @@ function render() {
       </div>`;
   } else if (VISTA === 'individual') {
     html = `<div class="fila-titulo"><h2>Clasificación individual</h2>${pills()}</div>
+      ${pillsCursos() ? `<div style="margin-bottom:${pillsGrupos(CURSO_SEL) ? '10px' : '20px'}">${pillsCursos()}</div>` : ''}
+      ${pillsGrupos(CURSO_SEL) ? `<div style="margin-bottom:20px">${pillsGrupos(CURSO_SEL)}</div>` : ''}
       <div class="card">${tablaIndividual(ind, false, tendAl)}</div>`;
   } else if (VISTA === 'jornadas') {
     html = `<div class="fila-titulo"><h2>Jornadas</h2>${pills()}</div>
-      ${listaJornadas(DATOS.jornadas, TRIMESTRE)}`;
+      ${pillsCursos() ? `<div style="margin-bottom:${pillsGrupos(CURSO_SEL) ? '10px' : '20px'}">${pillsCursos()}</div>` : ''}
+      ${pillsGrupos(CURSO_SEL) ? `<div style="margin-bottom:20px">${pillsGrupos(CURSO_SEL)}</div>` : ''}
+      ${listaJornadas(DATOS.jornadas, TRIMESTRE, CURSO_SEL, GRUPO_SEL)}`;
   } else if (VISTA === 'salon') {
     html = `<div class="fila-titulo"><h2>Salón de la Fama</h2></div>
       ${renderSalonFama()}`;
   } else {
     html = `<div class="fila-titulo"><h2>Clasificación por equipos</h2>${pills()}</div>
+      ${pillsCursos()}
       <div class="card">${tablaEquipos(eq, false, tendEq)}
       <p class="nota">Orden principal: media de puntos por alumno y jornada (solo jornadas publicadas). Equilibrio:
       desviación entre las medias de los integrantes con jornadas puntuadas — cuanto más bajo, más parejo el equipo.</p></div>`;
@@ -1314,6 +1449,10 @@ function render() {
     b.addEventListener('click', () => { TRIMESTRE = b.dataset.tri; render(); }));
   main.querySelectorAll('[data-periodo]').forEach(b =>
     b.addEventListener('click', () => { DIANA_PERIODO = b.dataset.periodo; render(); }));
+  main.querySelectorAll('[data-curso]').forEach(b =>
+    b.addEventListener('click', () => { CURSO_SEL = b.dataset.curso; GRUPO_SEL = ''; render(); }));
+  main.querySelectorAll('[data-grupo]').forEach(b =>
+    b.addEventListener('click', () => { GRUPO_SEL = b.dataset.grupo; render(); }));
   main.querySelectorAll('[data-ir]').forEach(a =>
     a.addEventListener('click', e => { e.preventDefault(); cambiarVista(a.dataset.ir); }));
   main.querySelectorAll('[data-alumno]').forEach(el =>
@@ -1503,10 +1642,17 @@ const ADMIN = {
   token: sessionStorage.getItem('liga_admin_token') || '',
   seccion: 'puntuar',
   jornadaSel: '',
+  puntuarGrupoSel: '', // filtro visual de la tabla de Puntuar ('' = todos los grupos)
   filas: {},          // id_alumno -> valores editables de la jornada
   insigniasFilas: {}, // id_alumno -> { id_insignia: true } insignias asignadas en esta jornada
   editJornada: null,  // id en edición (null = crear nueva)
+  jornadaCursoSel: '', // curso elegido en el formulario de "Nueva jornada"
+  jornadaGrupoSel: '', // grupo elegido en el formulario de "Nueva jornada" ('' = todo el curso)
   editAlumno: null,
+  editCurso: null,
+  editGrupo: null,
+  asignacionesGrupo: {}, // id_alumno -> id_grupo editable (asignación masiva en Admin → Grupos)
+  asignacionesCurso: {}, // id_alumno -> id_curso editable (asignación masiva en Admin → Grupos)
   editEquipo: null,
   imagenEscudo: null, // data URI recién elegida en el formulario de equipo (null = sin cambios)
   editCriterio: null,
@@ -1629,7 +1775,7 @@ function renderAdmin(mensaje = '', esError = false) {
 
   // --- Estructura común: cabecera + subnavegación + sección ---
   const SECCIONES = [
-    ['puntuar', 'Puntuar'], ['jornadas', 'Jornadas'], ['alumnos', 'Alumnos'],
+    ['puntuar', 'Puntuar'], ['jornadas', 'Jornadas'], ['alumnos', 'Alumnos'], ['grupos', 'Grupos'],
     ['equipos', 'Equipos'], ['criterios', 'Criterios'], ['insignias', 'Insignias'], ['liga', 'Liga'],
   ];
   const subnav = `<div class="pills" style="margin-bottom:16px">
@@ -1640,6 +1786,7 @@ function renderAdmin(mensaje = '', esError = false) {
   const cuerpo =
     ADMIN.seccion === 'jornadas' ? seccionJornadas() :
     ADMIN.seccion === 'alumnos' ? seccionAlumnos() :
+    ADMIN.seccion === 'grupos' ? seccionGrupos() :
     ADMIN.seccion === 'equipos' ? seccionEquipos() :
     ADMIN.seccion === 'criterios' ? seccionCriterios() :
     ADMIN.seccion === 'insignias' ? seccionInsignias() :
@@ -1666,6 +1813,7 @@ function renderAdmin(mensaje = '', esError = false) {
   if (ADMIN.seccion === 'puntuar') wirePuntuar();
   else if (ADMIN.seccion === 'jornadas') wireJornadas();
   else if (ADMIN.seccion === 'alumnos') wireAlumnos();
+  else if (ADMIN.seccion === 'grupos') wireGrupos();
   else if (ADMIN.seccion === 'equipos') wireEquipos();
   else if (ADMIN.seccion === 'criterios') wireCriterios();
   else if (ADMIN.seccion === 'insignias') wireInsignias();
@@ -1704,6 +1852,15 @@ function seccionPuntuar() {
   const jornada = DATOS.jornadas.find(j => String(j.id_jornada) === String(ADMIN.jornadaSel));
   const publicada = jornada && String(jornada.estado_publicacion).toLowerCase() === 'publicada';
   const insignias = insigniasActivas();
+  // Solo alumnos del mismo curso que la jornada (y, si la jornada es de un
+  // grupo concreto, solo ese grupo): las jornadas son propias de cada curso
+  // y, opcionalmente, de un único grupo dentro de él.
+  const alumnosDeJornada = alumnosActivos().filter(a =>
+    (!jornada || !jornada.id_curso || String(idCursoDeAlumno(DATOS, a)) === String(jornada.id_curso)) &&
+    (!jornada || !jornada.id_grupo || String(a.id_grupo) === String(jornada.id_grupo)));
+  const grupoFijado = jornada && jornada.id_grupo ? grupoDe(DATOS, jornada.id_grupo) : null;
+  const grupos = jornada && jornada.id_curso && !grupoFijado ? gruposDeCurso(DATOS, jornada.id_curso) : [];
+  const alumnosVisibles = alumnosDeJornada.filter(a => grupoFijado || !ADMIN.puntuarGrupoSel || String(a.id_grupo) === String(ADMIN.puntuarGrupoSel));
 
   return `
     <div class="card admin-barra" style="margin-bottom:14px">
@@ -1711,10 +1868,18 @@ function seccionPuntuar() {
         Jornada
         <select id="jornada-sel">
           ${DATOS.jornadas.map(j => `<option value="${esc(j.id_jornada)}" ${String(j.id_jornada) === String(ADMIN.jornadaSel) ? 'selected' : ''}>
-            J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Sin título')} (${esc(j.estado_publicacion)})
+            J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Sin título')} · ${esc((cursoDe(DATOS, j.id_curso) || {}).nombre_curso || 'Sin curso')}${j.id_grupo ? ' · ' + esc((grupoDe(DATOS, j.id_grupo) || {}).nombre_grupo || '') : ''} (${esc(j.estado_publicacion)})
           </option>`).join('')}
         </select>
       </label>
+      ${grupoFijado ? `<span class="estado-chip">Grupo: ${esc(grupoFijado.nombre_grupo)}</span>` : ''}
+      ${grupos.length > 0 ? `<label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)">
+        Grupo
+        <select id="puntuar-grupo-sel">
+          <option value="">Todos los grupos</option>
+          ${grupos.map(g => `<option value="${esc(g.id_grupo)}" ${ADMIN.puntuarGrupoSel === g.id_grupo ? 'selected' : ''}>${esc(g.nombre_grupo)}</option>`).join('')}
+        </select>
+      </label>` : ''}
       <span class="estado-chip ${publicada ? 'chip-pub' : 'chip-borr'}">${publicada ? 'Publicada' : 'Borrador'}</span>
       <div class="derecha">
         ${publicada
@@ -1723,7 +1888,7 @@ function seccionPuntuar() {
       </div>
     </div>
     <div class="card tabla-scroll">
-      ${alumnosActivos().length === 0 ? `<p class="nota">No hay alumnos activos. Créalos en la pestaña <strong>Alumnos</strong>.</p>` : `
+      ${alumnosVisibles.length === 0 ? `<p class="nota">${ADMIN.puntuarGrupoSel ? 'Ningún alumno activo en ese grupo.' : 'No hay alumnos activos de ese curso. Revisa la pestaña <strong>Alumnos</strong> o <strong>Grupos</strong>.'}</p>` : `
       <table class="tabla-admin">
         <thead><tr>
           <th>Alumno/a</th><th>Estado</th><th>Calidad</th><th>Entrega</th>
@@ -1731,7 +1896,7 @@ function seccionPuntuar() {
           ${insignias.length ? '<th>Insignias</th>' : ''}
         </tr></thead>
         <tbody>
-          ${alumnosActivos().map(a => {
+          ${alumnosVisibles.map(a => {
             const f = ADMIN.filas[a.id_alumno];
             const off = f.estado_entrega === 'No entregado' ? 'disabled' : '';
             const insAlumno = ADMIN.insigniasFilas[a.id_alumno] || '';
@@ -1765,8 +1930,9 @@ function seccionPuntuar() {
       <div class="admin-barra" style="margin-top:16px">
         <button class="btn-oro" id="guardar-btn">Guardar toda la jornada</button>
       </div>
-      <p class="nota">El total definitivo lo calcula la fórmula de la hoja al guardar (máximo 10;
-      «No entregado» = 0). Guardar no duplica: actualiza el registro de cada alumno en esta jornada.
+      <p class="nota">El total se calcula al guardar (máximo 10; «No entregado» = 0). Guardar no duplica:
+      actualiza el registro de cada alumno en esta jornada — incluidos los que el filtro de grupo esté
+      ocultando ahora mismo, no solo los que se ven en la tabla.
       ${insignias.length ? 'Elige en el desplegable la insignia (como mucho una) que se lleva cada alumno en esta jornada.' : ''}
       La vista para otros visitantes tarda unos minutos en refrescarse.</p>`}
     </div>`;
@@ -1777,7 +1943,14 @@ function wirePuntuar() {
   if (!sel) return;
   sel.addEventListener('change', e => {
     ADMIN.jornadaSel = e.target.value;
+    ADMIN.puntuarGrupoSel = ''; // el grupo elegido puede no existir en el curso de la nueva jornada
     prepararFilas();
+    renderAdmin();
+  });
+
+  const selGrupo = $('#puntuar-grupo-sel');
+  if (selGrupo) selGrupo.addEventListener('change', e => {
+    ADMIN.puntuarGrupoSel = e.target.value;
     renderAdmin();
   });
 
@@ -1815,7 +1988,11 @@ function wirePuntuar() {
   const btnGuardar = $('#guardar-btn');
   if (btnGuardar) btnGuardar.addEventListener('click', e =>
     operar(e.target, async () => {
-      const registros = alumnosActivos().map(a => {
+      const jornadaGuardar = DATOS.jornadas.find(x => String(x.id_jornada) === String(ADMIN.jornadaSel));
+      const alumnosDeJornada = alumnosActivos().filter(a =>
+        (!jornadaGuardar || !jornadaGuardar.id_curso || String(idCursoDeAlumno(DATOS, a)) === String(jornadaGuardar.id_curso)) &&
+        (!jornadaGuardar || !jornadaGuardar.id_grupo || String(a.id_grupo) === String(jornadaGuardar.id_grupo)));
+      const registros = alumnosDeJornada.map(a => {
         const f = ADMIN.filas[a.id_alumno];
         return {
           id_alumno: a.id_alumno,
@@ -1849,7 +2026,7 @@ function wirePuntuar() {
       // desactivadas que puedan seguir ahí por historial.
       if (insigniasActivas().length > 0) {
         const asignaciones = [];
-        alumnosActivos().forEach(a => {
+        alumnosDeJornada.forEach(a => {
           const idInsignia = ADMIN.insigniasFilas[a.id_alumno];
           if (idInsignia) asignaciones.push({ id_alumno: a.id_alumno, id_insignia: idInsignia });
         });
@@ -1864,17 +2041,40 @@ function wirePuntuar() {
 
 /* ---------- Sección: Jornadas ---------- */
 
+/**
+ * Siguiente n.º de jornada libre dentro de un curso y grupo: cada grupo (y
+ * las jornadas de todo el curso, sin grupo) tienen su propia numeración
+ * independiente, así que hay que acotar por los dos campos a la vez.
+ */
+function siguienteNumeroCurso(idCurso, idGrupo) {
+  return DATOS.jornadas
+    .filter(j => String(j.id_curso) === String(idCurso) && String(j.id_grupo || '') === String(idGrupo || ''))
+    .reduce((m, j) => Math.max(m, num(j.numero_jornada)), 0) + 1;
+}
+
 function seccionJornadas() {
   const ed = ADMIN.editJornada
     ? DATOS.jornadas.find(j => String(j.id_jornada) === String(ADMIN.editJornada))
     : null;
-  const maxNum = DATOS.jornadas.reduce((m, j) => Math.max(m, num(j.numero_jornada)), 0);
+  const cursos = cursosActivos(DATOS);
+  const cursoSel = ed ? ed.id_curso : (ADMIN.jornadaCursoSel || (cursos[0] || {}).id_curso || '');
+  const grupoSel = ed ? (ed.id_grupo || '') : (ADMIN.jornadaGrupoSel || '');
 
   return `
     <div class="card" style="margin-bottom:14px">
       <h3>${ed ? `Editar jornada J${esc(ed.numero_jornada)}` : 'Nueva jornada'}</h3>
       <div class="form-grid">
-        <label>N.º de jornada<input type="number" id="j-numero" min="1" value="${ed ? esc(ed.numero_jornada) : maxNum + 1}" /></label>
+        <label>Curso<select id="j-curso">
+          ${cursos.length === 0 ? `<option value="">— Crea un curso primero —</option>` : ''}
+          ${cursos.map(c => `<option value="${esc(c.id_curso)}" ${cursoSel === c.id_curso ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+        </select></label>
+        <label>Grupo (opcional)<select id="j-grupo">
+          <option value="">— Todo el curso (todos los grupos) —</option>
+          ${cursos.map(c => `<optgroup label="${esc(c.nombre_curso)}">
+            ${gruposDeCurso(DATOS, c.id_curso).map(g => `<option value="${esc(g.id_grupo)}" ${grupoSel === g.id_grupo ? 'selected' : ''}>${esc(g.nombre_grupo)}</option>`).join('')}
+          </optgroup>`).join('')}
+        </select></label>
+        <label>N.º de jornada<input type="number" id="j-numero" min="1" value="${ed ? esc(ed.numero_jornada) : siguienteNumeroCurso(cursoSel, grupoSel)}" /></label>
         <label>Título<input type="text" id="j-titulo" value="${ed ? esc(ed.titulo) : ''}" placeholder="p. ej. Enlace de acordes I-IV-V" /></label>
         <label>Fecha<input type="date" id="j-fecha" value="${ed ? esc(fechaISO(ed.fecha)) : hoyISO()}" /></label>
         <label>Trimestre<select id="j-trimestre">
@@ -1887,17 +2087,22 @@ function seccionJornadas() {
         <button class="btn-oro" id="j-guardar">${ed ? 'Guardar cambios' : 'Crear jornada'}</button>
         ${ed ? `<button class="btn-borde" id="j-cancelar">Cancelar</button>` : ''}
       </div>
-      ${ed ? '' : `<p class="nota">La jornada se crea en estado <strong>borrador</strong>: no cuenta en
-        la clasificación pública hasta que la publiques desde la pestaña Puntuar.</p>`}
+      ${ed ? '' : `<p class="nota">Las jornadas son propias de cada curso (no se comparten). Si dejas «Grupo» en
+        todo el curso, cuenta para todos sus grupos; si eliges un grupo concreto, solo se puntúa (y solo cuenta
+        para la clasificación) ese grupo — así cada grupo puede tener un número distinto de jornadas y su propia
+        numeración J1, J2... Se crea en estado <strong>borrador</strong>: no cuenta en la clasificación pública
+        hasta que la publiques desde la pestaña Puntuar.</p>`}
     </div>
     <div class="card tabla-scroll">
-      <h3>Jornadas del curso</h3>
+      <h3>Jornadas (${DATOS.jornadas.length})</h3>
       ${DATOS.jornadas.length === 0 ? `<p class="nota">Todavía no hay jornadas.</p>` : `
       <table>
-        <thead><tr><th>N.º</th><th>Título</th><th>Tareas</th><th>Fecha</th><th>Trim.</th><th>Estado</th><th></th></tr></thead>
-        <tbody>${[...DATOS.jornadas].sort((a, b) => num(a.numero_jornada) - num(b.numero_jornada)).map(j => `
+        <thead><tr><th>N.º</th><th>Curso</th><th>Grupo</th><th>Título</th><th>Tareas</th><th>Fecha</th><th>Trim.</th><th>Estado</th><th></th></tr></thead>
+        <tbody>${[...DATOS.jornadas].sort((a, b) => compararFechaJornada(b, a)).map(j => `
           <tr>
             <td class="num">J${esc(j.numero_jornada)}</td>
+            <td>${esc((cursoDe(DATOS, j.id_curso) || {}).nombre_curso || '—')}</td>
+            <td>${j.id_grupo ? esc((grupoDe(DATOS, j.id_grupo) || {}).nombre_grupo || '—') : '<span style="color:var(--muted)">Todo el curso</span>'}</td>
             <td><strong>${esc(j.titulo || '—')}</strong></td>
             <td style="max-width:220px;color:var(--muted)">${esc(j.tareas || '—')}</td>
             <td>${esc(j.fecha ? fmtFecha(j.fecha) : '—')}</td>
@@ -1916,10 +2121,38 @@ function wireJornadas() {
   const cancelar = $('#j-cancelar');
   if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editJornada = null; renderAdmin(); });
 
+  const selCurso = $('#j-curso');
+  const selGrupo = $('#j-grupo');
+  if (selCurso) selCurso.addEventListener('change', () => {
+    ADMIN.jornadaCursoSel = selCurso.value;
+    // El grupo elegido puede no pertenecer al nuevo curso: se resetea.
+    if (selGrupo && selGrupo.value) {
+      const g = grupoDe(DATOS, selGrupo.value);
+      if (!g || String(g.id_curso) !== String(selCurso.value)) { selGrupo.value = ''; ADMIN.jornadaGrupoSel = ''; }
+    }
+    if (!ADMIN.editJornada) {
+      const numero = $('#j-numero');
+      if (numero) numero.value = siguienteNumeroCurso(selCurso.value, selGrupo ? selGrupo.value : '');
+    }
+  });
+  if (selGrupo) selGrupo.addEventListener('change', () => {
+    ADMIN.jornadaGrupoSel = selGrupo.value;
+    if (selGrupo.value) {
+      const g = grupoDe(DATOS, selGrupo.value);
+      if (g && selCurso) { selCurso.value = g.id_curso; ADMIN.jornadaCursoSel = g.id_curso; }
+    }
+    if (!ADMIN.editJornada) {
+      const numero = $('#j-numero');
+      if (numero) numero.value = siguienteNumeroCurso(selCurso ? selCurso.value : '', selGrupo.value);
+    }
+  });
+
   $('#j-guardar').addEventListener('click', e =>
     operar(e.target, async () => {
       const datos = {
         id_jornada: ADMIN.editJornada || '',
+        id_curso: valorDe('j-curso'),
+        id_grupo: valorDe('j-grupo'),
         numero_jornada: valorDe('j-numero') || '1',
         titulo: valorDe('j-titulo'),
         fecha: valorDe('j-fecha'),
@@ -1928,6 +2161,7 @@ function wireJornadas() {
         tareas: valorDe('j-tareas'),
       };
       if (!datos.titulo) throw new Error('La jornada necesita un título.');
+      if (!datos.id_curso) throw new Error('La jornada necesita un curso.');
       const esEdicion = !!ADMIN.editJornada;
       if (esEdicion) {
         const j = DATOS.jornadas.find(x => String(x.id_jornada) === String(ADMIN.editJornada));
@@ -1975,7 +2209,16 @@ function seccionAlumnos() {
           <option value="">— Sin equipo —</option>
           ${equiposActivos.map(e => `<option value="${esc(e.id_equipo)}" ${ed && String(ed.id_equipo_actual) === String(e.id_equipo) ? 'selected' : ''}>${esc(e.nombre_equipo)}</option>`).join('')}
         </select></label>
-        <label>Grupo/curso<input type="text" id="a-grupo" value="${ed ? esc(ed.grupo) : ''}" placeholder="p. ej. 2.º EE.PP." /></label>
+        <label>Curso<select id="a-curso">
+          <option value="">— Sin curso —</option>
+          ${cursosActivos(DATOS).map(c => `<option value="${esc(c.id_curso)}" ${ed && String(ed.id_curso) === String(c.id_curso) ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+        </select></label>
+        <label>Grupo<select id="a-grupo">
+          <option value="">— Sin grupo —</option>
+          ${cursosActivos(DATOS).map(c => `<optgroup label="${esc(c.nombre_curso)}">
+            ${gruposDeCurso(DATOS, c.id_curso).map(g => `<option value="${esc(g.id_grupo)}" ${ed && String(ed.id_grupo) === String(g.id_grupo) ? 'selected' : ''}>${esc(g.nombre_grupo)}</option>`).join('')}
+          </optgroup>`).join('')}
+        </select></label>
         <label>Color de pelo del avatar<select id="a-pelo">
           ${COLORES_PELO.map(([v, l]) => `<option value="${v}" ${(ed ? ed.color_pelo : 'negro') === v ? 'selected' : ''}>${l}</option>`).join('')}
         </select></label>
@@ -1998,11 +2241,11 @@ function seccionAlumnos() {
       <h3>Plantilla (${DATOS.alumnos.length})</h3>
       ${DATOS.alumnos.length === 0 ? `<p class="nota">Todavía no hay alumnos.</p>` : `
       <table>
-        <thead><tr><th>Nombre</th><th>Grupo</th><th>Instrumento</th><th>Equipo</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Curso/grupo</th><th>Instrumento</th><th>Equipo</th><th>Estado</th><th></th></tr></thead>
         <tbody>${DATOS.alumnos.map(a => `
           <tr style="${activo(a) ? '' : 'opacity:0.45'}">
             <td><strong>${esc(a.nombre_publico)}</strong></td>
-            <td>${esc(a.grupo || '—')}</td>
+            <td>${esc(lugarDeAlumno(DATOS, a) || '—')}</td>
             <td>${esc(a.instrumento || '—')}</td>
             <td>${esc(nombreEquipo(a.id_equipo_actual))}</td>
             <td>${activo(a) ? 'Activo' : 'Inactivo'}</td>
@@ -2030,6 +2273,14 @@ function wireAlumnos() {
   const cancelar = $('#a-cancelar');
   if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editAlumno = null; renderAdmin(); });
 
+  const selGrupoForm = $('#a-grupo');
+  if (selGrupoForm) selGrupoForm.addEventListener('change', () => {
+    if (!selGrupoForm.value) return;
+    const g = grupoDe(DATOS, selGrupoForm.value);
+    const selCursoForm = $('#a-curso');
+    if (g && selCursoForm) selCursoForm.value = g.id_curso;
+  });
+
   $('#a-guardar').addEventListener('click', e =>
     operar(e.target, async () => {
       const datos = {
@@ -2038,7 +2289,8 @@ function wireAlumnos() {
         genero: valorDe('a-genero'),
         instrumento: valorDe('a-instrumento'),
         id_equipo_actual: valorDe('a-equipo'),
-        grupo: valorDe('a-grupo'),
+        id_curso: valorDe('a-curso'),
+        id_grupo: valorDe('a-grupo'),
         color_pelo: valorDe('a-pelo'),
         color_camiseta: marcado('a-camiseta-custom') ? valorDe('a-camiseta') : '',
         activo: marcado('a-activo'),
@@ -2162,6 +2414,193 @@ function wireDianaAlumno() {
     }));
 }
 
+/* ---------- Sección: Grupos (cursos + grupos reales, y asignación de alumnos) ---------- */
+
+function seccionGrupos() {
+  const edCurso = ADMIN.editCurso ? DATOS.cursos.find(c => String(c.id_curso) === String(ADMIN.editCurso)) : null;
+  const edGrupo = ADMIN.editGrupo ? DATOS.grupos.find(g => String(g.id_grupo) === String(ADMIN.editGrupo)) : null;
+  const cursos = cursosActivos(DATOS);
+  const alumnosOrdenados = DATOS.alumnos.filter(activo).slice().sort((a, b) => a.nombre_publico.localeCompare(b.nombre_publico, 'es'));
+
+  return `
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="card">
+        <h3>${edCurso ? `Editar curso: ${esc(edCurso.nombre_curso)}` : 'Nuevo curso'}</h3>
+        <div class="form-grid">
+          <label>Nombre del curso<input type="text" id="cu-nombre" value="${edCurso ? esc(edCurso.nombre_curso) : ''}" placeholder="p. ej. 1º ESO" /></label>
+          <label class="check"><input type="checkbox" id="cu-activo" ${!edCurso || activo(edCurso) ? 'checked' : ''} /> Activo</label>
+        </div>
+        <div class="admin-barra" style="margin-top:14px">
+          <button class="btn-oro" id="cu-guardar">${edCurso ? 'Guardar cambios' : 'Crear curso'}</button>
+          ${edCurso ? `<button class="btn-borde" id="cu-cancelar">Cancelar</button>` : ''}
+        </div>
+      </div>
+      <div class="card">
+        <h3>${edGrupo ? `Editar grupo: ${esc(edGrupo.nombre_grupo)}` : 'Nuevo grupo'}</h3>
+        <div class="form-grid">
+          <label>Curso<select id="gr-curso">
+            <option value="">— Elige un curso —</option>
+            ${cursos.map(c => `<option value="${esc(c.id_curso)}" ${edGrupo && String(edGrupo.id_curso) === String(c.id_curso) ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+          </select></label>
+          <label>Nombre del grupo<input type="text" id="gr-nombre" value="${edGrupo ? esc(edGrupo.nombre_grupo) : ''}" placeholder="p. ej. A" /></label>
+          <label class="check"><input type="checkbox" id="gr-activo" ${!edGrupo || activo(edGrupo) ? 'checked' : ''} /> Activo</label>
+        </div>
+        <div class="admin-barra" style="margin-top:14px">
+          <button class="btn-oro" id="gr-guardar">${edGrupo ? 'Guardar cambios' : 'Crear grupo'}</button>
+          ${edGrupo ? `<button class="btn-borde" id="gr-cancelar">Cancelar</button>` : ''}
+        </div>
+        ${cursos.length === 0 ? `<p class="nota">Crea primero un curso a la izquierda.</p>` : ''}
+      </div>
+    </div>
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="card tabla-scroll">
+        <h3>Cursos (${DATOS.cursos.length})</h3>
+        ${DATOS.cursos.length === 0 ? `<p class="nota">Todavía no hay cursos.</p>` : `
+        <table>
+          <thead><tr><th>Curso</th><th>Estado</th><th></th></tr></thead>
+          <tbody>${DATOS.cursos.map(c => `
+            <tr style="${activo(c) ? '' : 'opacity:0.45'}">
+              <td><strong>${esc(c.nombre_curso)}</strong></td>
+              <td>${activo(c) ? 'Activo' : 'Inactivo'}</td>
+              <td style="text-align:right"><button class="btn-borde btn-mini" data-editar-curso="${esc(c.id_curso)}">Editar</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`}
+      </div>
+      <div class="card tabla-scroll">
+        <h3>Grupos (${DATOS.grupos.length})</h3>
+        ${DATOS.grupos.length === 0 ? `<p class="nota">Todavía no hay grupos.</p>` : `
+        <table>
+          <thead><tr><th>Grupo</th><th>Curso</th><th>Estado</th><th></th></tr></thead>
+          <tbody>${DATOS.grupos.map(g => `
+            <tr style="${activo(g) ? '' : 'opacity:0.45'}">
+              <td><strong>${esc(g.nombre_grupo)}</strong></td>
+              <td>${esc((cursoDe(DATOS, g.id_curso) || {}).nombre_curso || '—')}</td>
+              <td>${activo(g) ? 'Activo' : 'Inactivo'}</td>
+              <td style="text-align:right"><button class="btn-borde btn-mini" data-editar-grupo="${esc(g.id_grupo)}">Editar</button></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`}
+      </div>
+    </div>
+    <div class="card tabla-scroll">
+      <h3>Asignar alumnos a un curso y un grupo (${alumnosOrdenados.length})</h3>
+      ${alumnosOrdenados.length === 0 ? `<p class="nota">Todavía no hay alumnos.</p>` : `
+      <table class="tabla-admin">
+        <thead><tr><th>Alumno/a</th><th>Curso</th><th>Grupo</th></tr></thead>
+        <tbody>${alumnosOrdenados.map(a => {
+          const cursoSel = ADMIN.asignacionesCurso[a.id_alumno] !== undefined ? ADMIN.asignacionesCurso[a.id_alumno] : (a.id_curso || '');
+          const grupoSel = ADMIN.asignacionesGrupo[a.id_alumno] !== undefined ? ADMIN.asignacionesGrupo[a.id_alumno] : (a.id_grupo || '');
+          return `<tr data-alumno="${esc(a.id_alumno)}">
+            <td><strong>${esc(a.nombre_publico)}</strong></td>
+            <td><select data-asignar-curso>
+              <option value="">— Sin curso —</option>
+              ${cursos.map(c => `<option value="${esc(c.id_curso)}" ${cursoSel === c.id_curso ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+            </select></td>
+            <td><select data-asignar-grupo>
+              <option value="">— Sin grupo —</option>
+              ${cursos.map(c => `<optgroup label="${esc(c.nombre_curso)}">
+                ${gruposDeCurso(DATOS, c.id_curso).map(g => `<option value="${esc(g.id_grupo)}" ${grupoSel === g.id_grupo ? 'selected' : ''}>${esc(g.nombre_grupo)}</option>`).join('')}
+              </optgroup>`).join('')}
+            </select></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+      <div class="admin-barra" style="margin-top:16px">
+        <button class="btn-oro" id="ga-guardar">Guardar asignaciones</button>
+      </div>`}
+      <p class="nota">Los equipos de la liga son mezclas para jugar; los cursos y grupos son la clase real, y
+      sirven para separar las clasificaciones: la de equipos se ve por curso y la individual por grupo. Si eliges
+      un grupo, el curso se rellena solo con el suyo; también puedes dejar solo el curso sin un grupo concreto.</p>
+    </div>`;
+}
+
+function wireGrupos() {
+  document.querySelectorAll('[data-editar-curso]').forEach(b =>
+    b.addEventListener('click', () => { ADMIN.editCurso = b.dataset.editarCurso; renderAdmin(); }));
+  const cancelarCurso = $('#cu-cancelar');
+  if (cancelarCurso) cancelarCurso.addEventListener('click', () => { ADMIN.editCurso = null; renderAdmin(); });
+
+  document.querySelectorAll('[data-editar-grupo]').forEach(b =>
+    b.addEventListener('click', () => { ADMIN.editGrupo = b.dataset.editarGrupo; renderAdmin(); }));
+  const cancelarGrupo = $('#gr-cancelar');
+  if (cancelarGrupo) cancelarGrupo.addEventListener('click', () => { ADMIN.editGrupo = null; renderAdmin(); });
+
+  $('#cu-guardar').addEventListener('click', e =>
+    operar(e.target, async () => {
+      const datos = {
+        id_curso: ADMIN.editCurso || '',
+        nombre_curso: valorDe('cu-nombre'),
+        activo: marcado('cu-activo'),
+      };
+      if (!datos.nombre_curso) throw new Error('El curso necesita un nombre.');
+      const res = await postScript('saveCurso', { datos });
+      const local = { ...datos, id_curso: res.id_curso, activo: datos.activo ? 'TRUE' : 'FALSE' };
+      const i = DATOS.cursos.findIndex(x => String(x.id_curso) === String(res.id_curso));
+      if (i >= 0) DATOS.cursos[i] = { ...DATOS.cursos[i], ...local }; else DATOS.cursos.push(local);
+      const esEdicion = !!ADMIN.editCurso;
+      ADMIN.editCurso = null;
+      return esEdicion ? 'Curso actualizado.' : 'Curso creado.';
+    }));
+
+  $('#gr-guardar').addEventListener('click', e =>
+    operar(e.target, async () => {
+      const datos = {
+        id_grupo: ADMIN.editGrupo || '',
+        nombre_grupo: valorDe('gr-nombre'),
+        id_curso: valorDe('gr-curso'),
+        activo: marcado('gr-activo'),
+      };
+      if (!datos.nombre_grupo) throw new Error('El grupo necesita un nombre.');
+      if (!datos.id_curso) throw new Error('El grupo necesita un curso.');
+      const res = await postScript('saveGrupo', { datos });
+      const local = { ...datos, id_grupo: res.id_grupo, activo: datos.activo ? 'TRUE' : 'FALSE' };
+      const i = DATOS.grupos.findIndex(x => String(x.id_grupo) === String(res.id_grupo));
+      if (i >= 0) DATOS.grupos[i] = { ...DATOS.grupos[i], ...local }; else DATOS.grupos.push(local);
+      const esEdicion = !!ADMIN.editGrupo;
+      ADMIN.editGrupo = null;
+      return esEdicion ? 'Grupo actualizado.' : 'Grupo creado.';
+    }));
+
+  document.querySelectorAll('[data-alumno] [data-asignar-curso]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const tr = sel.closest('[data-alumno]');
+      ADMIN.asignacionesCurso[tr.dataset.alumno] = sel.value;
+    });
+  });
+
+  document.querySelectorAll('[data-alumno] [data-asignar-grupo]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const tr = sel.closest('[data-alumno]');
+      ADMIN.asignacionesGrupo[tr.dataset.alumno] = sel.value;
+      if (sel.value) {
+        const g = grupoDe(DATOS, sel.value);
+        const selCurso = tr.querySelector('[data-asignar-curso]');
+        if (g && selCurso) { selCurso.value = g.id_curso; ADMIN.asignacionesCurso[tr.dataset.alumno] = g.id_curso; }
+      }
+    });
+  });
+
+  const btnGuardarAsig = $('#ga-guardar');
+  if (btnGuardarAsig) btnGuardarAsig.addEventListener('click', e =>
+    operar(e.target, async () => {
+      const filas = document.querySelectorAll('[data-alumno]');
+      const asignaciones = Array.from(filas).map(tr => ({
+        id_alumno: tr.dataset.alumno,
+        id_curso: tr.querySelector('[data-asignar-curso]').value,
+        id_grupo: tr.querySelector('[data-asignar-grupo]').value,
+      }));
+      await postScript('saveAsignacionesGrupo', { asignaciones });
+      asignaciones.forEach(a => {
+        const al = DATOS.alumnos.find(x => String(x.id_alumno) === String(a.id_alumno));
+        if (al) { al.id_curso = a.id_curso; al.id_grupo = a.id_grupo; }
+      });
+      ADMIN.asignacionesCurso = {};
+      ADMIN.asignacionesGrupo = {};
+      return 'Asignaciones guardadas.';
+    }));
+}
+
 /* ---------- Sección: Equipos ---------- */
 
 /** Vista previa del escudo en el formulario: la imagen subida, o un hueco vacío. */
@@ -2183,6 +2622,10 @@ function seccionEquipos() {
       <div class="form-grid">
         <label>Nombre del equipo<input type="text" id="e-nombre" value="${ed ? esc(ed.nombre_equipo) : ''}" placeholder="p. ej. Napolitana FC" /></label>
         <label>Color<input type="color" id="e-color" value="${ed && /^#[0-9a-fA-F]{6}$/.test(String(ed.color)) ? esc(ed.color) : '#C8102E'}" style="height:38px;padding:2px" /></label>
+        <label>Curso<select id="e-curso">
+          <option value="">— Sin curso —</option>
+          ${cursosActivos(DATOS).map(c => `<option value="${esc(c.id_curso)}" ${ed && String(ed.id_curso) === String(c.id_curso) ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+        </select></label>
         <label class="check"><input type="checkbox" id="e-activo" ${!ed || activo(ed) ? 'checked' : ''} /> Activo (aparece en la clasificación)</label>
         <label style="grid-column:1/-1">Escudo
           <div class="admin-barra" style="margin-top:6px;align-items:flex-start">
@@ -2201,16 +2644,18 @@ function seccionEquipos() {
       <p class="nota">Al subir la imagen se intenta quitar el fondo automáticamente (asumiendo que es de un color
       liso) y se reduce a un máximo de 800×800 px antes de guardarse en tu Google Drive (carpeta «Liga Armónica —
       Escudos»). Si el resultado no queda bien, sube directamente un PNG ya recortado con fondo transparente.
-      Si no subes ningún escudo, se sigue mostrando el punto de color de siempre.</p>
+      Si no subes ningún escudo, se sigue mostrando el punto de color de siempre. El curso determina en qué
+      clasificación por equipos aparece: procura que todos sus integrantes sean de ese mismo curso.</p>
     </div>
     <div class="card tabla-scroll">
       <h3>Equipos (${DATOS.equipos.length})</h3>
       ${DATOS.equipos.length === 0 ? `<p class="nota">Todavía no hay equipos.</p>` : `
       <table>
-        <thead><tr><th>Equipo</th><th class="num">Alumnos activos</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Equipo</th><th>Curso</th><th class="num">Alumnos activos</th><th>Estado</th><th></th></tr></thead>
         <tbody>${DATOS.equipos.map(eq => `
           <tr style="${activo(eq) ? '' : 'opacity:0.45'}">
             <td><strong>${escudoEquipoHTML(eq, 22)}${esc(eq.nombre_equipo)}</strong></td>
+            <td>${esc((cursoDe(DATOS, eq.id_curso) || {}).nombre_curso || '—')}</td>
             <td class="num">${nAlumnos(eq.id_equipo)}</td>
             <td>${activo(eq) ? 'Activo' : 'Inactivo'}</td>
             <td style="text-align:right"><button class="btn-borde btn-mini" data-editar="${esc(eq.id_equipo)}">Editar</button></td>
@@ -2249,6 +2694,7 @@ function wireEquipos() {
         id_equipo: ADMIN.editEquipo || '',
         nombre_equipo: valorDe('e-nombre'),
         color: valorDe('e-color') || '#888888',
+        id_curso: valorDe('e-curso'),
         activo: marcado('e-activo'),
         escudo: ADMIN.imagenEscudo !== null ? ADMIN.imagenEscudo : (ed ? (ed.escudo || '') : ''),
       };
@@ -2598,6 +3044,8 @@ function seccionLiga() {
           Mostrar en la clasificación individual si cada alumno/a sube, baja o se mantiene respecto a la última jornada</label>
         <label class="check"><input type="checkbox" id="c-tend-equipos" ${configActivo(c.mostrar_tendencia_equipos) ? 'checked' : ''} />
           Mostrar en la clasificación de equipos si cada equipo sube, baja o se mantiene respecto a la última jornada</label>
+        <label class="check"><input type="checkbox" id="c-todos-cursos" ${configActivo(c.mostrar_todos_cursos) ? 'checked' : ''} />
+          Permitir la opción «Todos los cursos» en los selectores de curso (si la desactivas, siempre hay que elegir uno concreto)</label>
       </div>
       <div class="admin-barra" style="margin-top:14px">
         <button class="btn-oro" id="c-guardar">Guardar configuración</button>
@@ -2622,6 +3070,7 @@ function wireLiga() {
         jornada_actual: valorDe('c-jornada'),
         mostrar_tendencia_alumnos: marcado('c-tend-alumnos') ? 'TRUE' : 'FALSE',
         mostrar_tendencia_equipos: marcado('c-tend-equipos') ? 'TRUE' : 'FALSE',
+        mostrar_todos_cursos: marcado('c-todos-cursos') ? 'TRUE' : 'FALSE',
       };
       await postScript('saveConfig', { config });
       Object.assign(DATOS.config, config);
