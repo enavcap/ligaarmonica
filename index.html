@@ -62,6 +62,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     font-weight: 800; font-size: clamp(40px, 8vw, 64px);
     text-transform: uppercase; line-height: 0.95; margin: 4px 0 0;
   }
+  #titulo { cursor: pointer; }
   .temporada {
     float: right; text-align: right; margin-top: 8px;
     border: 1px solid rgba(201, 153, 47, 0.4); border-radius: 10px;
@@ -1821,6 +1822,25 @@ function cambiarVista(v) {
 
 document.querySelectorAll('#nav button').forEach(b =>
   b.addEventListener('click', () => cambiarVista(b.dataset.vista)));
+
+const tituloEl = $('#titulo');
+if (tituloEl) tituloEl.addEventListener('click', () => cambiarVista('dashboard'));
+
+// Al bloquear la pantalla o salir del navegador (cambiar de app, minimizar...)
+// el móvil dispara "visibilitychange" con document.hidden a true: se para la
+// música de bienvenida si estaba sonando, en vez de dejarla de fondo sin que
+// se vea la pestaña. No se reanuda sola al volver (los navegadores tampoco
+// lo dejarían sin un gesto directo del usuario); hay que volver a pulsar el
+// botón de música.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) return;
+  const audio = $('#splash-audio');
+  if (audio && !audio.paused) {
+    audio.pause();
+    const musicaBtn = $('#musica-btn');
+    if (musicaBtn) musicaBtn.textContent = '🔇';
+  }
+});
 
 /* ---------- Menú lateral (móvil) ---------- */
 const menuBtn = $('#menu-btn');
