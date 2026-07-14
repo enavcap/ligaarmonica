@@ -1365,6 +1365,7 @@ function abrirAlumno(id) {
   VISTA = 'alumno';
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.vista === 'individual'));
   render();
+  pushHistorial();
 }
 
 /* =========================================================================
@@ -1487,6 +1488,7 @@ function abrirEquipo(id) {
   VISTA = 'equipo';
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.vista === 'equipos'));
   render();
+  pushHistorial();
 }
 
 /* =========================================================================
@@ -1948,10 +1950,49 @@ function cambiarVista(v) {
   document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.vista === v));
   render();
   cerrarMenu();
+  pushHistorial();
 }
 
 document.querySelectorAll('#nav button').forEach(b =>
   b.addEventListener('click', () => cambiarVista(b.dataset.vista)));
+
+/* =========================================================================
+   Historial del navegador: sin esto, cada pestaña/ficha que se abre no deja
+   rastro en el historial y el botón "atrás" del móvil se sale directamente
+   de la web (o cierra la pestaña) en vez de volver a la pantalla anterior
+   de la app. Se guarda un estado mínimo (vista + alumno/equipo abierto) con
+   pushState en cada navegación real, y popstate lo restaura.
+   ========================================================================= */
+
+let ULTIMO_ESTADO_HIST = null;
+
+function estadoActual() {
+  return {
+    vista: VISTA,
+    alumno: VISTA === 'alumno' ? ALUMNO_SEL : null,
+    equipo: VISTA === 'equipo' ? EQUIPO_SEL : null,
+  };
+}
+
+function pushHistorial() {
+  const estado = estadoActual();
+  const clave = JSON.stringify(estado);
+  if (clave === ULTIMO_ESTADO_HIST) return; // no duplicar si no ha cambiado nada real
+  ULTIMO_ESTADO_HIST = clave;
+  history.pushState(estado, '');
+}
+
+window.addEventListener('popstate', e => {
+  const estado = e.state || { vista: 'dashboard', alumno: null, equipo: null };
+  ULTIMO_ESTADO_HIST = JSON.stringify(estado);
+  VISTA = estado.vista || 'dashboard';
+  ALUMNO_SEL = estado.alumno || null;
+  EQUIPO_SEL = estado.equipo || null;
+  const navActivo = VISTA === 'alumno' ? 'individual' : VISTA === 'equipo' ? 'equipos' : VISTA;
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.vista === navActivo));
+  cerrarMenu();
+  render();
+});
 
 const tituloEl = $('#titulo');
 if (tituloEl) tituloEl.addEventListener('click', () => cambiarVista('dashboard'));
@@ -4294,6 +4335,12 @@ function fmtFecha(f) {
     if (DATOS.config.curso) { $('#curso').textContent = DATOS.config.curso; $('#temporada').hidden = false; }
     if (DATOS.config.profesor) { $('#pie-texto').textContent += ' · ' + DATOS.config.profesor; }
     render();
+    // Punto de partida del historial: con replaceState (no pushState) no se
+    // gasta una entrada "en falso", así que la primera pulsación de "atrás"
+    // real ya sale de la web como es de esperar, y las de después (tras
+    // navegar dentro de la app) vuelven pantalla a pantalla.
+    ULTIMO_ESTADO_HIST = JSON.stringify(estadoActual());
+    history.replaceState(estadoActual(), '');
     finalizarSplash(configActivo(DATOS.config.bienvenida_activa, false));
   } catch (err) {
     ocultarSplash();
