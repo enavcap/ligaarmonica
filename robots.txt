@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ligaarmonica.com/sitemap.xml
