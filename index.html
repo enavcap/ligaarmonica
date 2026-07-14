@@ -66,6 +66,9 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     background-attachment: fixed;
     min-height: 100vh;
   }
+  /* Mientras la pantalla de bienvenida está visible, la app ya está renderizada detrás
+     (tapada) — sin esto su altura real asoma como una barra de scroll vertical de fondo. */
+  body:has(#splash:not([hidden])) { overflow: hidden; }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 16px 64px; }
 
   /* Cabecera tipo marcador */
@@ -81,13 +84,29 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     text-transform: uppercase; line-height: 0.95; margin: 4px 0 0;
   }
   #titulo { cursor: pointer; }
+  .temporada-wrap { position: relative; float: right; }
   .temporada {
-    float: right; text-align: right; margin-top: 8px;
+    text-align: right; margin-top: 8px; cursor: pointer;
     border: 1px solid rgba(201, 153, 47, 0.4); border-radius: 10px;
     background: rgba(12, 23, 40, 0.7); padding: 8px 14px;
   }
   .temporada small { display: block; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
   .temporada strong { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; color: var(--gold-light); }
+  .temporada-admin-btn {
+    position: absolute; top: 100%; right: 0; z-index: 5; margin-top: 4px;
+    width: 100%; white-space: nowrap; text-align: center;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 15px;
+    letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;
+    border: 1px solid rgba(201, 153, 47, 0.4); border-radius: 10px; padding: 7px 14px;
+    background: rgba(12, 23, 40, 0.92); color: var(--muted);
+    opacity: 0; pointer-events: none; transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+  .temporada-admin-btn:hover { color: var(--chalk); background: rgba(16, 64, 44, 0.9); }
+  .temporada-wrap:hover .temporada-admin-btn,
+  .temporada-wrap.abierto .temporada-admin-btn {
+    opacity: 1; pointer-events: auto; transform: translateY(0);
+  }
 
   nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
   nav button, .pills button {
@@ -126,6 +145,14 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   .pills { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 10px; border: 1px solid rgba(30, 92, 65, 0.5); background: rgba(12, 23, 40, 0.6); }
   .pills button { font-size: 15px; padding: 5px 12px; }
   .pills button:hover { color: var(--chalk); }
+  .pills select {
+    background: transparent; border: none; outline: none; color: var(--muted); cursor: pointer;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 15px;
+    letter-spacing: 0.05em; text-transform: uppercase; padding: 5px 8px; border-radius: 8px; transition: 0.15s;
+  }
+  .pills select:hover, .pills select:focus { color: var(--chalk); background: rgba(16, 64, 44, 0.6); }
+  .pills select option { text-transform: none; letter-spacing: normal; font-family: 'Barlow', sans-serif; }
+  .dashboard-filtros { display: flex; flex-wrap: wrap; gap: 8px; }
 
   .card {
     border: 1px solid rgba(30, 92, 65, 0.5); border-radius: 14px;
@@ -237,7 +264,13 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   @media (max-width: 520px) {
     .podio-top3 { gap: 8px; }
     .podio-puesto { width: 88px; }
+    .dashboard-filtros { gap: 6px; }
+    .dashboard-filtros .pills { padding: 3px; }
+    .pills select { font-size: 12.5px; padding: 4px 5px; }
   }
+  .nav-jornadas { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+  .nav-jornadas select { max-width: 280px; }
+  .nav-jornadas button:disabled { opacity: 0.3; cursor: default; }
   .tendencia { display: inline-block; font-size: 12px; line-height: 1; cursor: default; }
   .tendencia-num { margin-left: 3px; }
   .tendencia-sube { color: #0ca30c; }
@@ -285,6 +318,11 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   .aviso h2 { color: var(--gold); margin-bottom: 12px; }
   .aviso p { color: var(--muted); font-size: 14px; line-height: 1.6; }
   .aviso code { background: var(--night-2); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .avisos-panel { border-left: 3px solid var(--gold); background: rgba(229, 185, 78, 0.08); }
+  .avisos-panel h3 { color: var(--gold-light); font-size: 15px; }
+  .avisos-panel ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .avisos-panel li { font-size: 14px; color: var(--chalk); line-height: 1.5; }
+  .enlace-aviso { background: none; border: none; padding: 0; font: inherit; color: var(--gold-light); text-decoration: underline; cursor: pointer; }
   @keyframes girar { to { transform: rotate(360deg); } }
   .carga-liga { text-align: center; margin: 70px auto 0; }
   .carga-marca { position: relative; width: 104px; height: 104px; margin: 0 auto 22px; }
@@ -310,6 +348,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   }
   footer #pie-texto { grid-column: 2; text-align: center; }
   footer #repetir-tour { grid-column: 1; justify-self: start; }
+  footer #pie-derecha { grid-column: 3; justify-self: end; display: flex; gap: 10px; }
 
   /* --- Panel de administración --- */
   input, select, textarea {
@@ -357,6 +396,32 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   .chip-borr { background: rgba(217, 119, 6, 0.3); color: #fcd34d; }
   .admin-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
   .admin-barra .derecha { margin-left: auto; display: flex; gap: 8px; }
+  /* Fija a la ventana (flota y se desplaza con el scroll, no con la página)
+     pero calculada para quedar pegada al borde izquierdo del cuadro
+     principal, que está centrado dentro de .wrap (max-width 1100px). */
+  .admin-sidebar {
+    position: fixed; top: 90px; left: calc((100vw - 1100px) / 2 - 316px); width: 300px; z-index: 45;
+    max-height: calc(100vh - 110px); overflow-y: auto;
+  }
+  .admin-sidebar .card { box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
+  @media (max-width: 1400px) {
+    .admin-sidebar { position: static; width: auto; max-height: none; margin-bottom: 16px; left: auto; top: auto; }
+  }
+  .enlace-fila { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: var(--chalk); cursor: pointer; text-align: left; }
+  .enlace-fila:hover { color: var(--gold-light); text-decoration: underline; }
+  tr.fila-seleccionada { background: rgba(229, 185, 78, 0.12); }
+  .sidebar-cabecera { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .sidebar-nombre { font-weight: 700; font-size: 15px; color: var(--chalk); margin: 0; }
+  .sidebar-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; text-align: center; }
+  .sidebar-stats > div { background: rgba(8, 15, 28, 0.5); border-radius: 8px; padding: 8px 4px; }
+  .sidebar-stats .secundario { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .sidebar-stats strong { display: block; font-size: 16px; color: var(--gold-light); margin-top: 2px; }
+  .sidebar-historial { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .sidebar-historial li { padding-bottom: 10px; border-bottom: 1px solid rgba(30, 92, 65, 0.25); }
+  .sidebar-historial li:last-child { border-bottom: none; padding-bottom: 0; }
+  .sidebar-hist-fila { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; }
+  .sidebar-hist-total { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 16px; color: var(--gold-light); }
+  .sidebar-hist-comentario { font-size: 12px; color: var(--muted); margin: 4px 0 0; line-height: 1.4; }
   .tabla-scroll { overflow-x: auto; }
   .tabla-admin { min-width: 760px; }
   .tabla-admin td { padding: 6px 8px; }
@@ -371,7 +436,8 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   .form-grid { display: grid; gap: 12px 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
   .form-grid label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .form-grid label.check { flex-direction: row; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--chalk); grid-column: 1 / -1; }
-  .form-grid input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--gold); }
+  .form-grid input[type=checkbox], .form-grid input[type=radio] { width: 18px; height: 18px; accent-color: var(--gold); flex-shrink: 0; }
+  .grid-resumen-backup { display: grid; gap: 6px 16px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
   .btn-mini { font-size: 14px; padding: 4px 12px; }
   .imagen-preview {
     width: 140px; height: 140px; border-radius: 14px; background: var(--night-2);
@@ -404,7 +470,9 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     header { display: flex; flex-direction: column; }
     .eyebrow { order: 1; }
     h1 { order: 2; }
-    .temporada { order: 3; float: none; align-self: flex-start; text-align: left; margin: 10px 0 0; }
+    .temporada-wrap { order: 3; float: none; align-self: flex-start; }
+    .temporada { text-align: left; margin: 10px 0 0; }
+    .temporada-admin-btn { text-align: left; }
 
     /* La navegación se contrae en un menú lateral con velo y animación de entrada. */
     .menu-btn { display: flex; }
@@ -535,6 +603,125 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; padding: 4px 8px;
   }
   .tour-cerrar:hover { color: var(--chalk); }
+
+  /* --- Modo pantalla grande (para proyectar en clase) --- */
+  .pantalla-grande {
+    position: fixed; inset: 0; z-index: 220; overflow-y: auto; overflow-x: hidden;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(30, 92, 65, 0.35), transparent),
+      linear-gradient(180deg, #080f1c 0%, #0b2e20 140%);
+    padding: 20px 24px;
+  }
+  .pantalla-grande[hidden] { display: none; }
+  .pantalla-salir {
+    position: fixed; top: 18px; right: 18px; z-index: 1;
+    width: 40px; height: 40px; border-radius: 50%; padding: 0;
+    border: 1px solid rgba(201, 153, 47, 0.4); background: rgba(12, 23, 40, 0.75);
+    color: var(--muted); font-size: 18px; cursor: pointer;
+  }
+  .pantalla-salir:hover { color: var(--chalk); border-color: var(--gold); }
+  .pantalla-filtros { position: fixed; top: 18px; left: 18px; z-index: 1; display: flex; gap: 8px; }
+  .pantalla-filtros select {
+    background: rgba(12, 23, 40, 0.75); border: 1px solid rgba(30, 92, 65, 0.5); color: var(--muted);
+    font-size: 13px; padding: 6px 10px; border-radius: 8px; cursor: pointer; appearance: none;
+    font-family: inherit; opacity: 0.65; transition: opacity 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .pantalla-filtros select:hover, .pantalla-filtros select:focus { opacity: 1; color: var(--chalk); border-color: rgba(201, 153, 47, 0.5); outline: none; }
+  .pantalla-filtros select option { background: var(--night); color: var(--chalk); }
+  @media (max-width: 640px) {
+    .pantalla-filtros { position: static; justify-content: center; margin-bottom: 14px; }
+  }
+  .pantalla-tipos { display: flex; justify-content: center; gap: 8px; margin-bottom: 18px; }
+  .pantalla-tipos button {
+    background: transparent; border: 1px solid var(--line); color: var(--muted);
+    padding: 7px 18px; border-radius: 999px; font-size: 14px; cursor: pointer;
+  }
+  .pantalla-tipos button.on { background: var(--gold); border-color: var(--gold); color: var(--night); }
+  .pantalla-titulo {
+    text-align: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
+    text-transform: uppercase; font-size: clamp(24px, 4vw, 36px); color: var(--chalk); margin: 0 0 14px;
+  }
+  .pantalla-grande .podio-top3 { transform: scale(1.15); margin: 30px 0 48px; }
+  .pantalla-tabla { max-width: 760px; margin: 0 auto; overflow-x: auto; }
+  .pantalla-insignias { max-width: 760px; margin: 20px auto 0; text-align: center; }
+  .pantalla-insignias h3 {
+    margin: 0 0 14px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted); font-weight: 700;
+  }
+  .pantalla-insignias-lista { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px; }
+  .pantalla-insignia-chip { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px; }
+  .pantalla-insignia-chip .avatar-alumno.avatar-pequeno { width: 30px; height: 30px; }
+  .pantalla-insignia-escudo {
+    width: 110px; height: 110px; flex-shrink: 0; object-fit: contain;
+    background-size: contain; background-repeat: no-repeat; background-position: center;
+    display: flex; align-items: center; justify-content: center; font-size: 72px; line-height: 1;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
+  }
+  .pantalla-insignia-nombre { font-size: 14px; color: var(--chalk); }
+  @media (max-width: 640px) {
+    .pantalla-grande .podio-top3 { transform: none; }
+  }
+
+  /* --- Resumen en ventana flotante (Picture-in-Picture) --- */
+  body.pip-body { min-height: 0; }
+  .pip-resumen { padding: 14px; }
+  .pip-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  .pip-titulo {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; text-transform: uppercase;
+    font-size: 16px; color: var(--chalk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pip-config-btn {
+    background: transparent; border: none; color: var(--muted); font-size: 15px;
+    cursor: pointer; padding: 2px 4px; flex-shrink: 0;
+  }
+  .pip-config-btn:hover { color: var(--chalk); }
+  .pip-tipos { display: flex; gap: 6px; flex-shrink: 0; }
+  .pip-tipos button {
+    background: transparent; border: 1px solid var(--line); color: var(--muted);
+    padding: 3px 10px; border-radius: 999px; font-size: 11px; cursor: pointer;
+  }
+  .pip-tipos button.on { background: var(--gold); border-color: var(--gold); color: var(--night); }
+  .pip-puestos { list-style: none; margin: 0; padding: 0; }
+  .pip-puestos li {
+    display: flex; align-items: center; gap: 10px; padding: 5px 2px;
+    border-bottom: 1px solid rgba(30, 92, 65, 0.2); font-size: 13px;
+  }
+  .pip-puestos li:last-child { border-bottom: none; }
+  .pip-pos { width: 18px; flex-shrink: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .pip-nombre { flex: 1; color: var(--chalk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pip-puntos { flex-shrink: 0; font-weight: 700; color: var(--gold-light); font-variant-numeric: tabular-nums; }
+  .pip-vacio { font-size: 12px; color: var(--muted); text-align: center; margin: 12px 0; }
+  .pip-insignias { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(30, 92, 65, 0.3); }
+  .pip-subtitulo { margin: 0 0 8px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .pip-insignias-lista { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pip-insignia-chip {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--chalk);
+    background: rgba(12, 23, 40, 0.6); border-radius: 999px; padding: 3px 10px 3px 6px;
+  }
+  .pip-insignia-icono { font-size: 15px; line-height: 1; }
+  .pip-insignias-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; padding-top: 4px; }
+  .pip-insignia-tarjeta { display: flex; flex-direction: column; align-items: center; gap: 5px; width: calc(var(--pip-escudo-tam, 64px) + 26px); }
+  .pip-insignia-tarjeta .avatar-alumno.avatar-pequeno { width: calc(var(--pip-escudo-tam, 64px) * 0.55); height: calc(var(--pip-escudo-tam, 64px) * 0.55); }
+  .pip-insignia-escudo-grande {
+    width: var(--pip-escudo-tam, 64px); height: var(--pip-escudo-tam, 64px); flex-shrink: 0; object-fit: contain;
+    background-size: contain; background-repeat: no-repeat; background-position: center;
+    display: flex; align-items: center; justify-content: center; font-size: calc(var(--pip-escudo-tam, 64px) * 0.62); line-height: 1;
+    filter: drop-shadow(0 3px 8px rgba(0,0,0,0.35));
+  }
+  .pip-insignia-tarjeta-nombre {
+    font-size: 11px; color: var(--chalk); text-align: center; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+  }
+
+  .pip-config { display: flex; flex-direction: column; gap: 10px; }
+  .pip-config-titulo {
+    margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; text-transform: uppercase;
+    font-size: 16px; color: var(--chalk);
+  }
+  .pip-config label { font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; display: block; }
+  .pip-config select { width: 100%; font-size: 13px; padding: 6px 8px; }
+  .pip-tipos-config button { flex: 1; padding: 6px 10px; font-size: 12px; }
+  #pip-mostrar { margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -556,9 +743,13 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
     <div id="tour-cuerpo"></div>
   </div>
 </div>
+<div id="pantalla-grande" class="pantalla-grande" hidden></div>
 <div class="wrap">
   <header>
-    <div class="temporada" id="temporada" hidden><small>Temporada</small><strong id="curso"></strong></div>
+    <div class="temporada-wrap" id="temporada-wrap">
+      <div class="temporada" id="temporada" hidden><small>Temporada</small><strong id="curso"></strong></div>
+      <button class="temporada-admin-btn" data-vista="admin">Admin</button>
+    </div>
     <p class="eyebrow">Conservatorio · Armonía</p>
     <h1 id="titulo">Liga Armónica</h1>
     <button id="menu-btn" class="menu-btn" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav">
@@ -571,7 +762,6 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
       <button data-vista="jornadas">Jornadas</button>
       <button data-vista="salon">Salón de la Fama</button>
       <button data-vista="reglas">Reglas</button>
-      <button data-vista="admin">Admin</button>
     </nav>
   </header>
   <div id="menu-overlay" class="menu-overlay"></div>
@@ -587,6 +777,10 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   <footer id="pie">
     <button class="btn-sutil" id="repetir-tour" hidden>Repetir tour</button>
     <span id="pie-texto">Liga Armónica · Gamificación de la asignatura de Armonía</span>
+    <div id="pie-derecha">
+      <button class="btn-sutil" id="pip-btn" title="Ventana flotante con un resumen, para verla mientras usas otras aplicaciones" hidden>Miniventana</button>
+      <button class="btn-sutil" id="pantalla-grande-btn" title="Modo pantalla grande, para proyectar en clase">Pantalla grande</button>
+    </div>
   </footer>
 </div>
 
@@ -706,6 +900,11 @@ function jornadasPublicadas(jornadas, trimestre, idCurso, idGrupo) {
   });
 }
 
+/** Jornadas publicadas del alcance en orden cronológico — para el navegador de jornadas de Individual/Equipos. */
+function jornadasDelAlcance(datos, trimestre, idCurso, idGrupo) {
+  return jornadasPublicadas(datos.jornadas, trimestre, idCurso, idGrupo).slice().sort(compararFechaJornada);
+}
+
 /**
  * La "más reciente" de una lista de jornadas. Como cada grupo puede tener su
  * propia numeración independiente (y las jornadas de todo el curso otra
@@ -748,24 +947,33 @@ function jornadaActual(datos, idManual, idCurso, idGrupo) {
   return jornadaMasRecienteDeLista(publicadas);
 }
 
-function registrosValidos(datos, trimestre, idCurso) {
+function registrosValidos(datos, trimestre, idCurso, idsJornadasPermitidas) {
   const ids = new Set(jornadasPublicadas(datos.jornadas, trimestre, idCurso).map(j => String(j.id_jornada)));
-  return datos.registros.filter(r => ids.has(String(r.id_jornada)));
+  return datos.registros.filter(r =>
+    ids.has(String(r.id_jornada)) && (!idsJornadasPermitidas || idsJornadasPermitidas.has(String(r.id_jornada))));
 }
 
-function clasIndividual(datos, trimestre, idGrupo, idCursoDirecto) {
+/**
+ * `idsJornadasPermitidas` (opcional): si se indica, la clasificación se
+ * calcula solo con esas jornadas — es lo que usa el navegador de jornadas de
+ * Individual/Equipos para reconstruir cómo estaba la tabla "hasta" una
+ * jornada concreta, en vez de con todas las publicadas del alcance.
+ */
+function clasIndividual(datos, trimestre, idGrupo, idCursoDirecto, idsJornadasPermitidas) {
   // Las jornadas son propias de cada curso: el del grupo elegido si hay uno,
   // o si no el curso indicado directamente (p. ej. el del selector del dashboard).
   const idCurso = idGrupo ? (grupoDe(datos, idGrupo) || {}).id_curso : (idCursoDirecto || null);
 
   const acc = new Map();
-  for (const r of registrosValidos(datos, trimestre, idCurso)) {
+  for (const r of registrosValidos(datos, trimestre, idCurso, idsJornadasPermitidas)) {
     const id = String(r.id_alumno);
     if (!acc.has(id)) acc.set(id, { puntos: 0, jornadas: 0 });
     const a = acc.get(id); a.puntos += num(r.total); a.jornadas += 1;
   }
 
-  const ultima = jornadaMasRecienteDeLista(jornadasPublicadas(datos.jornadas, trimestre, idCurso, idGrupo));
+  let jornadasElegibles = jornadasPublicadas(datos.jornadas, trimestre, idCurso, idGrupo);
+  if (idsJornadasPermitidas) jornadasElegibles = jornadasElegibles.filter(j => idsJornadasPermitidas.has(String(j.id_jornada)));
+  const ultima = jornadaMasRecienteDeLista(jornadasElegibles);
   const puntosUltima = new Map();
   if (ultima) {
     datos.registros.forEach(r => {
@@ -781,10 +989,13 @@ function clasIndividual(datos, trimestre, idGrupo, idCursoDirecto) {
     .map(a => {
     const s = acc.get(String(a.id_alumno)) || { puntos: 0, jornadas: 0 };
     const eq = eqById.get(String(a.id_equipo_actual));
+    const g = a.id_grupo ? grupoDe(datos, a.id_grupo) : null;
     return {
       id: String(a.id_alumno),
       nombre: a.nombre_publico || '—',
+      grupo: g ? g.nombre_grupo : '',
       equipo: eq ? eq.nombre_equipo : '—',
+      idEquipo: eq ? eq.id_equipo : null,
       color: eq ? eq.color : null,
       escudo: eq ? eq.escudo : null,
       puntos: s.puntos, jornadas: s.jornadas,
@@ -798,10 +1009,10 @@ function clasIndividual(datos, trimestre, idGrupo, idCursoDirecto) {
   return filas;
 }
 
-function clasEquipos(datos, trimestre, idCurso) {
+function clasEquipos(datos, trimestre, idCurso, idsJornadasPermitidas) {
   const acc = new Map();
   const accAlumno = new Map();
-  for (const r of registrosValidos(datos, trimestre, idCurso)) {
+  for (const r of registrosValidos(datos, trimestre, idCurso, idsJornadasPermitidas)) {
     const id = String(r.id_equipo_en_jornada);
     if (id) {
       if (!acc.has(id)) acc.set(id, { puntos: 0, registros: 0 });
@@ -812,7 +1023,9 @@ function clasEquipos(datos, trimestre, idCurso) {
     const al = accAlumno.get(idAl); al.puntos += num(r.total); al.jornadas += 1;
   }
 
-  const ultima = jornadaMasRecienteDeLista(jornadasPublicadas(datos.jornadas, trimestre, idCurso));
+  let jornadasElegiblesEq = jornadasPublicadas(datos.jornadas, trimestre, idCurso);
+  if (idsJornadasPermitidas) jornadasElegiblesEq = jornadasElegiblesEq.filter(j => idsJornadasPermitidas.has(String(j.id_jornada)));
+  const ultima = jornadaMasRecienteDeLista(jornadasElegiblesEq);
   const accUltima = new Map();
   if (ultima) {
     datos.registros.forEach(r => {
@@ -870,27 +1083,29 @@ const configActivo = (valor, porDefecto = true) => {
   return String(valor).toUpperCase() !== 'FALSE';
 };
 
-/** La jornada publicada más reciente dentro del alcance (trimestre, curso y grupo). */
-function jornadaMasReciente(jornadas, trimestre, idCurso, idGrupo) {
-  return jornadaMasRecienteDeLista(jornadasPublicadas(jornadas, trimestre, idCurso, idGrupo));
-}
-
 /**
  * Mapa id → 'subio' | 'bajo' | 'igual' | 'nuevo', comparando la clasificación
- * actual con la que había antes de contar la última jornada publicada del
- * alcance. `tipo` es 'individual' o 'equipos'.
+ * actual con la que había antes de contar la última jornada dentro del
+ * alcance. `tipo` es 'individual' o 'equipos'. `idsJornadasHasta` (opcional)
+ * acota el alcance a esas jornadas — así el navegador de jornadas de
+ * Individual/Equipos puede pedir "cómo se movió la clasificación en la
+ * jornada X" en vez de siempre respecto a la última real.
  */
-function tendencias(datos, trimestre, filasActuales, tipo, idFiltro, idCursoDirecto) {
+function tendencias(datos, trimestre, filasActuales, tipo, idFiltro, idCursoDirecto, idsJornadasHasta) {
   const mapa = new Map();
   // Las jornadas son propias de cada curso: para 'equipos' idFiltro ya es el
   // curso; para 'individual' es un grupo, del que hay que sacar su curso (o,
   // si no hay grupo elegido, el curso indicado directamente).
   const idCurso = tipo === 'equipos' ? idFiltro : (idFiltro ? (grupoDe(datos, idFiltro) || {}).id_curso : (idCursoDirecto || null));
   const idGrupoTend = tipo === 'individual' ? idFiltro : null;
-  const ultima = jornadaMasReciente(datos.jornadas, trimestre, idCurso, idGrupoTend);
+  let scope = jornadasPublicadas(datos.jornadas, trimestre, idCurso, idGrupoTend).slice().sort(compararFechaJornada);
+  if (idsJornadasHasta) scope = scope.filter(j => idsJornadasHasta.has(String(j.id_jornada)));
+  const ultima = scope[scope.length - 1];
   if (!ultima) return mapa;
-  const datosAntes = { ...datos, jornadas: datos.jornadas.filter(j => String(j.id_jornada) !== String(ultima.id_jornada)) };
-  const filasAntes = tipo === 'equipos' ? clasEquipos(datosAntes, trimestre, idFiltro) : clasIndividual(datosAntes, trimestre, idFiltro, idCursoDirecto);
+  const idsAntes = new Set(scope.filter(j => String(j.id_jornada) !== String(ultima.id_jornada)).map(j => String(j.id_jornada)));
+  const filasAntes = tipo === 'equipos'
+    ? clasEquipos(datos, trimestre, idFiltro, idsAntes)
+    : clasIndividual(datos, trimestre, idFiltro, idCursoDirecto, idsAntes);
   const posAntes = new Map(filasAntes.map(f => [f.id, f.pos]));
   filasActuales.forEach(f => {
     const antes = posAntes.get(f.id);
@@ -923,22 +1138,26 @@ function badgeTendencia(info) {
 
 const PERIODOS_DIANA = [['inicial', 'Evaluación inicial'], ['1', '1.º trimestre'], ['2', '2.º trimestre'], ['3', '3.º trimestre']];
 
-function criteriosActivos(datos) {
+/** Criterios activos; si se indica idCurso, incluye los propios de ese curso más los que no tienen curso asignado (aplican a todos). */
+function criteriosActivos(datos, idCurso) {
   return datos.criterios
     .filter(activo)
+    .filter(c => !idCurso || !c.id_curso || String(c.id_curso) === String(idCurso))
     .slice()
     .sort((a, b) => num(a.orden) - num(b.orden) || String(a.nombre).localeCompare(String(b.nombre), 'es'));
 }
 
-/** Valoraciones (0-5) de un alumno en un periodo, una por cada criterio activo. */
+/** Valoraciones (0-5) de un alumno en un periodo, una por cada criterio activo aplicable a su curso. */
 function dianaAlumno(datos, idAlumno, periodo) {
+  const alumno = datos.alumnos.find(a => String(a.id_alumno) === String(idAlumno));
+  const idCurso = alumno ? idCursoDeAlumno(datos, alumno) : null;
   const valores = new Map();
   datos.evaluaciones.forEach(e => {
     if (String(e.id_alumno) === String(idAlumno) && String(e.periodo) === String(periodo)) {
       valores.set(String(e.id_criterio), e.valor);
     }
   });
-  return criteriosActivos(datos).map(c => {
+  return criteriosActivos(datos, idCurso).map(c => {
     const v = valores.get(String(c.id_criterio));
     const evaluado = v !== undefined && v !== '';
     return { id: String(c.id_criterio), nombre: c.nombre || '—', valor: evaluado ? num(v) : 0, evaluado };
@@ -1305,8 +1524,8 @@ function renderAlumno(id) {
 
   return `
     <div class="fila-titulo">
-      <h2><a class="vermas" href="#" data-ir="individual" style="float:none;margin-right:14px">← Volver</a>${esc(a.nombre_publico)}</h2>
-      ${pills()}
+      <h2><a class="vermas" href="#" data-volver style="float:none;margin-right:14px">← Volver</a>${esc(a.nombre_publico)}</h2>
+      ${dashSelectTrimestre()}
     </div>
     <div class="grid2 perfil-grid">
       <div style="display:flex;flex-direction:column;gap:14px">
@@ -1329,7 +1548,7 @@ function renderAlumno(id) {
             ${insigniasDetalle.map(item => chipInsigniaHTML(item.insignia, item.jornadas.length)).join('')}
           </div>` : ''}
         </div>
-        <div class="card lider" style="display:flex;align-items:center;gap:14px">
+        <div class="card lider" style="display:flex;align-items:center;gap:14px"${eq ? ` data-equipo="${esc(eq.id_equipo)}"` : ''}>
           ${eq && eq.escudo ? escudoGrandeHTML(eq, 60) : ''}
           <div>
             <div class="etiqueta"><span>🛡️</span>Equipo</div>
@@ -1354,10 +1573,15 @@ function renderAlumno(id) {
       <div class="card"><h3>Puntos acumulados</h3>${svgLineaAcumulada(serie)}</div>
       <div class="card"><h3>Media comparada (pts/jornada)</h3>${svgComparativa(comparativa)}</div>
     </div>
-    <div class="card" style="margin-top:14px">
-      <div class="fila-titulo" style="margin-bottom:14px"><h3 style="margin:0">Diana de evaluación</h3>${pillsPeriodo()}</div>
-      ${svgDiana(dianaAlumno(DATOS, id, DIANA_PERIODO))}
-    </div>`;
+    ${(() => {
+      const periodosConDatos = periodosDianaConDatos(DATOS, id);
+      if (periodosConDatos.length === 0) return '';
+      if (!periodosConDatos.some(([v]) => v === DIANA_PERIODO)) DIANA_PERIODO = periodosConDatos[0][0];
+      return `<div class="card" style="margin-top:14px">
+        <div class="fila-titulo" style="margin-bottom:14px"><h3 style="margin:0">Diana de evaluación</h3>${pillsPeriodo(periodosConDatos)}</div>
+        ${svgDiana(dianaAlumno(DATOS, id, DIANA_PERIODO))}
+      </div>`;
+    })()}`;
 }
 
 function abrirAlumno(id) {
@@ -1452,8 +1676,8 @@ function renderEquipo(id) {
 
   return `
     <div class="fila-titulo">
-      <h2><a class="vermas" href="#" data-ir="equipos" style="float:none;margin-right:14px">← Volver</a>${e.escudo ? '' : escudoEquipoHTML(e, 34)}${esc(e.nombre_equipo)}</h2>
-      ${pills()}
+      <h2><a class="vermas" href="#" data-volver style="float:none;margin-right:14px">← Volver</a>${e.escudo ? '' : escudoEquipoHTML(e, 34)}${esc(e.nombre_equipo)}</h2>
+      ${dashSelectTrimestre()}
     </div>
     <div class="grid2 perfil-grid">
       <div style="display:flex;flex-direction:column;gap:14px">
@@ -1506,25 +1730,29 @@ let EQUIPO_SEL = null;
 let DIANA_PERIODO = '1';
 let CURSO_SEL = '';  // clasificación por equipos: '' = todos los cursos
 let GRUPO_SEL = '';  // clasificación individual: '' = todos los grupos
+let NAV_JORNADA_IND = null; // id_jornada hasta la que se ve Individual; null = la última disponible
+let NAV_JORNADA_EQ = null;  // igual para Equipos
 
 const TRIMESTRES = [['1','1.º trimestre'],['2','2.º trimestre'],['3','3.º trimestre'],['curso','Curso completo']];
 
-function pillsCursos() {
+
+/** Versión compacta (desplegable) de la selección de curso/grupo, para el Dashboard, junto al título. */
+function dashSelectCurso() {
   const cursos = cursosActivos(DATOS);
   if (cursos.length === 0) return '';
   const mostrarTodos = configActivo(DATOS.config.mostrar_todos_cursos);
-  return `<div class="pills">
-    ${mostrarTodos ? `<button data-curso="" class="${CURSO_SEL === '' ? 'on' : ''}">Todos los cursos</button>` : ''}
-    ${cursos.map(c => `<button data-curso="${esc(c.id_curso)}" class="${CURSO_SEL === c.id_curso ? 'on' : ''}">${esc(c.nombre_curso)}</button>`).join('')}
-  </div>`;
+  return `<div class="pills"><select id="dash-sel-curso" aria-label="Curso" title="Curso">
+    ${mostrarTodos ? `<option value="" ${CURSO_SEL === '' ? 'selected' : ''}>Todos los cursos</option>` : ''}
+    ${cursos.map(c => `<option value="${esc(c.id_curso)}" ${String(CURSO_SEL) === String(c.id_curso) ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+  </select></div>`;
 }
-function pillsGrupos(idCurso) {
+function dashSelectGrupo(idCurso) {
   const grupos = idCurso ? gruposDeCurso(DATOS, idCurso) : gruposActivos(DATOS);
   if (grupos.length === 0) return '';
-  return `<div class="pills">
-    <button data-grupo="" class="${GRUPO_SEL === '' ? 'on' : ''}">Todos los grupos</button>
-    ${grupos.map(g => `<button data-grupo="${esc(g.id_grupo)}" class="${GRUPO_SEL === g.id_grupo ? 'on' : ''}">${esc(nombreGrupoCompleto(DATOS, g.id_grupo))}</button>`).join('')}
-  </div>`;
+  return `<div class="pills"><select id="dash-sel-grupo" aria-label="Grupo" title="Grupo">
+    <option value="" ${GRUPO_SEL === '' ? 'selected' : ''}>Todos los grupos</option>
+    ${grupos.map(g => `<option value="${esc(g.id_grupo)}" ${String(GRUPO_SEL) === String(g.id_grupo) ? 'selected' : ''}>${esc(nombreGrupoCompleto(DATOS, g.id_grupo))}</option>`).join('')}
+  </select></div>`;
 }
 
 function badgePos(p) {
@@ -1553,9 +1781,76 @@ function escudoEsquinaHTML(obj, altura = 260) {
   return `<img src="${esc(obj.escudo)}" alt="" style="display:block;height:${altura}px;width:auto" />`;
 }
 
-function pills() {
-  return `<div class="pills">${TRIMESTRES.map(([v, l]) =>
-    `<button data-tri="${v}" class="${TRIMESTRE === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+/** Versión compacta (desplegable) del selector de trimestre, usada en todas las vistas públicas. */
+function dashSelectTrimestre() {
+  return `<div class="pills"><select id="dash-sel-trimestre" aria-label="Periodo" title="Periodo">
+    ${TRIMESTRES.map(([v, l]) => `<option value="${v}" ${TRIMESTRE === v ? 'selected' : ''}>${l}</option>`).join('')}
+  </select></div>`;
+}
+
+/**
+ * Botonera para moverse jornada a jornada por el historial de Individual o
+ * Equipos y ver cómo estaba la clasificación en cada momento. `scope` son
+ * las jornadas del alcance actual en orden cronológico e `idxSel` el índice
+ * elegido (por defecto, la última). Si no hay ninguna jornada publicada en
+ * el alcance, no se dibuja nada.
+ */
+function navegadorJornadas(scope, idxSel, tipo) {
+  if (scope.length === 0) return '';
+  return `<div class="nav-jornadas" data-nav-tipo="${tipo}">
+    <button class="btn-borde btn-mini" id="nj-prev" ${idxSel <= 0 ? 'disabled' : ''} aria-label="Jornada anterior">◀</button>
+    <select id="nj-select" aria-label="Elegir jornada">
+      ${scope.map((j, i) => `<option value="${esc(j.id_jornada)}" ${i === idxSel ? 'selected' : ''}>
+        J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Sin título')}${i === scope.length - 1 ? ' (última)' : ''}</option>`).join('')}
+    </select>
+    <button class="btn-borde btn-mini" id="nj-next" ${idxSel >= scope.length - 1 ? 'disabled' : ''} aria-label="Jornada siguiente">▶</button>
+    ${idxSel < scope.length - 1 ? `<button class="btn-borde btn-mini" id="nj-ultima">Ir a la última</button>` : ''}
+  </div>`;
+}
+
+/**
+ * Posición actual en pantalla (arriba e izquierda) de cada elemento con
+ * data-fila-id —filas de tabla Y bloques del podio, que se mueven en
+ * horizontal en vez de en vertical— antes de repintar.
+ */
+function capturarPosicionesFilas() {
+  const mapa = new Map();
+  document.querySelectorAll('#main [data-fila-id]').forEach(el => {
+    const r = el.getBoundingClientRect();
+    mapa.set(el.dataset.filaId, { top: r.top, left: r.left });
+  });
+  return mapa;
+}
+
+/**
+ * Compara la posición de cada elemento con la que tenía antes de repintar
+ * (capturarPosicionesFilas) y lo hace "entrar" deslizándose desde donde
+ * estaba hasta su sitio nuevo (en cualquier dirección), en vez de saltar de
+ * golpe. Respeta "reducir movimiento" del sistema.
+ */
+function animarReordenFilas(posicionesAntes) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('#main [data-fila-id]').forEach(el => {
+    const antes = posicionesAntes.get(el.dataset.filaId);
+    if (!antes) return; // elemento nuevo: no había con qué compararlo
+    const despues = el.getBoundingClientRect();
+    const deltaX = antes.left - despues.left;
+    const deltaY = antes.top - despues.top;
+    if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+    el.style.transition = 'none';
+    el.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    void el.offsetWidth; // fuerza a pintar el "salto" antes de animar la vuelta
+    el.style.transition = 'transform 1100ms cubic-bezier(0.22, 1, 0.36, 1)';
+    el.style.transform = '';
+  });
+}
+
+/** Cambia la jornada "hasta" de Individual/Equipos y anima el reordenamiento de las filas. */
+function navegarJornada(tipo, idJornada) {
+  const antes = capturarPosicionesFilas();
+  if (tipo === 'individual') NAV_JORNADA_IND = idJornada; else NAV_JORNADA_EQ = idJornada;
+  render();
+  animarReordenFilas(antes);
 }
 
 /**
@@ -1585,7 +1880,7 @@ function renderPodio(filas, tipo) {
       dato = `${f.puntos} pts`;
       attr = ` data-alumno="${esc(f.id)}"`;
     }
-    return `<a class="podio-puesto" href="#"${attr}>
+    return `<a class="podio-puesto" href="#"${attr} data-fila-id="podio-${esc(f.id)}">
       <span class="podio-visual">${visual}</span>
       <span class="podio-nombre">${esc(nombre)}</span>
       <span class="podio-dato">${esc(dato)}</span>
@@ -1596,9 +1891,15 @@ function renderPodio(filas, tipo) {
   return `<div class="podio-top3">${orden.map(puesto).join('')}</div>`;
 }
 
-function pillsPeriodo() {
-  return `<div class="pills">${PERIODOS_DIANA.map(([v, l]) =>
+/** Pills de periodo de la diana, mostrando solo los que traen `periodos` (los que sí tienen valoraciones guardadas). */
+function pillsPeriodo(periodos) {
+  return `<div class="pills">${periodos.map(([v, l]) =>
     `<button data-periodo="${v}" class="${DIANA_PERIODO === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+}
+
+/** Periodos de PERIODOS_DIANA en los que el alumno tiene al menos una valoración rellenada. */
+function periodosDianaConDatos(datos, idAlumno) {
+  return PERIODOS_DIANA.filter(([v]) => dianaAlumno(datos, idAlumno, v).some(e => e.evaluado));
 }
 
 function tablaIndividual(filas, compacta, tendMap) {
@@ -1606,14 +1907,15 @@ function tablaIndividual(filas, compacta, tendMap) {
   if (filas.length === 0) return `<p class="nota">Todavía no hay registros publicados en este trimestre.</p>`;
   const numUltima = filas.find(f => f.numeroUltima != null);
   return `<table><thead><tr>
-      <th>Pos</th>${tendMap ? '<th></th>' : ''}<th>Alumno/a</th><th>Equipo</th><th class="num">Puntos</th>
+      <th>Pos</th>${tendMap ? '<th></th>' : ''}<th>Alumno/a</th>${compacta ? '' : '<th>Grupo</th>'}<th>Equipo</th><th class="num">Puntos</th>
       ${compacta ? '' : `<th class="num">Media</th><th class="num">Jornadas</th><th class="num">${numUltima ? 'J' + numUltima.numeroUltima : 'Última jornada'}</th>`}
     </tr></thead><tbody>${filas.map(f => `
-    <tr class="${f.pos <= 3 ? 'podio' : ''}">
+    <tr class="${f.pos <= 3 ? 'podio' : ''}" data-fila-id="${esc(f.id)}">
       <td>${badgePos(f.pos)}</td>
       ${tendMap ? `<td>${badgeTendencia(tendMap.get(f.id))}</td>` : ''}
       <td><a class="enlace" href="#" data-alumno="${esc(f.id)}"><strong>${esc(f.nombre)}</strong></a></td>
-      <td>${escudoEquipoHTML(f, 20)}${esc(f.equipo)}</td>
+      ${compacta ? '' : `<td style="color:var(--muted)">${esc(f.grupo || '—')}</td>`}
+      <td>${f.idEquipo ? `<a class="enlace" href="#" data-equipo="${esc(f.idEquipo)}">${escudoEquipoHTML(f, 20)}${esc(f.equipo)}</a>` : `${escudoEquipoHTML(f, 20)}${esc(f.equipo)}`}</td>
       <td class="num pts">${f.puntos}</td>
       ${compacta ? '' : `<td class="num">${fmtMedia(f.media)}</td><td class="num" style="color:var(--muted)">${f.jornadas}</td><td class="num" style="color:var(--muted)">${f.puntosUltima != null ? f.puntosUltima : '—'}</td>`}
     </tr>`).join('')}</tbody></table>`;
@@ -1627,7 +1929,7 @@ function tablaEquipos(filas, compacta, tendMap) {
       <th>Pos</th>${tendMap ? '<th></th>' : ''}<th>Equipo</th><th class="num">Media</th><th class="num">Puntos</th>
       ${compacta ? '' : `<th class="num">Alumnos</th><th class="num">Media ${etiquetaUltima}</th><th class="num">Puntos ${etiquetaUltima}</th><th class="num">Equilibrio</th>`}
     </tr></thead><tbody>${filas.map(f => `
-    <tr class="${f.pos === 1 ? 'podio' : ''}">
+    <tr class="${f.pos === 1 ? 'podio' : ''}" data-fila-id="${esc(f.id)}">
       <td>${badgePos(f.pos)}</td>
       ${tendMap ? `<td>${badgeTendencia(tendMap.get(f.id))}</td>` : ''}
       <td><a class="enlace" href="#" data-equipo="${esc(f.id)}"><strong>${escudoEquipoHTML(f, 20)}${esc(f.equipo)}</strong></a></td>
@@ -1882,9 +2184,10 @@ function render() {
     const jAct = jornadaActual(DATOS, idActual, CURSO_SEL, GRUPO_SEL);
 
     html = `
-      <div class="fila-titulo"><h2>Marcador de la liga</h2>${pills()}</div>
-      ${pillsCursos() ? `<div style="margin-bottom:${pillsGrupos(CURSO_SEL) ? '10px' : '20px'}">${pillsCursos()}</div>` : ''}
-      ${pillsGrupos(CURSO_SEL) ? `<div style="margin-bottom:20px">${pillsGrupos(CURSO_SEL)}</div>` : ''}
+      <div class="fila-titulo">
+        <h2>Marcador de la liga</h2>
+        <div class="dashboard-filtros">${dashSelectCurso()}${dashSelectGrupo(CURSO_SEL)}${dashSelectTrimestre()}</div>
+      </div>
       <div class="grid3">
         ${tarjetaLider('Equipo líder', '🛡️', liderEq ? liderEq.equipo : '—',
           liderEq ? `${fmtMedia(liderEq.media)} de media · ${liderEq.puntos} pts` : 'Sin datos', liderEq && liderEq.color, null, liderEq ? liderEq.id : null, null, null, escudoLiderHTML)}
@@ -1901,15 +2204,25 @@ function render() {
         <div class="card tabla-scroll"><a class="vermas" href="#" data-ir="individual">Ver completa →</a><h3>Top individual</h3>${tablaIndividual(ind.slice(0, 8), true, tendAl)}</div>
       </div>`;
   } else if (VISTA === 'individual') {
-    html = `<div class="fila-titulo"><h2>Clasificación individual</h2>${pills()}</div>
-      ${pillsCursos() ? `<div style="margin-bottom:${pillsGrupos(CURSO_SEL) ? '10px' : '20px'}">${pillsCursos()}</div>` : ''}
-      ${pillsGrupos(CURSO_SEL) ? `<div style="margin-bottom:20px">${pillsGrupos(CURSO_SEL)}</div>` : ''}
-      ${renderPodio(ind, 'individual')}
-      <div class="card tabla-scroll">${tablaIndividual(ind, false, tendAl)}</div>`;
+    const idCursoNavInd = GRUPO_SEL ? (grupoDe(DATOS, GRUPO_SEL) || {}).id_curso : (CURSO_SEL || null);
+    const scopeInd = jornadasDelAlcance(DATOS, TRIMESTRE, idCursoNavInd, GRUPO_SEL);
+    if (NAV_JORNADA_IND && !scopeInd.some(j => String(j.id_jornada) === String(NAV_JORNADA_IND))) NAV_JORNADA_IND = null;
+    const idxInd = NAV_JORNADA_IND ? scopeInd.findIndex(j => String(j.id_jornada) === String(NAV_JORNADA_IND)) : scopeInd.length - 1;
+    const idsHastaInd = idxInd >= 0 ? new Set(scopeInd.slice(0, idxInd + 1).map(j => String(j.id_jornada))) : null;
+    const indNav = clasIndividual(DATOS, TRIMESTRE, GRUPO_SEL, CURSO_SEL, idsHastaInd);
+    const tendIndNav = configActivo(DATOS.config.mostrar_tendencia_alumnos) ? tendencias(DATOS, TRIMESTRE, indNav, 'individual', GRUPO_SEL, CURSO_SEL, idsHastaInd) : null;
+    html = `<div class="fila-titulo">
+        <h2>Clasificación individual</h2>
+        <div class="dashboard-filtros">${dashSelectCurso()}${dashSelectGrupo(CURSO_SEL)}${dashSelectTrimestre()}</div>
+      </div>
+      ${navegadorJornadas(scopeInd, idxInd, 'individual')}
+      ${renderPodio(indNav, 'individual')}
+      <div class="card tabla-scroll">${tablaIndividual(indNav, false, tendIndNav)}</div>`;
   } else if (VISTA === 'jornadas') {
-    html = `<div class="fila-titulo"><h2>Jornadas</h2>${pills()}</div>
-      ${pillsCursos() ? `<div style="margin-bottom:${pillsGrupos(CURSO_SEL) ? '10px' : '20px'}">${pillsCursos()}</div>` : ''}
-      ${pillsGrupos(CURSO_SEL) ? `<div style="margin-bottom:20px">${pillsGrupos(CURSO_SEL)}</div>` : ''}
+    html = `<div class="fila-titulo">
+        <h2>Jornadas</h2>
+        <div class="dashboard-filtros">${dashSelectCurso()}${dashSelectGrupo(CURSO_SEL)}${dashSelectTrimestre()}</div>
+      </div>
       ${listaJornadas(DATOS.jornadas, TRIMESTRE, CURSO_SEL, GRUPO_SEL)}`;
   } else if (VISTA === 'salon') {
     html = `<div class="fila-titulo"><h2>Salón de la Fama</h2></div>
@@ -1918,31 +2231,65 @@ function render() {
     html = `<div class="fila-titulo"><h2>Reglas</h2></div>
       ${renderReglas()}`;
   } else {
-    html = `<div class="fila-titulo"><h2>Clasificación por equipos</h2>${pills()}</div>
-      ${pillsCursos() ? `<div style="margin-bottom:20px">${pillsCursos()}</div>` : ''}
-      ${renderPodio(eq, 'equipos')}
-      <div class="card"><div class="tabla-scroll">${tablaEquipos(eq, false, tendEq)}</div>
+    const idCursoNavEq = CURSO_SEL || null;
+    const scopeEq = jornadasDelAlcance(DATOS, TRIMESTRE, idCursoNavEq, null);
+    if (NAV_JORNADA_EQ && !scopeEq.some(j => String(j.id_jornada) === String(NAV_JORNADA_EQ))) NAV_JORNADA_EQ = null;
+    const idxEq = NAV_JORNADA_EQ ? scopeEq.findIndex(j => String(j.id_jornada) === String(NAV_JORNADA_EQ)) : scopeEq.length - 1;
+    const idsHastaEq = idxEq >= 0 ? new Set(scopeEq.slice(0, idxEq + 1).map(j => String(j.id_jornada))) : null;
+    const eqNav = clasEquipos(DATOS, TRIMESTRE, CURSO_SEL, idsHastaEq);
+    const tendEqNav = configActivo(DATOS.config.mostrar_tendencia_equipos) ? tendencias(DATOS, TRIMESTRE, eqNav, 'equipos', CURSO_SEL, null, idsHastaEq) : null;
+    html = `<div class="fila-titulo">
+        <h2>Clasificación por equipos</h2>
+        <div class="dashboard-filtros">${dashSelectCurso()}${dashSelectTrimestre()}</div>
+      </div>
+      ${navegadorJornadas(scopeEq, idxEq, 'equipos')}
+      ${renderPodio(eqNav, 'equipos')}
+      <div class="card"><div class="tabla-scroll">${tablaEquipos(eqNav, false, tendEqNav)}</div>
       <p class="nota">Orden principal: media de puntos por alumno y jornada (solo jornadas publicadas). Equilibrio:
       desviación entre las medias de los integrantes con jornadas puntuadas — cuanto más bajo, más parejo el equipo.</p></div>`;
   }
   main.innerHTML = html;
 
-  main.querySelectorAll('[data-tri]').forEach(b =>
-    b.addEventListener('click', () => { TRIMESTRE = b.dataset.tri; render(); }));
   main.querySelectorAll('[data-periodo]').forEach(b =>
     b.addEventListener('click', () => { DIANA_PERIODO = b.dataset.periodo; render(); }));
-  main.querySelectorAll('[data-curso]').forEach(b =>
-    b.addEventListener('click', () => { CURSO_SEL = b.dataset.curso; GRUPO_SEL = ''; render(); }));
-  main.querySelectorAll('[data-grupo]').forEach(b =>
-    b.addEventListener('click', () => { GRUPO_SEL = b.dataset.grupo; render(); }));
+  const dashSelCurso = $('#dash-sel-curso');
+  if (dashSelCurso) dashSelCurso.addEventListener('change', () => { CURSO_SEL = dashSelCurso.value; GRUPO_SEL = ''; render(); });
+  const dashSelGrupo = $('#dash-sel-grupo');
+  if (dashSelGrupo) dashSelGrupo.addEventListener('change', () => { GRUPO_SEL = dashSelGrupo.value; render(); });
+  const dashSelTrimestre = $('#dash-sel-trimestre');
+  if (dashSelTrimestre) dashSelTrimestre.addEventListener('change', () => { TRIMESTRE = dashSelTrimestre.value; render(); });
   main.querySelectorAll('[data-ir]').forEach(a =>
     a.addEventListener('click', e => { e.preventDefault(); cambiarVista(a.dataset.ir); }));
+  main.querySelectorAll('[data-volver]').forEach(a =>
+    a.addEventListener('click', e => { e.preventDefault(); history.back(); }));
   main.querySelectorAll('[data-alumno]').forEach(el =>
     el.addEventListener('click', e => { e.preventDefault(); abrirAlumno(el.dataset.alumno); }));
   main.querySelectorAll('[data-equipo]').forEach(el =>
     el.addEventListener('click', e => { e.preventDefault(); abrirEquipo(el.dataset.equipo); }));
+
+  const navJornadas = main.querySelector('.nav-jornadas');
+  if (navJornadas) {
+    const tipoNav = navJornadas.dataset.navTipo;
+    const selJornada = $('#nj-select');
+    const irA = id => navegarJornada(tipoNav, id);
+    const btnPrev = $('#nj-prev');
+    if (btnPrev) btnPrev.addEventListener('click', () => {
+      const i = selJornada.selectedIndex;
+      if (i > 0) irA(selJornada.options[i - 1].value);
+    });
+    const btnNext = $('#nj-next');
+    if (btnNext) btnNext.addEventListener('click', () => {
+      const i = selJornada.selectedIndex;
+      if (i < selJornada.options.length - 1) irA(selJornada.options[i + 1].value);
+    });
+    if (selJornada) selJornada.addEventListener('change', () => irA(selJornada.value));
+    const btnUltima = $('#nj-ultima');
+    if (btnUltima) btnUltima.addEventListener('click', () => irA(null));
+  }
+
   $('#repetir-tour').hidden = VISTA !== 'dashboard';
   wireTooltips(main);
+  if (typeof actualizarPipSiListo === 'function') actualizarPipSiListo();
 }
 
 function cambiarVista(v) {
@@ -1955,6 +2302,24 @@ function cambiarVista(v) {
 
 document.querySelectorAll('#nav button').forEach(b =>
   b.addEventListener('click', () => cambiarVista(b.dataset.vista)));
+
+// El botón de Admin ya no vive en la barra de navegación: aparece como un
+// desplegable al pasar el ratón por el cuadro de temporada. En pantallas
+// táctiles (sin hover real) tocar el cuadro alterna su visibilidad, y tocar
+// fuera lo cierra.
+const temporadaWrap = $('#temporada-wrap');
+const temporadaAdminBtn = $('.temporada-admin-btn');
+if (temporadaAdminBtn) temporadaAdminBtn.addEventListener('click', () => {
+  temporadaWrap.classList.remove('abierto');
+  cambiarVista('admin');
+});
+const temporadaCaja = $('#temporada');
+if (temporadaCaja) temporadaCaja.addEventListener('click', () => temporadaWrap.classList.toggle('abierto'));
+document.addEventListener('click', e => {
+  if (temporadaWrap && temporadaWrap.classList.contains('abierto') && !temporadaWrap.contains(e.target)) {
+    temporadaWrap.classList.remove('abierto');
+  }
+});
 
 /* =========================================================================
    Historial del navegador: sin esto, cada pestaña/ficha que se abre no deja
@@ -2121,6 +2486,297 @@ function renderTour() {
 $('#tour-cerrar').addEventListener('click', cerrarTour);
 $('#tour').addEventListener('click', e => { if (e.target.id === 'tour') cerrarTour(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#tour').hidden) cerrarTour(); });
+
+/* =========================================================================
+   Modo pantalla grande (para proyectar en clase): podio + top de la
+   clasificación, sin menús ni el resto de la interfaz. Respeta el
+   trimestre/curso/grupo que ya estuvieras mirando y el ajuste de "mostrar
+   podio" de Admin → Liga (si está desactivado, se ve solo la tabla).
+   ========================================================================= */
+
+let PANTALLA_GRANDE_TIPO = 'equipos'; // 'equipos' | 'individual'
+
+function abrirPantallaGrande() {
+  renderPantallaGrande();
+  const el = $('#pantalla-grande');
+  el.hidden = false;
+  document.body.style.overflow = 'hidden';
+  // Pantalla completa "de verdad" del navegador (sin barra de direcciones ni
+  // pestañas), no solo el overlay dentro de la página — ideal al proyectar.
+  // Si el navegador la bloquea (algunos móviles, o si no lo cuenta como
+  // gesto directo del usuario), sigue funcionando igual pero sin ocultar
+  // la barra del navegador.
+  if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+}
+
+function cerrarPantallaGrande() {
+  $('#pantalla-grande').hidden = true;
+  document.body.style.overflow = '';
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+
+// Si se sale de pantalla completa por cualquier vía (Esc, F11, el propio
+// navegador...) se cierra también el modo pantalla grande, para no dejarlo
+// a medias en una ventana normal.
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && !$('#pantalla-grande').hidden) cerrarPantallaGrande();
+});
+
+/** Últimas insignias repartidas dentro del alcance (curso/grupo) elegido, de más a menos reciente. */
+function ultimasInsigniasScope(datos, idCurso, idGrupo, n) {
+  const alumnosPorId = new Map(datos.alumnos.filter(activo).map(a => [String(a.id_alumno), a]));
+  const jornadasPorId = new Map(datos.jornadas.map(j => [String(j.id_jornada), j]));
+  const insigniasPorId = new Map(datos.insignias.map(i => [String(i.id_insignia), i]));
+  return datos.insigniasAlumnos
+    .map(x => ({
+      alumno: alumnosPorId.get(String(x.id_alumno)),
+      insignia: insigniasPorId.get(String(x.id_insignia)),
+      jornada: jornadasPorId.get(String(x.id_jornada)),
+    }))
+    .filter(g => g.alumno && g.insignia && activo(g.insignia) && g.jornada)
+    .filter(g => !idGrupo || String(g.alumno.id_grupo) === String(idGrupo))
+    .filter(g => !idCurso || String(idCursoDeAlumno(datos, g.alumno)) === String(idCurso))
+    .sort((a, b) => compararFechaJornada(b.jornada, a.jornada))
+    .slice(0, n);
+}
+
+function pantallaInsigniasHTML() {
+  const ultimas = ultimasInsigniasScope(DATOS, CURSO_SEL, GRUPO_SEL, 8);
+  if (ultimas.length === 0) return '';
+  const equiposPorId = new Map(DATOS.equipos.map(e => [String(e.id_equipo), e]));
+  return `<div class="pantalla-insignias">
+    <h3>Últimas insignias</h3>
+    <div class="pantalla-insignias-lista">${ultimas.map(g => `<div class="pantalla-insignia-chip">
+      <span class="pantalla-insignia-escudo"${g.insignia.imagen ? ` style="background-image:url('${esc(g.insignia.imagen)}')"` : ''}>${g.insignia.imagen ? '' : esc(g.insignia.icono || '🎖️')}</span>
+      ${svgAvatar(g.alumno, equiposPorId.get(String(g.alumno.id_equipo_actual)), 'pequeno')}
+      <span class="pantalla-insignia-nombre">${esc(g.alumno.nombre_publico)}</span>
+    </div>`).join('')}</div>
+  </div>`;
+}
+
+function selectSutilCurso() {
+  const cursos = cursosActivos(DATOS);
+  if (cursos.length === 0) return '';
+  const mostrarTodos = configActivo(DATOS.config.mostrar_todos_cursos);
+  return `<select id="pantalla-sel-curso" aria-label="Curso" title="Curso">
+    ${mostrarTodos ? `<option value="" ${CURSO_SEL === '' ? 'selected' : ''}>Todos los cursos</option>` : ''}
+    ${cursos.map(c => `<option value="${esc(c.id_curso)}" ${CURSO_SEL === c.id_curso ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+  </select>`;
+}
+function selectSutilGrupo(idCurso) {
+  const grupos = idCurso ? gruposDeCurso(DATOS, idCurso) : gruposActivos(DATOS);
+  if (grupos.length === 0) return '';
+  return `<select id="pantalla-sel-grupo" aria-label="Grupo" title="Grupo">
+    <option value="" ${GRUPO_SEL === '' ? 'selected' : ''}>Todos los grupos</option>
+    ${grupos.map(g => `<option value="${esc(g.id_grupo)}" ${GRUPO_SEL === g.id_grupo ? 'selected' : ''}>${esc(nombreGrupoCompleto(DATOS, g.id_grupo))}</option>`).join('')}
+  </select>`;
+}
+
+function renderPantallaGrande() {
+  const ind = clasIndividual(DATOS, TRIMESTRE, GRUPO_SEL, CURSO_SEL);
+  const eq = clasEquipos(DATOS, TRIMESTRE, CURSO_SEL);
+  const filas = PANTALLA_GRANDE_TIPO === 'individual' ? ind : eq;
+  const cont = $('#pantalla-grande');
+  cont.innerHTML = `
+    <button class="pantalla-salir" id="pantalla-salir" aria-label="Salir de pantalla grande">×</button>
+    <div class="pantalla-filtros">${selectSutilCurso()}${selectSutilGrupo(CURSO_SEL)}</div>
+    <div class="pantalla-tipos">
+      <button data-pantalla-tipo="equipos" class="${PANTALLA_GRANDE_TIPO === 'equipos' ? 'on' : ''}">Equipos</button>
+      <button data-pantalla-tipo="individual" class="${PANTALLA_GRANDE_TIPO === 'individual' ? 'on' : ''}">Individual</button>
+    </div>
+    <h1 class="pantalla-titulo">${esc(DATOS.config.nombre_liga || 'Liga Armónica')}</h1>
+    ${renderPodio(filas, PANTALLA_GRANDE_TIPO)}
+    <div class="pantalla-tabla">${PANTALLA_GRANDE_TIPO === 'individual'
+      ? tablaIndividual(ind.slice(0, 8), true, null)
+      : tablaEquipos(eq.slice(0, 8), true, null)}</div>
+    ${pantallaInsigniasHTML()}`;
+
+  $('#pantalla-salir').addEventListener('click', cerrarPantallaGrande);
+  document.querySelectorAll('[data-pantalla-tipo]').forEach(b =>
+    b.addEventListener('click', () => { PANTALLA_GRANDE_TIPO = b.dataset.pantallaTipo; renderPantallaGrande(); }));
+  const selCurso = $('#pantalla-sel-curso');
+  if (selCurso) selCurso.addEventListener('change', () => { CURSO_SEL = selCurso.value; GRUPO_SEL = ''; renderPantallaGrande(); });
+  const selGrupo = $('#pantalla-sel-grupo');
+  if (selGrupo) selGrupo.addEventListener('change', () => { GRUPO_SEL = selGrupo.value; renderPantallaGrande(); });
+}
+
+$('#pantalla-grande-btn').addEventListener('click', abrirPantallaGrande);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#pantalla-grande').hidden) cerrarPantallaGrande(); });
+
+/* =========================================================================
+   Miniventana flotante (Document Picture-in-Picture): un resumen mínimo,
+   para tener a la vista mientras se usan otras aplicaciones. Al abrirla
+   pregunta primero qué se quiere ver (equipos o alumnos, y de qué grupo) y
+   luego muestra solo lo esencial —puestos e insignias, sin avatares ni
+   podio— para que se lea bien en una ventana pequeña. Solo Chrome/Edge
+   soportan la API; en el resto el botón permanece oculto. La ventana
+   comparte el mismo contexto de JavaScript que esta pestaña, así que basta
+   con volver a pintarla cuando cambien los datos — no hace falta recargar
+   nada.
+   ========================================================================= */
+
+let PIP_VENTANA = null;
+let PIP_INTERVALO = null;
+let PIP_TIPO = 'equipos'; // 'equipos' | 'individual'
+let PIP_CURSO_SEL = '';
+let PIP_GRUPO_SEL = '';
+let PIP_CONFIGURADO = false; // true tras pulsar "Mostrar" en la pantalla de configuración inicial
+
+async function abrirPiP() {
+  if (!('documentPictureInPicture' in window)) return;
+  if (PIP_VENTANA && !PIP_VENTANA.closed) { PIP_VENTANA.focus(); return; }
+  const pip = await documentPictureInPicture.requestWindow({ width: 320, height: 300 }).catch(() => null);
+  if (!pip) return;
+  PIP_VENTANA = pip;
+  PIP_CONFIGURADO = false;
+  document.querySelectorAll('style, link[rel="stylesheet"]').forEach(nodo => pip.document.head.appendChild(nodo.cloneNode(true)));
+  pip.document.title = DATOS.config.nombre_liga || 'Liga Armónica';
+  pip.document.body.className = 'pip-body';
+  const cont = pip.document.createElement('div');
+  cont.id = 'pip-resumen';
+  cont.className = 'pip-resumen';
+  pip.document.body.appendChild(cont);
+
+  renderPip();
+  pip.addEventListener('pagehide', () => {
+    clearInterval(PIP_INTERVALO);
+    PIP_INTERVALO = null;
+    PIP_VENTANA = null;
+  });
+}
+
+function renderPip() {
+  if (!PIP_VENTANA || PIP_VENTANA.closed) return;
+  if (PIP_CONFIGURADO) renderPipResumen(); else renderPipConfig();
+}
+
+function pipSelectCurso() {
+  const cursos = cursosActivos(DATOS);
+  if (cursos.length === 0) return '';
+  const mostrarTodos = configActivo(DATOS.config.mostrar_todos_cursos);
+  return `<div><label>Curso</label><select id="pip-sel-curso">
+    ${mostrarTodos ? `<option value="" ${PIP_CURSO_SEL === '' ? 'selected' : ''}>Todos los cursos</option>` : ''}
+    ${cursos.map(c => `<option value="${esc(c.id_curso)}" ${PIP_CURSO_SEL === c.id_curso ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+  </select></div>`;
+}
+function pipSelectGrupo(idCurso) {
+  const grupos = idCurso ? gruposDeCurso(DATOS, idCurso) : gruposActivos(DATOS);
+  if (grupos.length === 0) return '';
+  return `<div><label>Grupo</label><select id="pip-sel-grupo">
+    <option value="" ${PIP_GRUPO_SEL === '' ? 'selected' : ''}>Todos los grupos</option>
+    ${grupos.map(g => `<option value="${esc(g.id_grupo)}" ${PIP_GRUPO_SEL === g.id_grupo ? 'selected' : ''}>${esc(nombreGrupoCompleto(DATOS, g.id_grupo))}</option>`).join('')}
+  </select></div>`;
+}
+
+function renderPipConfig() {
+  const cont = PIP_VENTANA.document.getElementById('pip-resumen');
+  if (!cont) return;
+  cont.innerHTML = `
+    <div class="pip-config">
+      <p class="pip-config-titulo">¿Qué quieres ver?</p>
+      <div class="pip-tipos pip-tipos-config">
+        <button data-pip-tipo="equipos" class="${PIP_TIPO === 'equipos' ? 'on' : ''}">Equipos</button>
+        <button data-pip-tipo="individual" class="${PIP_TIPO === 'individual' ? 'on' : ''}">Alumnos</button>
+        <button data-pip-tipo="insignias" class="${PIP_TIPO === 'insignias' ? 'on' : ''}">Insignias</button>
+      </div>
+      ${pipSelectCurso()}
+      ${PIP_TIPO !== 'equipos' ? pipSelectGrupo(PIP_CURSO_SEL) : ''}
+      <button class="btn-oro" id="pip-mostrar">Mostrar</button>
+    </div>`;
+
+  cont.querySelectorAll('[data-pip-tipo]').forEach(b =>
+    b.addEventListener('click', () => { PIP_TIPO = b.dataset.pipTipo; if (PIP_TIPO === 'equipos') PIP_GRUPO_SEL = ''; renderPipConfig(); }));
+  const selCurso = cont.querySelector('#pip-sel-curso');
+  if (selCurso) selCurso.addEventListener('change', () => { PIP_CURSO_SEL = selCurso.value; PIP_GRUPO_SEL = ''; renderPipConfig(); });
+  const selGrupo = cont.querySelector('#pip-sel-grupo');
+  if (selGrupo) selGrupo.addEventListener('change', () => { PIP_GRUPO_SEL = selGrupo.value; });
+  cont.querySelector('#pip-mostrar').addEventListener('click', () => {
+    PIP_CONFIGURADO = true;
+    renderPip();
+    PIP_INTERVALO = setInterval(renderPip, 15000);
+  });
+}
+
+/** Texto corto para la cabecera del resumen: nombre del grupo o curso elegido, si hay alguno. */
+function pipAlcanceTexto() {
+  if (PIP_GRUPO_SEL) return ' · ' + nombreGrupoCompleto(DATOS, PIP_GRUPO_SEL);
+  if (PIP_CURSO_SEL) { const c = cursoDe(DATOS, PIP_CURSO_SEL); return c ? ' · ' + c.nombre_curso : ''; }
+  return '';
+}
+
+/** Lista mínima de puestos (posición, nombre, puntos o media), sin avatares ni escudos. Los equipos muestran su media, no los puntos totales. */
+function pipListaHTML(filas, tipo) {
+  if (filas.length === 0) return `<p class="pip-vacio">Todavía no hay datos.</p>`;
+  return `<ol class="pip-puestos">${filas.slice(0, 8).map(f => `
+    <li><span class="pip-pos">${f.pos}</span><span class="pip-nombre">${esc(tipo === 'individual' ? f.nombre : f.equipo)}</span><span class="pip-puntos">${tipo === 'individual' ? f.puntos : fmtMedia(f.media)}</span></li>`).join('')}</ol>`;
+}
+
+/** Últimas insignias del alcance elegido, con el icono (no el escudo) para que quepan compactas. */
+function pipInsigniasHTML() {
+  const ultimas = ultimasInsigniasScope(DATOS, PIP_CURSO_SEL, PIP_GRUPO_SEL, 6);
+  if (ultimas.length === 0) return '';
+  return `<div class="pip-insignias">
+    <p class="pip-subtitulo">Últimas insignias</p>
+    <div class="pip-insignias-lista">${ultimas.map(g => `<span class="pip-insignia-chip" title="${esc(g.insignia.nombre)}">
+      <span class="pip-insignia-icono">${esc(g.insignia.icono || '🎖️')}</span>${esc(g.alumno.nombre_publico)}
+    </span>`).join('')}</div>
+  </div>`;
+}
+
+/** Vista dedicada a insignias: escudo (no icono) y debajo el avatar con el nombre. El tamaño del escudo
+ * se reduce a medida que hay más insignias que mostrar, para que quepan sin desbordar la ventana. */
+function pipInsigniasGridHTML() {
+  const ultimas = ultimasInsigniasScope(DATOS, PIP_CURSO_SEL, PIP_GRUPO_SEL, 20);
+  if (ultimas.length === 0) return `<p class="pip-vacio">Todavía no hay insignias en este alcance.</p>`;
+  const equiposPorId = new Map(DATOS.equipos.map(e => [String(e.id_equipo), e]));
+  const n = ultimas.length;
+  const tam = n <= 4 ? 76 : n <= 8 ? 62 : n <= 12 ? 50 : n <= 16 ? 42 : 34;
+  return `<div class="pip-insignias-grid" style="--pip-escudo-tam:${tam}px">${ultimas.map(g => `<div class="pip-insignia-tarjeta">
+    <span class="pip-insignia-escudo-grande"${g.insignia.imagen ? ` style="background-image:url('${esc(g.insignia.imagen)}')"` : ''}>${g.insignia.imagen ? '' : esc(g.insignia.icono || '🎖️')}</span>
+    ${svgAvatar(g.alumno, equiposPorId.get(String(g.alumno.id_equipo_actual)), 'pequeno')}
+    <span class="pip-insignia-tarjeta-nombre" title="${esc(g.alumno.nombre_publico)}">${esc(g.alumno.nombre_publico)}</span>
+  </div>`).join('')}</div>`;
+}
+
+function renderPipResumen() {
+  if (!PIP_VENTANA || PIP_VENTANA.closed) return;
+  const cont = PIP_VENTANA.document.getElementById('pip-resumen');
+  if (!cont) return;
+  const titulos = { individual: 'Alumnos', equipos: 'Equipos', insignias: 'Insignias' };
+  let cuerpo;
+  if (PIP_TIPO === 'insignias') {
+    cuerpo = pipInsigniasGridHTML();
+  } else {
+    const ind = clasIndividual(DATOS, TRIMESTRE, PIP_GRUPO_SEL, PIP_CURSO_SEL);
+    const eq = clasEquipos(DATOS, TRIMESTRE, PIP_CURSO_SEL);
+    const filas = PIP_TIPO === 'individual' ? ind : eq;
+    cuerpo = `${pipListaHTML(filas, PIP_TIPO)}${pipInsigniasHTML()}`;
+  }
+  cont.innerHTML = `
+    <div class="pip-cabecera">
+      <span class="pip-titulo">${esc(titulos[PIP_TIPO])}${esc(pipAlcanceTexto())}</span>
+      <button class="pip-config-btn" id="pip-cambiar" title="Cambiar qué se muestra" aria-label="Cambiar qué se muestra">⚙</button>
+    </div>
+    ${cuerpo}`;
+
+  cont.querySelector('#pip-cambiar').addEventListener('click', () => {
+    PIP_CONFIGURADO = false;
+    clearInterval(PIP_INTERVALO);
+    PIP_INTERVALO = null;
+    renderPip();
+  });
+}
+
+/** Refresca la miniventana solo si ya está configurada (para no interrumpir la pantalla de "¿qué quieres ver?"). */
+function actualizarPipSiListo() {
+  if (PIP_VENTANA && !PIP_VENTANA.closed && PIP_CONFIGURADO) renderPipResumen();
+}
+
+if ('documentPictureInPicture' in window) {
+  const btnPip = $('#pip-btn');
+  btnPip.hidden = false;
+  btnPip.addEventListener('click', abrirPiP);
+}
 
 /** Aviso flotante y breve para errores de audio que si no se verían (la consola no la mira nadie). */
 function avisarErrorAudio(mensaje) {
@@ -2363,12 +3019,15 @@ const ADMIN = {
   token: sessionStorage.getItem('liga_admin_token') || '',
   seccion: 'puntuar',
   jornadaSel: '',
-  puntuarGrupoSel: '', // filtro visual de la tabla de Puntuar ('' = todos los grupos)
+  puntuarCursoSel: '', // curso elegido en Puntuar: acota qué jornadas aparecen en su desplegable
+  puntuarGrupoSel: '', // grupo elegido en Puntuar: acota jornadas y alumnos ('' = todos los grupos)
+  puntuarAlumnoSel: null, // id_alumno elegido en Puntuar para ver sus datos en la barra lateral
   filas: {},          // id_alumno -> valores editables de la jornada
   insigniasFilas: {}, // id_alumno -> { id_insignia: true } insignias asignadas en esta jornada
   editJornada: null,  // id en edición (null = crear nueva)
   nuevaJornada: false, // true = mostrar el formulario en blanco tras pulsar "Nueva jornada"
   jornadasOrden: { campo: 'fecha', dir: 'desc' }, // columna y sentido de la tabla de Jornadas
+  jornadasFiltro: { titulo: '', id_curso: '', id_grupo: '', trimestre: '', estado: '' }, // filtros de la tabla de Jornadas
   jornadaCursoSel: '', // curso elegido en el formulario de "Nueva jornada"
   jornadaGrupoSel: '', // grupo elegido en el formulario de "Nueva jornada" ('' = todo el curso)
   editAlumno: null,
@@ -2376,19 +3035,26 @@ const ADMIN = {
   verAlumno: null,   // id_alumno cuya ficha de solo lectura se está viendo (sin editar)
   alumnosFiltro: { nombre: '', id_curso: '', id_grupo: '', instrumento: '', id_equipo: '', estado: '' }, // filtros de la Plantilla
   editCurso: null,
+  nuevoCurso: false, // true = mostrar el formulario en blanco tras pulsar "Nuevo curso"
   editGrupo: null,
+  nuevoGrupo: false, // true = mostrar el formulario en blanco tras pulsar "Nuevo grupo"
   asignacionesGrupo: {}, // id_alumno -> id_grupo editable (asignación masiva en Admin → Grupos)
   asignacionesCurso: {}, // id_alumno -> id_curso editable (asignación masiva en Admin → Grupos)
   editEquipo: null,
+  nuevoEquipo: false, // true = mostrar el formulario en blanco tras pulsar "Nuevo equipo"
   imagenEscudo: null, // data URI recién elegida en el formulario de equipo (null = sin cambios)
   audioBienvenida: null, // data URI del audio recién elegido en Liga → Configuración (null = sin cambios)
   editCriterio: null,
+  nuevoCriterio: false, // true = mostrar el formulario en blanco tras pulsar "Nuevo criterio"
   editDianaAlumno: null,   // id_alumno cuya diana se está rellenando (solo Admin)
   filasDianaAlumno: {},    // periodo -> { id_criterio: valor editable }
   previewPeriodo: '1',     // periodo mostrado en la vista previa de la diana
   editInsignia: null,
+  nuevaInsignia: false, // true = mostrar el formulario en blanco tras pulsar "Nueva insignia"
   imagenInsignia: null,    // data URI recién elegida en el formulario (null = sin cambios)
   iconoInsignia: null,     // emoji recién elegido en el formulario (null = sin cambios)
+  backupArchivo: null,     // { datos, resumen, nombre } del .json leído, listo para importar
+  backupModo: 'fusionar',  // 'sustituir' | 'fusionar' | 'nuevo'
   ocupado: false,
 };
 
@@ -2505,6 +3171,7 @@ function renderAdmin(mensaje = '', esError = false) {
   const SECCIONES = [
     ['puntuar', 'Puntuar'], ['jornadas', 'Jornadas'], ['alumnos', 'Alumnos'], ['grupos', 'Grupos'],
     ['equipos', 'Equipos'], ['criterios', 'Criterios'], ['insignias', 'Insignias'], ['liga', 'Liga'],
+    ['backup', 'Copia de seguridad'],
   ];
   const subnav = `<div class="pills" style="margin-bottom:16px">
     ${SECCIONES.map(([v, l]) =>
@@ -2519,7 +3186,14 @@ function renderAdmin(mensaje = '', esError = false) {
     ADMIN.seccion === 'criterios' ? seccionCriterios() :
     ADMIN.seccion === 'insignias' ? seccionInsignias() :
     ADMIN.seccion === 'liga' ? seccionLiga() :
+    ADMIN.seccion === 'backup' ? seccionBackup() :
     seccionPuntuar();
+
+  // Barra lateral con información relacionada con lo que se esté viendo en
+  // cada pestaña (p. ej. en Puntuar, los datos del alumno seleccionado). Si
+  // no hay nada que mostrar en la pestaña actual, no se reserva hueco para
+  // ella y el contenido principal ocupa todo el ancho.
+  const sidebar = sidebarAdmin();
 
   main.innerHTML = `
     <div class="fila-titulo">
@@ -2528,7 +3202,10 @@ function renderAdmin(mensaje = '', esError = false) {
     </div>
     ${subnav}
     <p id="admin-aviso" class="${esError ? 'msg-error' : 'msg-ok'}" style="margin:0 0 12px">${esc(mensaje)}</p>
-    ${cuerpo}`;
+    <div class="admin-cuerpo-wrap">
+      ${sidebar ? `<aside class="admin-sidebar">${sidebar}</aside>` : ''}
+      ${cuerpo}
+    </div>`;
 
   $('#salir-btn').addEventListener('click', () => {
     sessionStorage.removeItem('liga_admin_token');
@@ -2537,6 +3214,7 @@ function renderAdmin(mensaje = '', esError = false) {
   });
   main.querySelectorAll('[data-seccion]').forEach(b =>
     b.addEventListener('click', () => { ADMIN.seccion = b.dataset.seccion; renderAdmin(); }));
+  wireSidebarAdmin();
 
   if (ADMIN.seccion === 'puntuar') wirePuntuar();
   else if (ADMIN.seccion === 'jornadas') wireJornadas();
@@ -2546,6 +3224,7 @@ function renderAdmin(mensaje = '', esError = false) {
   else if (ADMIN.seccion === 'criterios') wireCriterios();
   else if (ADMIN.seccion === 'insignias') wireInsignias();
   else if (ADMIN.seccion === 'liga') wireLiga();
+  else if (ADMIN.seccion === 'backup') wireBackup();
   wireTooltips(main);
 }
 
@@ -2564,15 +3243,209 @@ async function operar(boton, fn, okMsg) {
   }
 }
 
+/* ---------- Barra lateral de Admin (información contextual según la pestaña) ---------- */
+
+/**
+ * Contenido de la barra lateral de Admin, según la pestaña activa y lo que
+ * se tenga seleccionado en ella. Si devuelve '' no se reserva hueco para la
+ * barra lateral (el contenido principal ocupa todo el ancho). De momento
+ * solo hay contenido para Puntuar (datos del alumno seleccionado); el resto
+ * de pestañas no tienen barra lateral todavía.
+ */
+function sidebarAdmin() {
+  if (ADMIN.seccion === 'puntuar' && ADMIN.puntuarAlumnoSel) return sidebarPuntuarAlumno(ADMIN.puntuarAlumnoSel);
+  return '';
+}
+
+/** Cablea los controles genéricos de la barra lateral (cerrar, ir a la ficha completa...), sea cual sea su contenido. */
+function wireSidebarAdmin() {
+  const cerrar = $('#sidebar-cerrar');
+  if (cerrar) cerrar.addEventListener('click', () => { ADMIN.puntuarAlumnoSel = null; renderAdmin(); });
+
+  const verFicha = $('#sidebar-ver-ficha');
+  if (verFicha) verFicha.addEventListener('click', e => {
+    e.preventDefault();
+    ADMIN.seccion = 'alumnos';
+    ADMIN.verAlumno = verFicha.dataset.alumno;
+    ADMIN.editAlumno = null;
+    ADMIN.nuevoAlumno = false;
+    renderAdmin();
+  });
+}
+
+/** Ficha compacta del alumno seleccionado en Puntuar: posición/puntos/media del curso completo e historial reciente. */
+function sidebarPuntuarAlumno(idAlumno) {
+  const a = DATOS.alumnos.find(x => String(x.id_alumno) === String(idAlumno));
+  if (!a) return '';
+
+  const eq = DATOS.equipos.find(e => String(e.id_equipo) === String(a.id_equipo_actual));
+  const idCurso = idCursoDeAlumno(DATOS, a);
+  const st = statsAlumno(DATOS, a.id_alumno, 'curso');
+  const ind = clasIndividual(DATOS, 'curso', a.id_grupo, idCurso);
+  const posActual = ind.find(f => f.id === String(a.id_alumno));
+
+  const jornadasPorId = new Map(DATOS.jornadas.map(j => [String(j.id_jornada), j]));
+  const historial = DATOS.registros
+    .filter(r => String(r.id_alumno) === String(a.id_alumno))
+    .map(r => ({ r, j: jornadasPorId.get(String(r.id_jornada)) }))
+    .filter(x => x.j)
+    .sort((x, y) => compararFechaJornada(y.j, x.j))
+    .slice(0, 10); // las más recientes primero
+
+  return `
+    <div class="card">
+      <div class="fila-titulo" style="margin-bottom:12px">
+        <h3 style="margin:0;font-size:15px">Alumno seleccionado</h3>
+        <button type="button" class="btn-borde btn-mini" id="sidebar-cerrar" aria-label="Cerrar">×</button>
+      </div>
+      <div class="sidebar-cabecera">
+        ${svgAvatar(a, eq, 'pequeno')}
+        <div>
+          <p class="sidebar-nombre">${esc(a.nombre_publico)}</p>
+          <p class="secundario" style="margin:2px 0 0;font-size:12px">${esc(lugarDeAlumno(DATOS, a) || 'Sin curso/grupo')}</p>
+        </div>
+      </div>
+      <div class="sidebar-stats">
+        <div><span class="secundario">Posición</span><strong>${posActual ? '#' + posActual.pos : '—'}</strong></div>
+        <div><span class="secundario">Puntos</span><strong>${st.puntos}</strong></div>
+        <div><span class="secundario">Media</span><strong>${fmtMedia(st.media)}</strong></div>
+      </div>
+      <h4 style="margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Historial reciente</h4>
+      ${historial.length === 0 ? `<p class="nota" style="margin:0">Todavía no tiene ningún registro.</p>` : `
+      <ul class="sidebar-historial">
+        ${historial.map(({ r, j }) => `<li>
+          <div class="sidebar-hist-fila">
+            <span><strong>J${esc(j.numero_jornada)}</strong> <span class="secundario">${esc(r.estado_entrega || '—')}</span></span>
+            <strong class="sidebar-hist-total">${esc(r.total)}</strong>
+          </div>
+          ${r.comentario ? `<p class="sidebar-hist-comentario">${esc(r.comentario)}</p>` : ''}
+        </li>`).join('')}
+      </ul>`}
+      <a class="vermas" href="#" id="sidebar-ver-ficha" data-alumno="${esc(a.id_alumno)}" style="float:none;display:inline-block;margin-top:12px">Ver ficha completa →</a>
+    </div>`;
+}
+
 /* ---------- Sección: Puntuar ---------- */
+
+/**
+ * Alumnos que llevan `minimo` o más jornadas SEGUIDAS sin entregar, contando
+ * hacia atrás desde la más reciente entre las publicadas de su propio curso
+ * y grupo (de cualquier trimestre: una racha de no entregas no debería
+ * "resetearse" sola solo porque empezó otro trimestre). Cuenta como "sin
+ * entregar" tanto un registro con estado "No entregado" como que
+ * directamente no haya ningún registro suyo en esa jornada (en la práctica
+ * es lo mismo: no hay nada que corregir). La racha se corta en la primera
+ * jornada, yendo hacia atrás, en la que sí entregó.
+ */
+function alumnosSinEntregar(minimo) {
+  const registrosPorAlumno = new Map(); // id_alumno -> Map(id_jornada -> registro)
+  DATOS.registros.forEach(r => {
+    const id = String(r.id_alumno);
+    if (!registrosPorAlumno.has(id)) registrosPorAlumno.set(id, new Map());
+    registrosPorAlumno.get(id).set(String(r.id_jornada), r);
+  });
+
+  const resultado = [];
+  alumnosActivos().forEach(a => {
+    const idCurso = idCursoDeAlumno(DATOS, a);
+    const jornadasAlumno = jornadasPublicadas(DATOS.jornadas, 'curso', idCurso, a.id_grupo)
+      .slice().sort(compararFechaJornada).reverse(); // de la más reciente a la más antigua
+    const registrosAlumno = registrosPorAlumno.get(String(a.id_alumno));
+    let racha = 0;
+    for (const j of jornadasAlumno) {
+      const r = registrosAlumno && registrosAlumno.get(String(j.id_jornada));
+      const entrego = r && String(r.estado_entrega) !== 'No entregado';
+      if (entrego) break;
+      racha++;
+    }
+    if (racha >= minimo) resultado.push({ alumno: a, racha });
+  });
+  resultado.sort((x, y) => y.racha - x.racha || x.alumno.nombre_publico.localeCompare(y.alumno.nombre_publico, 'es'));
+  return resultado;
+}
+
+/**
+ * Avisos accionables para el profesor en Puntuar: alumnos sin puntuar
+ * todavía en la jornada que se está viendo, alumnos que llevan 2 o más
+ * jornadas seguidas sin entregar (en todo el curso, no solo en la jornada
+ * actual), y jornadas que llevan más de una semana en borrador
+ * (probablemente olvidadas sin publicar). Se recalculan en cada render, no
+ * se guardan en ningún sitio.
+ */
+function avisosPuntuar(jornada, alumnosDeJornada) {
+  const avisos = [];
+
+  if (jornada && alumnosDeJornada.length > 0) {
+    const registrosJornada = new Map(
+      DATOS.registros.filter(r => String(r.id_jornada) === String(jornada.id_jornada)).map(r => [String(r.id_alumno), r])
+    );
+    const sinPuntuar = alumnosDeJornada.filter(a => {
+      const r = registrosJornada.get(String(a.id_alumno));
+      if (!r) return true; // nunca se ha guardado nada de este alumno en esta jornada
+      if (String(r.estado_entrega) === 'No entregado') return false; // 0 puntos a propósito, no es que falte
+      return r.calidad === '' || r.calidad == null;
+    });
+    if (sinPuntuar.length > 0) {
+      avisos.push(`<li>📝 <strong>${sinPuntuar.length}</strong> alumno${sinPuntuar.length === 1 ? '' : 's'} sin
+        puntuar todavía en esta jornada: ${sinPuntuar.map(a => esc(a.nombre_publico)).join(', ')}.</li>`);
+    }
+  }
+
+  const sinEntregar = alumnosSinEntregar(2);
+  if (sinEntregar.length > 0) {
+    avisos.push(`<li>🚩 <strong>${sinEntregar.length}</strong> alumno${sinEntregar.length === 1 ? '' : 's'}
+      lleva${sinEntregar.length === 1 ? '' : 'n'} 2 o más jornadas seguidas sin entregar: ${sinEntregar.map(x =>
+        `<button type="button" class="enlace-aviso" data-alumno-aviso="${esc(x.alumno.id_alumno)}">${esc(x.alumno.nombre_publico)} (${x.racha})</button>`
+      ).join(', ')}.</li>`);
+  }
+
+  const limite = new Date();
+  limite.setDate(limite.getDate() - 7);
+  const limiteISO = `${limite.getFullYear()}-${String(limite.getMonth() + 1).padStart(2, '0')}-${String(limite.getDate()).padStart(2, '0')}`;
+  const borradoresViejos = DATOS.jornadas
+    .filter(j => String(j.estado_publicacion).toLowerCase() !== 'publicada')
+    .filter(j => { const f = fechaISO(j.fecha); return f && f < limiteISO; })
+    .sort(compararFechaJornada);
+  if (borradoresViejos.length > 0) {
+    avisos.push(`<li>🕓 <strong>${borradoresViejos.length}</strong> jornada${borradoresViejos.length === 1 ? '' : 's'}
+      en borrador desde hace más de una semana: ${borradoresViejos.map(j =>
+        `<button type="button" class="enlace-aviso" data-jornada-aviso="${esc(j.id_jornada)}">J${esc(j.numero_jornada)}</button>`
+      ).join(', ')}.</li>`);
+  }
+
+  return avisos;
+}
 
 function seccionPuntuar() {
   if (DATOS.jornadas.length === 0) {
     return `<div class="card"><p class="nota">Todavía no hay jornadas. Crea la primera en la
       pestaña <strong>Jornadas</strong>.</p></div>`;
   }
-  if (!ADMIN.jornadaSel || !DATOS.jornadas.some(j => String(j.id_jornada) === String(ADMIN.jornadaSel))) {
-    ADMIN.jornadaSel = String(DATOS.jornadas[DATOS.jornadas.length - 1].id_jornada);
+
+  // Curso y grupo se eligen ANTES que la jornada, y acotan qué jornadas
+  // aparecen en su desplegable — así nunca se mezclan jornadas de cursos o
+  // grupos distintos. Por defecto se parte del curso de la última jornada
+  // creada (igual que antes se partía directamente de esa jornada).
+  const cursosConJornadas = cursosActivos(DATOS).filter(c => DATOS.jornadas.some(j => String(j.id_curso) === String(c.id_curso)));
+  if (!ADMIN.puntuarCursoSel || !cursosConJornadas.some(c => String(c.id_curso) === String(ADMIN.puntuarCursoSel))) {
+    const ultimaJornada = DATOS.jornadas[DATOS.jornadas.length - 1];
+    ADMIN.puntuarCursoSel = ultimaJornada ? String(ultimaJornada.id_curso) : (cursosConJornadas[0] ? String(cursosConJornadas[0].id_curso) : '');
+  }
+  const gruposDelCurso = ADMIN.puntuarCursoSel ? gruposDeCurso(DATOS, ADMIN.puntuarCursoSel) : [];
+  if (ADMIN.puntuarGrupoSel && !gruposDelCurso.some(g => String(g.id_grupo) === String(ADMIN.puntuarGrupoSel))) {
+    ADMIN.puntuarGrupoSel = '';
+  }
+
+  // Jornadas del curso elegido; si además hay un grupo elegido, se incluyen
+  // las de todo el curso (sin grupo propio) MÁS las de ese grupo, pero no
+  // las de otros grupos del mismo curso (igual que en las clasificaciones).
+  const jornadasDisponibles = DATOS.jornadas
+    .filter(j => String(j.id_curso) === String(ADMIN.puntuarCursoSel))
+    .filter(j => !ADMIN.puntuarGrupoSel || !j.id_grupo || String(j.id_grupo) === String(ADMIN.puntuarGrupoSel))
+    .slice().sort(compararFechaJornada);
+
+  if (!ADMIN.jornadaSel || !jornadasDisponibles.some(j => String(j.id_jornada) === String(ADMIN.jornadaSel))) {
+    ADMIN.jornadaSel = jornadasDisponibles.length > 0 ? String(jornadasDisponibles[jornadasDisponibles.length - 1].id_jornada) : '';
     prepararFilas();
   }
   if (Object.keys(ADMIN.filas).length === 0) prepararFilas();
@@ -2583,40 +3456,51 @@ function seccionPuntuar() {
   // Solo alumnos del mismo curso que la jornada (y, si la jornada es de un
   // grupo concreto, solo ese grupo): las jornadas son propias de cada curso
   // y, opcionalmente, de un único grupo dentro de él.
-  const alumnosDeJornada = alumnosActivos().filter(a =>
-    (!jornada || !jornada.id_curso || String(idCursoDeAlumno(DATOS, a)) === String(jornada.id_curso)) &&
-    (!jornada || !jornada.id_grupo || String(a.id_grupo) === String(jornada.id_grupo)));
+  const alumnosDeJornada = !jornada ? [] : alumnosActivos().filter(a =>
+    (!jornada.id_curso || String(idCursoDeAlumno(DATOS, a)) === String(jornada.id_curso)) &&
+    (!jornada.id_grupo || String(a.id_grupo) === String(jornada.id_grupo)));
   const grupoFijado = jornada && jornada.id_grupo ? grupoDe(DATOS, jornada.id_grupo) : null;
-  const grupos = jornada && jornada.id_curso && !grupoFijado ? gruposDeCurso(DATOS, jornada.id_curso) : [];
   const alumnosVisibles = alumnosDeJornada.filter(a => grupoFijado || !ADMIN.puntuarGrupoSel || String(a.id_grupo) === String(ADMIN.puntuarGrupoSel));
+  const avisos = avisosPuntuar(jornada, alumnosDeJornada);
 
   return `
+    ${avisos.length > 0 ? `<div class="card avisos-panel" style="margin-bottom:14px">
+      <h3 style="margin:0 0 8px">Avisos</h3>
+      <ul>${avisos.join('')}</ul>
+    </div>` : ''}
     <div class="card admin-barra" style="margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)">
+        Curso
+        <select id="puntuar-curso-sel">
+          ${cursosConJornadas.map(c => `<option value="${esc(c.id_curso)}" ${String(c.id_curso) === String(ADMIN.puntuarCursoSel) ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+        </select>
+      </label>
+      ${gruposDelCurso.length > 0 ? `<label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)">
+        Grupo
+        <select id="puntuar-grupo-sel">
+          <option value="">Todos los grupos</option>
+          ${gruposDelCurso.map(g => `<option value="${esc(g.id_grupo)}" ${ADMIN.puntuarGrupoSel === g.id_grupo ? 'selected' : ''}>${esc(g.nombre_grupo)}</option>`).join('')}
+        </select>
+      </label>` : ''}
       <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)">
         Jornada
         <select id="jornada-sel">
-          ${DATOS.jornadas.map(j => `<option value="${esc(j.id_jornada)}" ${String(j.id_jornada) === String(ADMIN.jornadaSel) ? 'selected' : ''}>
-            J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Sin título')} · ${esc((cursoDe(DATOS, j.id_curso) || {}).nombre_curso || 'Sin curso')}${j.id_grupo ? ' · ' + esc((grupoDe(DATOS, j.id_grupo) || {}).nombre_grupo || '') : ''} (${esc(j.estado_publicacion)})
+          ${jornadasDisponibles.length === 0 ? `<option value="">— Sin jornadas en este curso/grupo —</option>` : ''}
+          ${jornadasDisponibles.map(j => `<option value="${esc(j.id_jornada)}" ${String(j.id_jornada) === String(ADMIN.jornadaSel) ? 'selected' : ''}>
+            J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Sin título')}${j.id_grupo ? ' · ' + esc((grupoDe(DATOS, j.id_grupo) || {}).nombre_grupo || '') : ' · Todo el curso'} (${esc(j.estado_publicacion)})
           </option>`).join('')}
         </select>
       </label>
       ${grupoFijado ? `<span class="estado-chip">Grupo: ${esc(grupoFijado.nombre_grupo)}</span>` : ''}
-      ${grupos.length > 0 ? `<label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)">
-        Grupo
-        <select id="puntuar-grupo-sel">
-          <option value="">Todos los grupos</option>
-          ${grupos.map(g => `<option value="${esc(g.id_grupo)}" ${ADMIN.puntuarGrupoSel === g.id_grupo ? 'selected' : ''}>${esc(g.nombre_grupo)}</option>`).join('')}
-        </select>
-      </label>` : ''}
-      <span class="estado-chip ${publicada ? 'chip-pub' : 'chip-borr'}">${publicada ? 'Publicada' : 'Borrador'}</span>
+      ${jornada ? `<span class="estado-chip ${publicada ? 'chip-pub' : 'chip-borr'}">${publicada ? 'Publicada' : 'Borrador'}</span>` : ''}
       <div class="derecha">
-        ${publicada
+        ${jornada ? (publicada
           ? `<button class="btn-borde" id="pub-btn" data-estado="borrador">Devolver a borrador</button>`
-          : `<button class="btn-oro" id="pub-btn" data-estado="publicada">Publicar jornada</button>`}
+          : `<button class="btn-oro" id="pub-btn" data-estado="publicada">Publicar jornada</button>`) : ''}
       </div>
     </div>
     <div class="card tabla-scroll">
-      ${alumnosVisibles.length === 0 ? `<p class="nota">${ADMIN.puntuarGrupoSel ? 'Ningún alumno activo en ese grupo.' : 'No hay alumnos activos de ese curso. Revisa la pestaña <strong>Alumnos</strong> o <strong>Grupos</strong>.'}</p>` : `
+      ${alumnosVisibles.length === 0 ? `<p class="nota">${!jornada ? 'No hay ninguna jornada en este curso/grupo. Crea una en la pestaña <strong>Jornadas</strong>.' : ADMIN.puntuarGrupoSel ? 'Ningún alumno activo en ese grupo.' : 'No hay alumnos activos de ese curso. Revisa la pestaña <strong>Alumnos</strong> o <strong>Grupos</strong>.'}</p>` : `
       <table class="tabla-admin">
         <thead><tr>
           <th>Alumno/a</th><th>Estado</th><th>Calidad</th><th>Entrega</th>
@@ -2628,8 +3512,8 @@ function seccionPuntuar() {
             const f = ADMIN.filas[a.id_alumno];
             const off = f.estado_entrega === 'No entregado' ? 'disabled' : '';
             const insAlumno = ADMIN.insigniasFilas[a.id_alumno] || '';
-            return `<tr data-alumno="${esc(a.id_alumno)}">
-              <td><strong>${esc(a.nombre_publico)}</strong></td>
+            return `<tr data-alumno="${esc(a.id_alumno)}" class="${String(ADMIN.puntuarAlumnoSel) === String(a.id_alumno) ? 'fila-seleccionada' : ''}">
+              <td><button type="button" class="enlace-fila" data-seleccionar-alumno="${esc(a.id_alumno)}">${esc(a.nombre_publico)}</button></td>
               <td><select data-campo="estado_entrega">
                 ${ESTADOS_ENTREGA.map(s => `<option ${f.estado_entrega === s ? 'selected' : ''}>${s}</option>`).join('')}
               </select></td>
@@ -2668,12 +3552,11 @@ function seccionPuntuar() {
 }
 
 function wirePuntuar() {
-  const sel = $('#jornada-sel');
-  if (!sel) return;
-  sel.addEventListener('change', e => {
-    ADMIN.jornadaSel = e.target.value;
-    ADMIN.puntuarGrupoSel = ''; // el grupo elegido puede no existir en el curso de la nueva jornada
-    prepararFilas();
+  const selCurso = $('#puntuar-curso-sel');
+  if (!selCurso) return;
+  selCurso.addEventListener('change', e => {
+    ADMIN.puntuarCursoSel = e.target.value;
+    ADMIN.puntuarGrupoSel = ''; // el grupo elegido puede no existir en el curso nuevo
     renderAdmin();
   });
 
@@ -2683,13 +3566,47 @@ function wirePuntuar() {
     renderAdmin();
   });
 
+  const selJornada = $('#jornada-sel');
+  if (selJornada) selJornada.addEventListener('change', e => {
+    ADMIN.jornadaSel = e.target.value;
+    prepararFilas();
+    renderAdmin();
+  });
+
+  document.querySelectorAll('[data-jornada-aviso]').forEach(b =>
+    b.addEventListener('click', () => {
+      const jAviso = DATOS.jornadas.find(x => String(x.id_jornada) === String(b.dataset.jornadaAviso));
+      ADMIN.jornadaSel = b.dataset.jornadaAviso;
+      ADMIN.puntuarCursoSel = jAviso ? String(jAviso.id_curso) : ADMIN.puntuarCursoSel;
+      ADMIN.puntuarGrupoSel = '';
+      prepararFilas();
+      renderAdmin();
+    }));
+
+  document.querySelectorAll('[data-alumno-aviso]').forEach(b =>
+    b.addEventListener('click', () => {
+      ADMIN.seccion = 'alumnos';
+      ADMIN.verAlumno = b.dataset.alumnoAviso;
+      ADMIN.editAlumno = null;
+      ADMIN.nuevoAlumno = false;
+      renderAdmin();
+    }));
+
   const jornada = DATOS.jornadas.find(j => String(j.id_jornada) === String(ADMIN.jornadaSel));
-  $('#pub-btn').addEventListener('click', e =>
+  const btnPub = $('#pub-btn');
+  if (btnPub) btnPub.addEventListener('click', e =>
     operar(e.target, async () => {
       const estado = e.target.dataset.estado;
       await postScript('setPublicacion', { id_jornada: ADMIN.jornadaSel, estado_publicacion: estado });
       jornada.estado_publicacion = estado;
       return estado === 'publicada' ? 'Jornada publicada.' : 'Jornada devuelta a borrador.';
+    }));
+
+  document.querySelectorAll('[data-seleccionar-alumno]').forEach(b =>
+    b.addEventListener('click', () => {
+      const id = b.dataset.seleccionarAlumno;
+      ADMIN.puntuarAlumnoSel = String(ADMIN.puntuarAlumnoSel) === String(id) ? null : id; // click otra vez = deseleccionar
+      renderAdmin();
     }));
 
   document.querySelectorAll('#main [data-campo]').forEach(el => {
@@ -2802,7 +3719,18 @@ function seccionJornadas() {
     estado: j => String(j.estado_publicacion || ''),
   };
   const ordenValor = CAMPOS_ORDEN_JORNADAS[ADMIN.jornadasOrden.campo] || CAMPOS_ORDEN_JORNADAS.fecha;
-  const jornadasOrdenadas = [...DATOS.jornadas].sort((a, b) => {
+
+  const filtro = ADMIN.jornadasFiltro;
+  const hayFiltro = Object.values(filtro).some(v => v !== '');
+  const jornadasFiltradas = DATOS.jornadas.filter(j => {
+    if (filtro.titulo && !String(j.titulo || '').toLowerCase().includes(filtro.titulo.trim().toLowerCase())) return false;
+    if (filtro.id_curso && String(j.id_curso) !== String(filtro.id_curso)) return false;
+    if (filtro.id_grupo && String(j.id_grupo || '') !== String(filtro.id_grupo)) return false;
+    if (filtro.trimestre && String(j.trimestre) !== String(filtro.trimestre)) return false;
+    if (filtro.estado && String(j.estado_publicacion).toLowerCase() !== filtro.estado) return false;
+    return true;
+  });
+  const jornadasOrdenadas = jornadasFiltradas.sort((a, b) => {
     const va = ordenValor(a), vb = ordenValor(b);
     let cmp = typeof va === 'number' && typeof vb === 'number' ? va - vb : String(va).localeCompare(String(vb), 'es');
     if (cmp === 0) cmp = compararFechaJornada(a, b); // desempate estable
@@ -2843,8 +3771,32 @@ function seccionJornadas() {
         hasta que la publiques desde la pestaña Puntuar.</p>`}
     </div>` : ''}
     <div class="card tabla-scroll">
-      <h3>Jornadas (${DATOS.jornadas.length})</h3>
-      ${DATOS.jornadas.length === 0 ? `<p class="nota">Todavía no hay jornadas.</p>` : `
+      <h3>Jornadas (${jornadasOrdenadas.length}${hayFiltro ? ` de ${DATOS.jornadas.length}` : ''})</h3>
+      ${DATOS.jornadas.length > 0 ? `<div class="admin-barra" style="margin-bottom:14px">
+        <input type="text" id="jf-titulo" value="${esc(filtro.titulo)}" placeholder="Buscar por título…" style="min-width:180px" />
+        <select id="jf-curso">
+          <option value="">Todos los cursos</option>
+          ${cursos.map(c => `<option value="${esc(c.id_curso)}" ${filtro.id_curso === c.id_curso ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+        </select>
+        <select id="jf-grupo">
+          <option value="">Todos los grupos</option>
+          ${cursos.map(c => `<optgroup label="${esc(c.nombre_curso)}">
+            ${gruposDeCurso(DATOS, c.id_curso).map(g => `<option value="${esc(g.id_grupo)}" ${filtro.id_grupo === g.id_grupo ? 'selected' : ''}>${esc(g.nombre_grupo)}</option>`).join('')}
+          </optgroup>`).join('')}
+        </select>
+        <select id="jf-trimestre">
+          <option value="">Todos los trimestres</option>
+          ${['1', '2', '3'].map(t => `<option value="${t}" ${filtro.trimestre === t ? 'selected' : ''}>${t}.º trimestre</option>`).join('')}
+        </select>
+        <select id="jf-estado">
+          <option value="">Todos los estados</option>
+          <option value="borrador" ${filtro.estado === 'borrador' ? 'selected' : ''}>Borrador</option>
+          <option value="publicada" ${filtro.estado === 'publicada' ? 'selected' : ''}>Publicada</option>
+        </select>
+        ${hayFiltro ? `<button class="btn-borde btn-mini" id="jf-limpiar">Quitar filtros</button>` : ''}
+      </div>` : ''}
+      ${DATOS.jornadas.length === 0 ? `<p class="nota">Todavía no hay jornadas.</p>` :
+        jornadasOrdenadas.length === 0 ? `<p class="nota">Ninguna jornada coincide con el filtro.</p>` : `
       <table>
         <thead><tr>${[
           ['numero', 'N.º'], ['curso', 'Curso'], ['grupo', 'Grupo'], ['titulo', 'Título'],
@@ -2892,6 +3844,30 @@ function wireJornadas() {
     }
     renderAdmin();
   }));
+
+  // Filtros de la tabla de Jornadas. El de título se filtra mientras se
+  // escribe, así que hay que devolverle el foco y el cursor a mano (ver el
+  // mismo patrón en wireAlumnos).
+  const inputTituloFiltro = $('#jf-titulo');
+  if (inputTituloFiltro) inputTituloFiltro.addEventListener('input', () => {
+    const cursor = inputTituloFiltro.selectionStart;
+    ADMIN.jornadasFiltro.titulo = inputTituloFiltro.value;
+    renderAdmin();
+    const nuevoInput = $('#jf-titulo');
+    if (nuevoInput) { nuevoInput.focus(); nuevoInput.setSelectionRange(cursor, cursor); }
+  });
+
+  const mapaFiltrosJornadas = { 'jf-curso': 'id_curso', 'jf-grupo': 'id_grupo', 'jf-trimestre': 'trimestre', 'jf-estado': 'estado' };
+  Object.keys(mapaFiltrosJornadas).forEach(idEl => {
+    const el = $('#' + idEl);
+    if (el) el.addEventListener('change', () => { ADMIN.jornadasFiltro[mapaFiltrosJornadas[idEl]] = el.value; renderAdmin(); });
+  });
+
+  const limpiarFiltrosJornadas = $('#jf-limpiar');
+  if (limpiarFiltrosJornadas) limpiarFiltrosJornadas.addEventListener('click', () => {
+    ADMIN.jornadasFiltro = { titulo: '', id_curso: '', id_grupo: '', trimestre: '', estado: '' };
+    renderAdmin();
+  });
 
   const selCurso = $('#j-curso');
   const selGrupo = $('#j-grupo');
@@ -3167,7 +4143,8 @@ function wireAlumnos() {
 /* ---------- Panel: Diana de un alumno (las 4 evaluaciones a la vez) ---------- */
 
 function prepararFilasDianaAlumno(idAlumno) {
-  const crits = criteriosActivos(DATOS);
+  const alumno = DATOS.alumnos.find(x => String(x.id_alumno) === String(idAlumno));
+  const crits = criteriosActivos(DATOS, alumno ? idCursoDeAlumno(DATOS, alumno) : null);
   const porPeriodo = {};
   PERIODOS_DIANA.forEach(([p]) => { porPeriodo[p] = {}; });
   DATOS.evaluaciones
@@ -3188,7 +4165,7 @@ function prepararFilasDianaAlumno(idAlumno) {
 function seccionDianaAlumno() {
   const a = DATOS.alumnos.find(x => String(x.id_alumno) === String(ADMIN.editDianaAlumno));
   if (!a) { ADMIN.editDianaAlumno = null; return seccionAlumnos(); }
-  const crits = criteriosActivos(DATOS);
+  const crits = criteriosActivos(DATOS, idCursoDeAlumno(DATOS, a));
   if (Object.keys(ADMIN.filasDianaAlumno).length === 0) prepararFilasDianaAlumno(a.id_alumno);
   if (!PERIODOS_DIANA.some(([v]) => v === ADMIN.previewPeriodo)) ADMIN.previewPeriodo = '1';
 
@@ -3256,9 +4233,10 @@ function wireDianaAlumno() {
   if (btnGuardar) btnGuardar.addEventListener('click', e =>
     operar(e.target, async () => {
       const idAlumno = ADMIN.editDianaAlumno;
+      const alumnoDiana = DATOS.alumnos.find(x => String(x.id_alumno) === String(idAlumno));
       const valoraciones = [];
       PERIODOS_DIANA.forEach(([p]) => {
-        criteriosActivos(DATOS).forEach(c => {
+        criteriosActivos(DATOS, alumnoDiana ? idCursoDeAlumno(DATOS, alumnoDiana) : null).forEach(c => {
           const v = ADMIN.filasDianaAlumno[p][c.id_criterio];
           if (v === '' || v == null) return;
           valoraciones.push({ id_alumno: idAlumno, periodo: p, id_criterio: c.id_criterio, valor: v });
@@ -3292,7 +4270,7 @@ function seccionFichaAlumno() {
   const posActual = ind.find(f => f.id === String(a.id_alumno));
   const equipoStats = eq ? clasEquipos(DATOS, 'curso', eq.id_curso).find(e2 => e2.id === String(eq.id_equipo)) : null;
   const insigniasDetalle = insigniasAlumnoDetalle(DATOS, a.id_alumno, 'curso');
-  const crits = criteriosActivos(DATOS);
+  const crits = criteriosActivos(DATOS, idCurso);
 
   const jornadasPorId = new Map(DATOS.jornadas.map(j => [String(j.id_jornada), j]));
   const historial = DATOS.registros
@@ -3313,7 +4291,7 @@ function seccionFichaAlumno() {
           <div>
             <p class="principal" style="margin:0 0 8px">${esc(a.nombre_publico)}</p>
             <p class="secundario" style="margin-top:6px">${esc(lugarDeAlumno(DATOS, a) || 'Sin curso/grupo')}</p>
-            <p class="secundario" style="margin-top:6px">${eq ? `${escudoEquipoHTML(eq, 16)}${esc(eq.nombre_equipo)}` : 'Sin equipo'}</p>
+            <p class="secundario" style="margin-top:6px">${eq ? `<a class="enlace" href="#" data-equipo="${esc(eq.id_equipo)}">${escudoEquipoHTML(eq, 16)}${esc(eq.nombre_equipo)}</a>` : 'Sin equipo'}</p>
             ${a.instrumento ? `<p class="secundario" style="display:flex;align-items:center;gap:6px;margin-top:6px">${iconoInstrumento(a.instrumento, 16)} ${esc(a.instrumento)}</p>` : ''}
             <p class="secundario" style="margin-top:6px">${activo(a) ? 'Activo' : 'Inactivo'}</p>
           </div>
@@ -3375,6 +4353,8 @@ function seccionFichaAlumno() {
 function wireFichaAlumno() {
   const volver = $('#ficha-volver');
   if (volver) volver.addEventListener('click', () => { ADMIN.verAlumno = null; renderAdmin(); });
+  document.querySelectorAll('#main [data-equipo]').forEach(el =>
+    el.addEventListener('click', e => { e.preventDefault(); abrirEquipo(el.dataset.equipo); }));
 }
 
 /* ---------- Sección: Grupos (cursos + grupos reales, y asignación de alumnos) ---------- */
@@ -3382,39 +4362,39 @@ function wireFichaAlumno() {
 function seccionGrupos() {
   const edCurso = ADMIN.editCurso ? DATOS.cursos.find(c => String(c.id_curso) === String(ADMIN.editCurso)) : null;
   const edGrupo = ADMIN.editGrupo ? DATOS.grupos.find(g => String(g.id_grupo) === String(ADMIN.editGrupo)) : null;
+  const mostrarFormCurso = !!edCurso || ADMIN.nuevoCurso;
+  const mostrarFormGrupo = !!edGrupo || ADMIN.nuevoGrupo;
   const cursos = cursosActivos(DATOS);
   const alumnosOrdenados = DATOS.alumnos.filter(activo).slice().sort((a, b) => a.nombre_publico.localeCompare(b.nombre_publico, 'es'));
 
   return `
-    <div class="grid2" style="margin-bottom:14px">
-      <div class="card">
-        <h3>${edCurso ? `Editar curso: ${esc(edCurso.nombre_curso)}` : 'Nuevo curso'}</h3>
-        <div class="form-grid">
-          <label>Nombre del curso<input type="text" id="cu-nombre" value="${edCurso ? esc(edCurso.nombre_curso) : ''}" placeholder="p. ej. 1º ESO" /></label>
-          <label class="check"><input type="checkbox" id="cu-activo" ${!edCurso || activo(edCurso) ? 'checked' : ''} /> Activo</label>
-        </div>
-        <div class="admin-barra" style="margin-top:14px">
-          <button class="btn-oro" id="cu-guardar">${edCurso ? 'Guardar cambios' : 'Crear curso'}</button>
-          ${edCurso ? `<button class="btn-borde" id="cu-cancelar">Cancelar</button>` : ''}
-        </div>
+    ${mostrarFormCurso ? `<div class="card" style="margin-bottom:14px">
+      <h3>${edCurso ? `Editar curso: ${esc(edCurso.nombre_curso)}` : 'Nuevo curso'}</h3>
+      <div class="form-grid">
+        <label>Nombre del curso<input type="text" id="cu-nombre" value="${edCurso ? esc(edCurso.nombre_curso) : ''}" placeholder="p. ej. 1º ESO" /></label>
+        <label class="check"><input type="checkbox" id="cu-activo" ${!edCurso || activo(edCurso) ? 'checked' : ''} /> Activo</label>
       </div>
-      <div class="card">
-        <h3>${edGrupo ? `Editar grupo: ${esc(edGrupo.nombre_grupo)}` : 'Nuevo grupo'}</h3>
-        <div class="form-grid">
-          <label>Curso<select id="gr-curso">
-            <option value="">— Elige un curso —</option>
-            ${cursos.map(c => `<option value="${esc(c.id_curso)}" ${edGrupo && String(edGrupo.id_curso) === String(c.id_curso) ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
-          </select></label>
-          <label>Nombre del grupo<input type="text" id="gr-nombre" value="${edGrupo ? esc(edGrupo.nombre_grupo) : ''}" placeholder="p. ej. A" /></label>
-          <label class="check"><input type="checkbox" id="gr-activo" ${!edGrupo || activo(edGrupo) ? 'checked' : ''} /> Activo</label>
-        </div>
-        <div class="admin-barra" style="margin-top:14px">
-          <button class="btn-oro" id="gr-guardar">${edGrupo ? 'Guardar cambios' : 'Crear grupo'}</button>
-          ${edGrupo ? `<button class="btn-borde" id="gr-cancelar">Cancelar</button>` : ''}
-        </div>
-        ${cursos.length === 0 ? `<p class="nota">Crea primero un curso a la izquierda.</p>` : ''}
+      <div class="admin-barra" style="margin-top:14px">
+        <button class="btn-oro" id="cu-guardar">${edCurso ? 'Guardar cambios' : 'Crear curso'}</button>
+        <button class="btn-borde" id="cu-cancelar">Cancelar</button>
       </div>
-    </div>
+    </div>` : ''}
+    ${mostrarFormGrupo ? `<div class="card" style="margin-bottom:14px">
+      <h3>${edGrupo ? `Editar grupo: ${esc(edGrupo.nombre_grupo)}` : 'Nuevo grupo'}</h3>
+      <div class="form-grid">
+        <label>Curso<select id="gr-curso">
+          <option value="">— Elige un curso —</option>
+          ${cursos.map(c => `<option value="${esc(c.id_curso)}" ${edGrupo && String(edGrupo.id_curso) === String(c.id_curso) ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+        </select></label>
+        <label>Nombre del grupo<input type="text" id="gr-nombre" value="${edGrupo ? esc(edGrupo.nombre_grupo) : ''}" placeholder="p. ej. A" /></label>
+        <label class="check"><input type="checkbox" id="gr-activo" ${!edGrupo || activo(edGrupo) ? 'checked' : ''} /> Activo</label>
+      </div>
+      <div class="admin-barra" style="margin-top:14px">
+        <button class="btn-oro" id="gr-guardar">${edGrupo ? 'Guardar cambios' : 'Crear grupo'}</button>
+        <button class="btn-borde" id="gr-cancelar">Cancelar</button>
+      </div>
+      ${cursos.length === 0 ? `<p class="nota">Crea primero un curso.</p>` : ''}
+    </div>` : ''}
     <div class="grid2" style="margin-bottom:14px">
       <div class="card tabla-scroll">
         <h3>Cursos (${DATOS.cursos.length})</h3>
@@ -3429,6 +4409,9 @@ function seccionGrupos() {
             </tr>`).join('')}
           </tbody>
         </table>`}
+        <div class="admin-barra" style="margin-top:14px;justify-content:flex-end">
+          <button class="btn-oro" id="cu-nuevo">+ Nuevo curso</button>
+        </div>
       </div>
       <div class="card tabla-scroll">
         <h3>Grupos (${DATOS.grupos.length})</h3>
@@ -3444,6 +4427,9 @@ function seccionGrupos() {
             </tr>`).join('')}
           </tbody>
         </table>`}
+        <div class="admin-barra" style="margin-top:14px;justify-content:flex-end">
+          <button class="btn-oro" id="gr-nuevo">+ Nuevo grupo</button>
+        </div>
       </div>
     </div>
     <div class="card tabla-scroll">
@@ -3480,16 +4466,21 @@ function seccionGrupos() {
 
 function wireGrupos() {
   document.querySelectorAll('[data-editar-curso]').forEach(b =>
-    b.addEventListener('click', () => { ADMIN.editCurso = b.dataset.editarCurso; renderAdmin(); }));
+    b.addEventListener('click', () => { ADMIN.editCurso = b.dataset.editarCurso; ADMIN.nuevoCurso = false; renderAdmin(); }));
   const cancelarCurso = $('#cu-cancelar');
-  if (cancelarCurso) cancelarCurso.addEventListener('click', () => { ADMIN.editCurso = null; renderAdmin(); });
+  if (cancelarCurso) cancelarCurso.addEventListener('click', () => { ADMIN.editCurso = null; ADMIN.nuevoCurso = false; renderAdmin(); });
+  const nuevoCurso = $('#cu-nuevo');
+  if (nuevoCurso) nuevoCurso.addEventListener('click', () => { ADMIN.nuevoCurso = true; ADMIN.editCurso = null; renderAdmin(); });
 
   document.querySelectorAll('[data-editar-grupo]').forEach(b =>
-    b.addEventListener('click', () => { ADMIN.editGrupo = b.dataset.editarGrupo; renderAdmin(); }));
+    b.addEventListener('click', () => { ADMIN.editGrupo = b.dataset.editarGrupo; ADMIN.nuevoGrupo = false; renderAdmin(); }));
   const cancelarGrupo = $('#gr-cancelar');
-  if (cancelarGrupo) cancelarGrupo.addEventListener('click', () => { ADMIN.editGrupo = null; renderAdmin(); });
+  if (cancelarGrupo) cancelarGrupo.addEventListener('click', () => { ADMIN.editGrupo = null; ADMIN.nuevoGrupo = false; renderAdmin(); });
+  const nuevoGrupo = $('#gr-nuevo');
+  if (nuevoGrupo) nuevoGrupo.addEventListener('click', () => { ADMIN.nuevoGrupo = true; ADMIN.editGrupo = null; renderAdmin(); });
 
-  $('#cu-guardar').addEventListener('click', e =>
+  const btnGuardarCurso = $('#cu-guardar');
+  if (btnGuardarCurso) btnGuardarCurso.addEventListener('click', e =>
     operar(e.target, async () => {
       const datos = {
         id_curso: ADMIN.editCurso || '',
@@ -3503,10 +4494,12 @@ function wireGrupos() {
       if (i >= 0) DATOS.cursos[i] = { ...DATOS.cursos[i], ...local }; else DATOS.cursos.push(local);
       const esEdicion = !!ADMIN.editCurso;
       ADMIN.editCurso = null;
+      ADMIN.nuevoCurso = false;
       return esEdicion ? 'Curso actualizado.' : 'Curso creado.';
     }));
 
-  $('#gr-guardar').addEventListener('click', e =>
+  const btnGuardarGrupo = $('#gr-guardar');
+  if (btnGuardarGrupo) btnGuardarGrupo.addEventListener('click', e =>
     operar(e.target, async () => {
       const datos = {
         id_grupo: ADMIN.editGrupo || '',
@@ -3522,6 +4515,7 @@ function wireGrupos() {
       if (i >= 0) DATOS.grupos[i] = { ...DATOS.grupos[i], ...local }; else DATOS.grupos.push(local);
       const esEdicion = !!ADMIN.editGrupo;
       ADMIN.editGrupo = null;
+      ADMIN.nuevoGrupo = false;
       return esEdicion ? 'Grupo actualizado.' : 'Grupo creado.';
     }));
 
@@ -3576,11 +4570,12 @@ function seccionEquipos() {
   const ed = ADMIN.editEquipo
     ? DATOS.equipos.find(e => String(e.id_equipo) === String(ADMIN.editEquipo))
     : null;
+  const mostrarForm = !!ed || ADMIN.nuevoEquipo;
   const nAlumnos = id => DATOS.alumnos.filter(a => activo(a) && String(a.id_equipo_actual) === String(id)).length;
   const escudoActual = ADMIN.imagenEscudo !== null ? ADMIN.imagenEscudo : (ed ? ed.escudo : '');
 
   return `
-    <div class="card" style="margin-bottom:14px">
+    ${mostrarForm ? `<div class="card" style="margin-bottom:14px">
       <h3>${ed ? `Editar: ${esc(ed.nombre_equipo)}` : 'Nuevo equipo'}</h3>
       <div class="form-grid">
         <label>Nombre del equipo<input type="text" id="e-nombre" value="${ed ? esc(ed.nombre_equipo) : ''}" placeholder="p. ej. Napolitana FC" /></label>
@@ -3602,14 +4597,14 @@ function seccionEquipos() {
       </div>
       <div class="admin-barra" style="margin-top:14px">
         <button class="btn-oro" id="e-guardar">${ed ? 'Guardar cambios' : 'Crear equipo'}</button>
-        ${ed ? `<button class="btn-borde" id="e-cancelar">Cancelar</button>` : ''}
+        <button class="btn-borde" id="e-cancelar">Cancelar</button>
       </div>
       <p class="nota">Al subir la imagen se intenta quitar el fondo automáticamente (asumiendo que es de un color
       liso) y se reduce a un máximo de 800×800 px antes de guardarse en tu Google Drive (carpeta «Liga Armónica —
       Escudos»). Si el resultado no queda bien, sube directamente un PNG ya recortado con fondo transparente.
       Si no subes ningún escudo, se sigue mostrando el punto de color de siempre. El curso determina en qué
       clasificación por equipos aparece: procura que todos sus integrantes sean de ese mismo curso.</p>
-    </div>
+    </div>` : ''}
     <div class="card tabla-scroll">
       <h3>Equipos (${DATOS.equipos.length})</h3>
       ${DATOS.equipos.length === 0 ? `<p class="nota">Todavía no hay equipos.</p>` : `
@@ -3621,18 +4616,48 @@ function seccionEquipos() {
             <td>${esc((cursoDe(DATOS, eq.id_curso) || {}).nombre_curso || '—')}</td>
             <td class="num">${nAlumnos(eq.id_equipo)}</td>
             <td>${activo(eq) ? 'Activo' : 'Inactivo'}</td>
-            <td style="text-align:right"><button class="btn-borde btn-mini" data-editar="${esc(eq.id_equipo)}">Editar</button></td>
+            <td style="text-align:right">
+              <button class="btn-borde btn-mini" data-editar="${esc(eq.id_equipo)}" style="margin-right:6px">Editar</button>
+              <button class="btn-borde btn-mini" data-eliminar="${esc(eq.id_equipo)}">Eliminar</button>
+            </td>
           </tr>`).join('')}
         </tbody>
       </table>`}
+      <div class="admin-barra" style="margin-top:14px;justify-content:flex-end">
+        <button class="btn-oro" id="e-nuevo">+ Nuevo equipo</button>
+      </div>
     </div>`;
 }
 
 function wireEquipos() {
   document.querySelectorAll('[data-editar]').forEach(b =>
-    b.addEventListener('click', () => { ADMIN.editEquipo = b.dataset.editar; ADMIN.imagenEscudo = null; renderAdmin(); }));
+    b.addEventListener('click', () => { ADMIN.editEquipo = b.dataset.editar; ADMIN.nuevoEquipo = false; ADMIN.imagenEscudo = null; renderAdmin(); }));
   const cancelar = $('#e-cancelar');
-  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editEquipo = null; ADMIN.imagenEscudo = null; renderAdmin(); });
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editEquipo = null; ADMIN.nuevoEquipo = false; ADMIN.imagenEscudo = null; renderAdmin(); });
+  const nuevo = $('#e-nuevo');
+  if (nuevo) nuevo.addEventListener('click', () => { ADMIN.nuevoEquipo = true; ADMIN.editEquipo = null; ADMIN.imagenEscudo = null; renderAdmin(); });
+
+  document.querySelectorAll('[data-eliminar]').forEach(b =>
+    b.addEventListener('click', e => {
+      const id = b.dataset.eliminar;
+      const eq = DATOS.equipos.find(x => String(x.id_equipo) === String(id));
+      const nombre = eq ? eq.nombre_equipo : id;
+      const nAlumnosEquipo = DATOS.alumnos.filter(a => activo(a) && String(a.id_equipo_actual) === String(id)).length;
+      const tieneRegistros = DATOS.registros.some(r => String(r.id_equipo_en_jornada) === String(id));
+      let aviso = `¿Eliminar el equipo «${nombre}»? Esta acción no se puede deshacer.`;
+      if (nAlumnosEquipo > 0) {
+        aviso = `¿Eliminar el equipo «${nombre}»? ${nAlumnosEquipo} alumno(s) activo(s) pertenecen a él ahora mismo y se quedarán sin equipo. Esta acción no se puede deshacer.`;
+      } else if (tieneRegistros) {
+        aviso = `¿Eliminar el equipo «${nombre}»? Tiene puntuaciones guardadas de jornadas anteriores, que seguirán existiendo pero sin equipo asociado en ellas. Esta acción no se puede deshacer.`;
+      }
+      if (!confirm(aviso)) return;
+      operar(e.target, async () => {
+        await postScript('deleteEquipo', { id_equipo: id });
+        DATOS.equipos = DATOS.equipos.filter(x => String(x.id_equipo) !== String(id));
+        if (String(ADMIN.editEquipo) === String(id)) { ADMIN.editEquipo = null; ADMIN.nuevoEquipo = false; }
+        return 'Equipo eliminado.';
+      });
+    }));
 
   const inputEscudo = $('#e-escudo');
   if (inputEscudo) inputEscudo.addEventListener('change', async () => {
@@ -3650,7 +4675,8 @@ function wireEquipos() {
   const quitarEscudo = $('#e-escudo-quitar');
   if (quitarEscudo) quitarEscudo.addEventListener('click', () => { ADMIN.imagenEscudo = ''; renderAdmin(); });
 
-  $('#e-guardar').addEventListener('click', e =>
+  const btnGuardar = $('#e-guardar');
+  if (btnGuardar) btnGuardar.addEventListener('click', e =>
     operar(e.target, async () => {
       const ed = ADMIN.editEquipo ? DATOS.equipos.find(x => String(x.id_equipo) === String(ADMIN.editEquipo)) : null;
       const datos = {
@@ -3668,6 +4694,7 @@ function wireEquipos() {
       if (i >= 0) DATOS.equipos[i] = { ...DATOS.equipos[i], ...local }; else DATOS.equipos.push(local);
       const esEdicion = !!ADMIN.editEquipo;
       ADMIN.editEquipo = null;
+      ADMIN.nuevoEquipo = false;
       ADMIN.imagenEscudo = null;
       return esEdicion ? 'Equipo actualizado.' : 'Equipo creado.';
     }));
@@ -3679,33 +4706,40 @@ function seccionCriterios() {
   const ed = ADMIN.editCriterio
     ? DATOS.criterios.find(c => String(c.id_criterio) === String(ADMIN.editCriterio))
     : null;
+  const mostrarForm = !!ed || ADMIN.nuevoCriterio;
   const ordenSugerido = DATOS.criterios.reduce((m, c) => Math.max(m, num(c.orden)), 0) + 1;
   const ordenados = [...DATOS.criterios].sort((a, b) => num(a.orden) - num(b.orden));
 
   return `
-    <div class="card" style="margin-bottom:14px">
+    ${mostrarForm ? `<div class="card" style="margin-bottom:14px">
       <h3>${ed ? `Editar: ${esc(ed.nombre)}` : 'Nuevo criterio'}</h3>
       <div class="form-grid">
         <label>Nombre del criterio<input type="text" id="cr-nombre" value="${ed ? esc(ed.nombre) : ''}" placeholder="p. ej. Afinación" /></label>
         <label>Orden en la diana<input type="number" id="cr-orden" min="0" value="${ed ? esc(ed.orden) : ordenSugerido}" /></label>
+        <label>Curso<select id="cr-curso">
+          <option value="">— Todos los cursos —</option>
+          ${cursosActivos(DATOS).map(c => `<option value="${esc(c.id_curso)}" ${ed && String(ed.id_curso) === String(c.id_curso) ? 'selected' : ''}>${esc(c.nombre_curso)}</option>`).join('')}
+        </select></label>
         <label class="check"><input type="checkbox" id="cr-activo" ${!ed || activo(ed) ? 'checked' : ''} /> Activo (aparece en la diana de evaluación)</label>
       </div>
       <div class="admin-barra" style="margin-top:14px">
         <button class="btn-oro" id="cr-guardar">${ed ? 'Guardar cambios' : 'Crear criterio'}</button>
-        ${ed ? `<button class="btn-borde" id="cr-cancelar">Cancelar</button>` : ''}
+        <button class="btn-borde" id="cr-cancelar">Cancelar</button>
       </div>
-      <p class="nota">La diana necesita al menos 3 criterios activos para poder dibujarse. Si desactivas
-      un criterio, sus valoraciones ya guardadas se conservan pero dejan de mostrarse.</p>
-    </div>
+      <p class="nota">La diana de cada alumno/a usa los criterios de «Todos los cursos» más los propios de su curso,
+      y necesita al menos 3 activos y aplicables para poder dibujarse. Si desactivas un criterio, sus valoraciones
+      ya guardadas se conservan pero dejan de mostrarse.</p>
+    </div>` : ''}
     <div class="card tabla-scroll">
       <h3>Criterios (${DATOS.criterios.length})</h3>
       ${DATOS.criterios.length === 0 ? `<p class="nota">Todavía no hay criterios.</p>` : `
       <table>
-        <thead><tr><th class="num">Orden</th><th>Criterio</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th class="num">Orden</th><th>Criterio</th><th>Curso</th><th>Estado</th><th></th></tr></thead>
         <tbody>${ordenados.map(c => `
           <tr style="${activo(c) ? '' : 'opacity:0.45'}">
             <td class="num">${esc(c.orden)}</td>
             <td><strong>${esc(c.nombre)}</strong></td>
+            <td>${c.id_curso ? esc((cursoDe(DATOS, c.id_curso) || {}).nombre_curso || '—') : '<span class="secundario">Todos los cursos</span>'}</td>
             <td>${activo(c) ? 'Activo' : 'Inactivo'}</td>
             <td style="text-align:right">
               <button class="btn-borde btn-mini" data-editar="${esc(c.id_criterio)}" style="margin-right:6px">Editar</button>
@@ -3714,14 +4748,19 @@ function seccionCriterios() {
           </tr>`).join('')}
         </tbody>
       </table>`}
+      <div class="admin-barra" style="margin-top:14px;justify-content:flex-end">
+        <button class="btn-oro" id="cr-nuevo">+ Nuevo criterio</button>
+      </div>
     </div>`;
 }
 
 function wireCriterios() {
   document.querySelectorAll('[data-editar]').forEach(b =>
-    b.addEventListener('click', () => { ADMIN.editCriterio = b.dataset.editar; renderAdmin(); }));
+    b.addEventListener('click', () => { ADMIN.editCriterio = b.dataset.editar; ADMIN.nuevoCriterio = false; renderAdmin(); }));
   const cancelar = $('#cr-cancelar');
-  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editCriterio = null; renderAdmin(); });
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editCriterio = null; ADMIN.nuevoCriterio = false; renderAdmin(); });
+  const nuevo = $('#cr-nuevo');
+  if (nuevo) nuevo.addEventListener('click', () => { ADMIN.nuevoCriterio = true; ADMIN.editCriterio = null; renderAdmin(); });
 
   document.querySelectorAll('[data-eliminar]').forEach(b =>
     b.addEventListener('click', e => {
@@ -3742,12 +4781,14 @@ function wireCriterios() {
       });
     }));
 
-  $('#cr-guardar').addEventListener('click', e =>
+  const btnGuardar = $('#cr-guardar');
+  if (btnGuardar) btnGuardar.addEventListener('click', e =>
     operar(e.target, async () => {
       const datos = {
         id_criterio: ADMIN.editCriterio || '',
         nombre: valorDe('cr-nombre'),
         orden: valorDe('cr-orden') || '0',
+        id_curso: valorDe('cr-curso'),
         activo: marcado('cr-activo'),
       };
       if (!datos.nombre) throw new Error('El criterio necesita un nombre.');
@@ -3758,6 +4799,7 @@ function wireCriterios() {
       ADMIN.filasDianaAlumno = {}; // el panel de diana por alumno cambia si varían los criterios activos
       const esEdicion = !!ADMIN.editCriterio;
       ADMIN.editCriterio = null;
+      ADMIN.nuevoCriterio = false;
       return esEdicion ? 'Criterio actualizado.' : 'Criterio creado.';
     }));
 }
@@ -3888,11 +4930,12 @@ function seccionInsignias() {
   const ed = ADMIN.editInsignia
     ? DATOS.insignias.find(i => String(i.id_insignia) === String(ADMIN.editInsignia))
     : null;
+  const mostrarForm = !!ed || ADMIN.nuevaInsignia;
   const imagenActual = ADMIN.imagenInsignia !== null ? ADMIN.imagenInsignia : (ed ? ed.imagen : '');
   const iconoActual = ADMIN.iconoInsignia !== null ? ADMIN.iconoInsignia : (ed ? ed.icono : '');
 
   return `
-    <div class="card" style="margin-bottom:14px">
+    ${mostrarForm ? `<div class="card" style="margin-bottom:14px">
       <h3>${ed ? `Editar: ${esc(ed.nombre)}` : 'Nueva insignia'}</h3>
       <div class="form-grid">
         <label>Nombre de la insignia<input type="text" id="in-nombre" value="${ed ? esc(ed.nombre) : ''}" placeholder="p. ej. Racha de oro" /></label>
@@ -3918,14 +4961,14 @@ function seccionInsignias() {
       </div>
       <div class="admin-barra" style="margin-top:14px">
         <button class="btn-oro" id="in-guardar">${ed ? 'Guardar cambios' : 'Crear insignia'}</button>
-        ${ed ? `<button class="btn-borde" id="in-cancelar">Cancelar</button>` : ''}
+        <button class="btn-borde" id="in-cancelar">Cancelar</button>
       </div>
       <p class="nota">El icono y el escudo son independientes: el icono aparece en los sitios donde la insignia se
       muestra en pequeño (listados, resúmenes...) y el escudo, si lo subes, se muestra grande en el Salón de la
       Fama sin recortar aunque no sea cuadrado — si no subes ningún escudo, ahí también se usa el icono. Al subirlo
       se intenta quitar el fondo automáticamente y se reduce a un máximo de 800×800 px antes de guardarse en tu
       Google Drive (carpeta «Liga Armónica — Insignias»).</p>
-    </div>
+    </div>` : ''}
     <div class="card tabla-scroll">
       <h3>Insignias (${DATOS.insignias.length})</h3>
       ${DATOS.insignias.length === 0 ? `<p class="nota">Todavía no hay insignias.</p>` : `
@@ -3937,18 +4980,44 @@ function seccionInsignias() {
             <td><strong>${esc(i.nombre)}</strong></td>
             <td>${esc(etiquetaPeriodicidad(i.periodicidad))}</td>
             <td>${activo(i) ? 'Activa' : 'Inactiva'}</td>
-            <td style="text-align:right"><button class="btn-borde btn-mini" data-editar="${esc(i.id_insignia)}">Editar</button></td>
+            <td style="text-align:right">
+              <button class="btn-borde btn-mini" data-editar="${esc(i.id_insignia)}" style="margin-right:6px">Editar</button>
+              <button class="btn-borde btn-mini" data-eliminar="${esc(i.id_insignia)}">Eliminar</button>
+            </td>
           </tr>`).join('')}
         </tbody>
       </table>`}
+      <div class="admin-barra" style="margin-top:14px;justify-content:flex-end">
+        <button class="btn-oro" id="in-nuevo">+ Nueva insignia</button>
+      </div>
     </div>`;
 }
 
 function wireInsignias() {
   document.querySelectorAll('[data-editar]').forEach(b =>
-    b.addEventListener('click', () => { ADMIN.editInsignia = b.dataset.editar; ADMIN.imagenInsignia = null; ADMIN.iconoInsignia = null; renderAdmin(); }));
+    b.addEventListener('click', () => { ADMIN.editInsignia = b.dataset.editar; ADMIN.nuevaInsignia = false; ADMIN.imagenInsignia = null; ADMIN.iconoInsignia = null; renderAdmin(); }));
   const cancelar = $('#in-cancelar');
-  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editInsignia = null; ADMIN.imagenInsignia = null; ADMIN.iconoInsignia = null; renderAdmin(); });
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.editInsignia = null; ADMIN.nuevaInsignia = false; ADMIN.imagenInsignia = null; ADMIN.iconoInsignia = null; renderAdmin(); });
+  const nuevo = $('#in-nuevo');
+  if (nuevo) nuevo.addEventListener('click', () => { ADMIN.nuevaInsignia = true; ADMIN.editInsignia = null; ADMIN.imagenInsignia = null; ADMIN.iconoInsignia = null; renderAdmin(); });
+
+  document.querySelectorAll('[data-eliminar]').forEach(b =>
+    b.addEventListener('click', e => {
+      const id = b.dataset.eliminar;
+      const ins = DATOS.insignias.find(x => String(x.id_insignia) === String(id));
+      const nombre = ins ? ins.nombre : id;
+      const nRepartidas = DATOS.insigniasAlumnos.filter(x => String(x.id_insignia) === String(id)).length;
+      const aviso = nRepartidas > 0
+        ? `¿Eliminar la insignia «${nombre}»? Ya se ha repartido ${nRepartidas} vez/veces; dejará de aparecer en el Salón de la Fama y en las fichas de los alumnos que la tienen. Esta acción no se puede deshacer.`
+        : `¿Eliminar la insignia «${nombre}»? Esta acción no se puede deshacer.`;
+      if (!confirm(aviso)) return;
+      operar(e.target, async () => {
+        await postScript('deleteInsignia', { id_insignia: id });
+        DATOS.insignias = DATOS.insignias.filter(x => String(x.id_insignia) !== String(id));
+        if (String(ADMIN.editInsignia) === String(id)) { ADMIN.editInsignia = null; ADMIN.nuevaInsignia = false; }
+        return 'Insignia eliminada.';
+      });
+    }));
 
   const inputImagen = $('#in-imagen');
   if (inputImagen) inputImagen.addEventListener('change', async () => {
@@ -3972,7 +5041,8 @@ function wireInsignias() {
       renderAdmin();
     }));
 
-  $('#in-guardar').addEventListener('click', e =>
+  const btnGuardar = $('#in-guardar');
+  if (btnGuardar) btnGuardar.addEventListener('click', e =>
     operar(e.target, async () => {
       const ed = ADMIN.editInsignia ? DATOS.insignias.find(i => String(i.id_insignia) === String(ADMIN.editInsignia)) : null;
       const datos = {
@@ -3990,6 +5060,7 @@ function wireInsignias() {
       if (i >= 0) DATOS.insignias[i] = { ...DATOS.insignias[i], ...local }; else DATOS.insignias.push(local);
       const esEdicion = !!ADMIN.editInsignia;
       ADMIN.editInsignia = null;
+      ADMIN.nuevaInsignia = false;
       ADMIN.imagenInsignia = null;
       ADMIN.iconoInsignia = null;
       return esEdicion ? 'Insignia actualizada.' : 'Insignia creada.';
@@ -4002,11 +5073,17 @@ function seccionLiga() {
   const c = DATOS.config;
   return `
     <div class="card">
-      <h3>Configuración de la liga</h3>
+      <h3>Identidad de la liga</h3>
       <div class="form-grid">
         <label>Nombre de la liga<input type="text" id="c-nombre" value="${esc(c.nombre_liga || '')}" /></label>
         <label>Curso<input type="text" id="c-curso" value="${esc(c.curso || '')}" placeholder="2026/2027" /></label>
         <label>Profesor/a<input type="text" id="c-profesor" value="${esc(c.profesor || '')}" /></label>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3>Trimestre y jornada</h3>
+      <div class="form-grid">
         <label>Trimestre activo<select id="c-trimestre">
           ${['1', '2', '3'].map(t => `<option value="${t}" ${String(c.trimestre_activo) === t ? 'selected' : ''}>${t}.º</option>`).join('')}
         </select></label>
@@ -4015,6 +5092,18 @@ function seccionLiga() {
           ${DATOS.jornadas.map(j => `<option value="${esc(j.id_jornada)}" ${String(c.jornada_actual) === String(j.id_jornada) ? 'selected' : ''}>
             J${esc(j.numero_jornada)} · ${esc(j.titulo || 'Sin título')}</option>`).join('')}
         </select></label>
+      </div>
+      <p class="nota">El «trimestre activo» es el que se muestra por defecto al abrir la web.
+      Al empezar un trimestre nuevo, cámbialo aquí: la clasificación principal se reinicia sola
+      porque cada trimestre cuenta únicamente sus jornadas (el histórico sigue en «Curso completo»).
+      La «jornada actual» no hace falta tocarla normalmente: si la dejas en automático, el Dashboard
+      siempre enseña la última jornada publicada que hayas creado. Solo elige una a mano aquí si
+      quieres forzar que se muestre otra distinta.</p>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3>Clasificaciones</h3>
+      <div class="form-grid">
         <label class="check"><input type="checkbox" id="c-tend-alumnos" ${configActivo(c.mostrar_tendencia_alumnos) ? 'checked' : ''} />
           Mostrar en la clasificación individual si cada alumno/a sube, baja o se mantiene respecto a la última jornada</label>
         <label class="check"><input type="checkbox" id="c-tend-equipos" ${configActivo(c.mostrar_tendencia_equipos) ? 'checked' : ''} />
@@ -4025,6 +5114,12 @@ function seccionLiga() {
           Mostrar el podio (1º-2º-3º) encima de la tabla en «Individual» y «Equipos» (no afecta al Dashboard)</label>
         <label class="check"><input type="checkbox" id="c-todos-cursos" ${configActivo(c.mostrar_todos_cursos) ? 'checked' : ''} />
           Permitir la opción «Todos los cursos» en los selectores de curso (si la desactivas, siempre hay que elegir uno concreto)</label>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h3>Bienvenida y tour</h3>
+      <div class="form-grid">
         <label class="check"><input type="checkbox" id="c-bienvenida" ${configActivo(c.bienvenida_activa, false) ? 'checked' : ''} />
           Mostrar una pantalla de bienvenida cada vez que se entra en la web</label>
         <label class="check"><input type="checkbox" id="c-bienvenida-musica-activa" ${configActivo(c.bienvenida_musica_activa, true) ? 'checked' : ''} />
@@ -4044,22 +5139,19 @@ function seccionLiga() {
             : (c.bienvenida_musica_url ? `<audio controls src="${esc(c.bienvenida_musica_url)}" style="margin-top:8px;width:100%;max-width:420px;display:block"></audio>` : '')}
         </label>
       </div>
-      <div class="admin-barra" style="margin-top:14px">
-        <button class="btn-oro" id="c-guardar">Guardar configuración</button>
-      </div>
-      <p class="nota">El «trimestre activo» es el que se muestra por defecto al abrir la web.
-      Al empezar un trimestre nuevo, cámbialo aquí: la clasificación principal se reinicia sola
-      porque cada trimestre cuenta únicamente sus jornadas (el histórico sigue en «Curso completo»).
-      La «jornada actual» no hace falta tocarla normalmente: si la dejas en automático, el Dashboard
-      siempre enseña la última jornada publicada que hayas creado. Solo elige una a mano aquí si
-      quieres forzar que se muestre otra distinta. Para la música de bienvenida, o pegas un enlace
-      directo al propio archivo de audio (que termine en .mp3 o similar, no a una página que lo
-      reproduce), o subes el archivo directamente (máximo 15 MB; se guarda en tu Google Drive, en la
-      carpeta «Liga Armónica — Música», igual que los escudos e insignias); si subes un archivo, se usa
-      ese en vez de la URL. Si no hay ni URL ni archivo, la pantalla de bienvenida se muestra igualmente
-      pero sin sonido. Los navegadores no dejan reproducir audio sin que la persona pulse antes algo, así
-      que la música empieza justo al pulsar «Entrar».</p>
+      <p class="nota">Para la música de bienvenida, o pegas un enlace directo al propio archivo de
+      audio (que termine en .mp3 o similar, no a una página que lo reproduce), o subes el archivo
+      directamente (máximo 15 MB; se guarda en tu Google Drive, en la carpeta «Liga Armónica —
+      Música», igual que los escudos e insignias); si subes un archivo, se usa ese en vez de la URL.
+      Si no hay ni URL ni archivo, la pantalla de bienvenida se muestra igualmente pero sin sonido.
+      Los navegadores no dejan reproducir audio sin que la persona pulse antes algo, así que la
+      música empieza justo al pulsar «Entrar».</p>
     </div>
+
+    <div class="admin-barra" style="margin-top:14px">
+      <button class="btn-oro" id="c-guardar">Guardar configuración</button>
+    </div>
+
     <div class="card" style="margin-top:14px">
       <h3>Reglas de la liga</h3>
       <p class="nota" style="margin-top:0">Este texto (con el formato que le des) se muestra tal cual en la
@@ -4285,6 +5377,149 @@ function wireLiga() {
       if (config.nombre_liga) { $('#titulo').textContent = DATOS.config.nombre_liga; document.title = DATOS.config.nombre_liga; }
       if (config.curso) { $('#curso').textContent = DATOS.config.curso; $('#temporada').hidden = false; }
       return res.aviso || 'Configuración guardada.';
+    }));
+}
+
+/* ---------- Sección: Copia de seguridad (exportar/importar todos los datos) ---------- */
+
+/** Las mismas claves que trae DATOS, con la etiqueta y la hoja de Google Sheets a la que corresponde cada una. */
+const ENTIDADES_BACKUP_UI = [
+  ['cursos', 'Cursos'], ['grupos', 'Grupos'], ['equipos', 'Equipos'], ['alumnos', 'Alumnos'],
+  ['jornadas', 'Jornadas'], ['criterios', 'Criterios'], ['insignias', 'Insignias'],
+  ['registros', 'Registros (puntuaciones)'], ['evaluaciones', 'Evaluaciones (diana)'],
+  ['insigniasAlumnos', 'Insignias repartidas'],
+];
+
+function seccionBackup() {
+  const archivo = ADMIN.backupArchivo;
+  return `
+    <div class="card" style="margin-bottom:14px">
+      <h3>Exportar</h3>
+      <p class="nota" style="margin-top:0">Descarga un archivo con absolutamente todos los datos de la liga tal
+      como están ahora mismo: alumnos, equipos, jornadas, puntuaciones, criterios, evaluaciones, insignias, cursos,
+      grupos y la configuración de la pestaña Liga. Guárdalo en un sitio seguro (tu ordenador, Drive...); sirve
+      para restaurarlo más adelante desde aquí mismo, o como copia de seguridad antes de un cambio grande.</p>
+      <button class="btn-oro" id="bk-exportar">⬇ Descargar copia de seguridad (.json)</button>
+    </div>
+    <div class="card">
+      <h3>Importar</h3>
+      <p class="nota" style="margin-top:0">Elige un archivo .json exportado desde aquí mismo (de esta hoja o de
+      otra). Antes de tocar nada podrás ver un resumen de lo que trae y elegir cómo se combina con los datos
+      actuales.</p>
+      <input type="file" id="bk-archivo" accept="application/json,.json" />
+      ${archivo ? `
+      <div class="card" style="margin-top:14px;background:rgba(8,15,28,0.6)">
+        <p class="secundario" style="margin:0 0 10px"><strong>${esc(archivo.nombre)}</strong>${archivo.fecha ? ` · exportado el ${esc(archivo.fecha)}` : ''}</p>
+        <div class="grid-resumen-backup">
+          ${ENTIDADES_BACKUP_UI.map(([clave, etiqueta]) => `<span class="secundario">${etiqueta}: <strong>${(archivo.datos[clave] || []).length}</strong></span>`).join('')}
+        </div>
+        <div class="form-grid" style="margin-top:16px">
+          <label class="check" style="grid-column:1/-1">
+            <input type="radio" name="bk-modo" value="fusionar" ${ADMIN.backupModo === 'fusionar' ? 'checked' : ''} />
+            <strong>Fusionar</strong> — actualiza lo que ya exista con el mismo id y añade lo que falte. No borra nada que no venga en el archivo.
+          </label>
+          <label class="check" style="grid-column:1/-1">
+            <input type="radio" name="bk-modo" value="nuevo" ${ADMIN.backupModo === 'nuevo' ? 'checked' : ''} />
+            <strong>Añadir como nuevo</strong> — crea alumnos, equipos, jornadas... con ids nuevos, sin tocar ni pisar nada de lo que ya hay (útil para juntar dos ligas o restaurar la misma copia varias veces).
+          </label>
+          <label class="check" style="grid-column:1/-1">
+            <input type="radio" name="bk-modo" value="sustituir" ${ADMIN.backupModo === 'sustituir' ? 'checked' : ''} />
+            <strong>Sustituir todo</strong> — borra todo lo que haya ahora mismo y lo deja exactamente como en el archivo. No se puede deshacer desde la web.
+          </label>
+        </div>
+        ${ADMIN.backupModo === 'sustituir' ? `
+        <p class="nota" style="color:#f87171;margin-top:14px">Esto va a borrar TODOS los datos actuales (alumnos,
+        equipos, jornadas, puntuaciones...) y ponerlos como estaban en el archivo. Escribe <strong>SUSTITUIR</strong>
+        para confirmar que lo has entendido.</p>
+        <input type="text" id="bk-confirmar" placeholder="Escribe SUSTITUIR" style="max-width:260px" />` : ''}
+        <div class="admin-barra" style="margin-top:16px">
+          <button class="btn-oro" id="bk-importar">Importar</button>
+          <button class="btn-borde" id="bk-cancelar">Cancelar</button>
+        </div>
+      </div>` : ''}
+    </div>`;
+}
+
+function wireBackup() {
+  $('#bk-exportar').addEventListener('click', () => {
+    const backup = {
+      tipo: 'liga-armonica-backup',
+      version: 1,
+      fecha: new Date().toISOString(),
+      nombre_liga: DATOS.config.nombre_liga || '',
+      datos: {
+        config: DATOS.config,
+        cursos: DATOS.cursos, grupos: DATOS.grupos, equipos: DATOS.equipos, alumnos: DATOS.alumnos,
+        jornadas: DATOS.jornadas, criterios: DATOS.criterios, insignias: DATOS.insignias,
+        registros: DATOS.registros, evaluaciones: DATOS.evaluaciones, insigniasAlumnos: DATOS.insigniasAlumnos,
+      },
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const fecha = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `liga-armonica-backup-${fecha}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  const inputArchivo = $('#bk-archivo');
+  if (inputArchivo) inputArchivo.addEventListener('change', () => {
+    const file = inputArchivo.files[0];
+    if (!file) return;
+    const lector = new FileReader();
+    lector.onload = () => {
+      let json;
+      try {
+        json = JSON.parse(lector.result);
+      } catch (err) {
+        alert('Ese archivo no es un .json válido.');
+        inputArchivo.value = '';
+        return;
+      }
+      if (!json || typeof json !== 'object' || !json.datos || (!json.datos.alumnos && !json.datos.config)) {
+        alert('Ese archivo no parece una copia de seguridad de Liga Armónica.');
+        inputArchivo.value = '';
+        return;
+      }
+      ADMIN.backupArchivo = {
+        nombre: file.name,
+        fecha: json.fecha ? new Date(json.fecha).toLocaleString('es-ES') : '',
+        datos: json.datos,
+      };
+      renderAdmin();
+    };
+    lector.readAsText(file);
+  });
+
+  document.querySelectorAll('input[name="bk-modo"]').forEach(r =>
+    r.addEventListener('change', () => { ADMIN.backupModo = r.value; renderAdmin(); }));
+
+  const cancelar = $('#bk-cancelar');
+  if (cancelar) cancelar.addEventListener('click', () => { ADMIN.backupArchivo = null; renderAdmin(); });
+
+  const btnImportar = $('#bk-importar');
+  if (btnImportar) btnImportar.addEventListener('click', e =>
+    operar(e.target, async () => {
+      const modo = ADMIN.backupModo;
+      if (modo === 'sustituir' && valorDe('bk-confirmar').toUpperCase() !== 'SUSTITUIR') {
+        throw new Error('Escribe SUSTITUIR en el recuadro para confirmar que quieres borrarlo todo.');
+      }
+      const aviso = modo === 'sustituir'
+        ? 'Vas a BORRAR todos los datos actuales y sustituirlos por los del archivo. Esto no se puede deshacer desde la web. ¿Seguro?'
+        : modo === 'nuevo'
+        ? 'Se va a añadir todo el contenido del archivo como datos nuevos (alumnos, equipos, jornadas... con ids nuevos), sin tocar lo que ya hay. ¿Continuar?'
+        : 'Se van a actualizar los registros que coincidan y añadir los que falten, sin borrar nada que no venga en el archivo. ¿Continuar?';
+      if (!confirm(aviso)) throw new Error('Importación cancelada.');
+
+      const res = await postScript('restaurarBackup', { modo, datos: ADMIN.backupArchivo.datos });
+      ADMIN.backupArchivo = null;
+      // Ha cambiado prácticamente todo: es más fiable recargar la página entera
+      // y que vuelva a leer todo desde la hoja que intentar recomponer DATOS a mano.
+      alert('Importación completada:\n\n' + res.resumen.join('\n') + '\n\nLa página se va a recargar.');
+      location.reload();
+      return 'Importado.';
     }));
 }
 
