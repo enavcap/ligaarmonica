@@ -222,7 +222,24 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   .pos.p1 { background: var(--gold); color: var(--night); box-shadow: 0 0 0 2px rgba(243, 217, 139, 0.5); }
   .pos.p2 { background: #cbd5e1; color: var(--night); }
   .pos.p3 { background: #b45309; color: var(--chalk); }
+  .podio-top3 { display: flex; align-items: flex-end; justify-content: center; gap: 14px; margin-bottom: 24px; }
+  .podio-puesto { display: flex; flex-direction: column; align-items: center; text-align: center; text-decoration: none; width: 112px; }
+  .podio-visual { margin-bottom: 8px; }
+  .podio-nombre { font-size: 13px; font-weight: 600; color: var(--chalk); margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .podio-dato { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .podio-bloque {
+    width: 100%; border-radius: 10px 10px 0 0; display: flex; align-items: flex-start; justify-content: center;
+    padding-top: 8px; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 22px;
+  }
+  .podio-bloque.p1 { background: var(--gold); color: var(--night); box-shadow: 0 0 0 2px rgba(243, 217, 139, 0.5); }
+  .podio-bloque.p2 { background: #cbd5e1; color: var(--night); }
+  .podio-bloque.p3 { background: #b45309; color: var(--chalk); }
+  @media (max-width: 520px) {
+    .podio-top3 { gap: 8px; }
+    .podio-puesto { width: 88px; }
+  }
   .tendencia { display: inline-block; font-size: 12px; line-height: 1; cursor: default; }
+  .tendencia-num { margin-left: 3px; }
   .tendencia-sube { color: #0ca30c; }
   .tendencia-baja { color: #e0524f; }
   .tendencia-igual { color: var(--muted); font-size: 10px; }
@@ -231,6 +248,12 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   .nota { font-size: 12px; color: rgba(244,246,243,0.35); margin-top: 12px; }
   .vermas { font-size: 13px; font-weight: 600; color: var(--gold); text-decoration: none; float: right; }
   .vermas:hover { color: var(--gold-light); }
+  .btn-sutil {
+    background: none; border: none; padding: 4px 8px; cursor: pointer;
+    font-size: 12px; color: rgba(244, 246, 243, 0.3); text-decoration: underline;
+    text-underline-offset: 2px; transition: color 0.15s;
+  }
+  .btn-sutil:hover { color: var(--muted); }
 
   .enlace { color: inherit; text-decoration: none; cursor: pointer; }
   .enlace:hover { color: var(--gold-light); text-decoration: underline; }
@@ -280,7 +303,13 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   }
   @keyframes respirar-marca { 0%, 100% { opacity: 0.72; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
   .cargando { text-align: center; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-size: 18px; text-transform: uppercase; letter-spacing: 0.2em; }
-  footer { margin-top: 60px; padding-top: 14px; border-top: 1px solid rgba(30,92,65,0.4); text-align: center; font-size: 12px; color: rgba(244,246,243,0.35); }
+  footer {
+    margin-top: 60px; padding-top: 14px; border-top: 1px solid rgba(30,92,65,0.4);
+    font-size: 12px; color: rgba(244,246,243,0.35);
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px;
+  }
+  footer #pie-texto { grid-column: 2; text-align: center; }
+  footer #repetir-tour { grid-column: 1; justify-self: start; }
 
   /* --- Panel de administración --- */
   input, select, textarea {
@@ -480,6 +509,32 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
   @media (prefers-reduced-motion: reduce) {
     .splash-linea, .splash.animar .splash-linea { animation: none; opacity: 1; transform: none; }
   }
+
+  /* --- Tour de bienvenida (primera visita) --- */
+  .tour-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(4, 8, 16, 0.72); padding: 20px;
+  }
+  .tour-overlay[hidden] { display: none; }
+  .tour-caja {
+    width: min(440px, 100%); border: 1px solid rgba(229, 185, 78, 0.35); border-radius: 14px;
+    background: rgba(12, 23, 40, 0.98); box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    padding: 28px 26px; text-align: left; position: relative;
+  }
+  .tour-dots { display: flex; gap: 6px; }
+  .tour-dots span { width: 7px; height: 7px; border-radius: 50%; background: rgba(244, 246, 243, 0.25); display: inline-block; }
+  .tour-dots span.on { background: var(--gold); }
+  .tour-caja h3 {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 24px;
+    text-transform: uppercase; letter-spacing: 0.03em; color: var(--gold-light); margin: 12px 0 10px;
+  }
+  .tour-caja p { font-size: 15px; line-height: 1.6; color: var(--chalk); margin: 0; }
+  .tour-cerrar {
+    position: absolute; top: 12px; right: 12px; background: transparent; border: none;
+    color: var(--muted); font-size: 22px; line-height: 1; cursor: pointer; padding: 4px 8px;
+  }
+  .tour-cerrar:hover { color: var(--chalk); }
 </style>
 </head>
 <body>
@@ -495,6 +550,12 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
 </div>
 <audio id="splash-audio" preload="none"></audio>
 <button id="musica-btn" class="musica-btn" hidden aria-label="Silenciar música">🔊</button>
+<div id="tour" class="tour-overlay" hidden>
+  <div class="tour-caja">
+    <button class="tour-cerrar" id="tour-cerrar" aria-label="Cerrar">×</button>
+    <div id="tour-cuerpo"></div>
+  </div>
+</div>
 <div class="wrap">
   <header>
     <div class="temporada" id="temporada" hidden><small>Temporada</small><strong id="curso"></strong></div>
@@ -523,7 +584,10 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKBFyMm_iLsJUjnfA5B
       <p class="cargando">Cargando la liga…</p>
     </div>
   </main>
-  <footer id="pie">Liga Armónica · Gamificación de la asignatura de Armonía</footer>
+  <footer id="pie">
+    <button class="btn-sutil" id="repetir-tour" hidden>Repetir tour</button>
+    <span id="pie-texto">Liga Armónica · Gamificación de la asignatura de Armonía</span>
+  </footer>
 </div>
 
 <script>
@@ -830,19 +894,26 @@ function tendencias(datos, trimestre, filasActuales, tipo, idFiltro, idCursoDire
   const posAntes = new Map(filasAntes.map(f => [f.id, f.pos]));
   filasActuales.forEach(f => {
     const antes = posAntes.get(f.id);
-    if (antes === undefined) { mapa.set(f.id, 'nuevo'); return; }
-    if (antes > f.pos) mapa.set(f.id, 'subio');
-    else if (antes < f.pos) mapa.set(f.id, 'bajo');
-    else mapa.set(f.id, 'igual');
+    if (antes === undefined) { mapa.set(f.id, { t: 'nuevo', n: 0 }); return; }
+    if (antes > f.pos) mapa.set(f.id, { t: 'subio', n: antes - f.pos });
+    else if (antes < f.pos) mapa.set(f.id, { t: 'bajo', n: f.pos - antes });
+    else mapa.set(f.id, { t: 'igual', n: 0 });
   });
   return mapa;
 }
 
-function badgeTendencia(t) {
-  if (t === 'subio') return `<span class="tendencia tendencia-sube" title="Ha subido puestos desde la última jornada">▲</span>`;
-  if (t === 'bajo') return `<span class="tendencia tendencia-baja" title="Ha bajado puestos desde la última jornada">▼</span>`;
-  if (t === 'nuevo') return `<span class="tendencia tendencia-nuevo" title="Nueva incorporación a la clasificación">●</span>`;
-  if (t === 'igual') return `<span class="tendencia tendencia-igual" title="Se mantiene desde la última jornada">▬</span>`;
+/** `info` es { t: 'subio'|'bajo'|'igual'|'nuevo', n: puestos de diferencia }, tal como lo deja tendencias(). */
+function badgeTendencia(info) {
+  if (!info) return '';
+  // El número de puestos se puede ocultar sin desactivar las flechas (ajuste
+  // aparte en Admin → Liga): así se puede enseñar solo si sube/baja, sin
+  // decir cuánto.
+  const conNumero = configActivo(DATOS.config.mostrar_tendencia_numero, true);
+  const n = conNumero && info.n ? `<span class="tendencia-num">${info.n}</span>` : '';
+  if (info.t === 'subio') return `<span class="tendencia tendencia-sube" title="Ha subido ${info.n} puesto${info.n === 1 ? '' : 's'} desde la última jornada">▲${n}</span>`;
+  if (info.t === 'bajo') return `<span class="tendencia tendencia-baja" title="Ha bajado ${info.n} puesto${info.n === 1 ? '' : 's'} desde la última jornada">▼${n}</span>`;
+  if (info.t === 'nuevo') return `<span class="tendencia tendencia-nuevo" title="Nueva incorporación a la clasificación">●</span>`;
+  if (info.t === 'igual') return `<span class="tendencia tendencia-igual" title="Se mantiene desde la última jornada">▬</span>`;
   return '';
 }
 
@@ -1485,6 +1556,44 @@ function pills() {
     `<button data-tri="${v}" class="${TRIMESTRE === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 }
 
+/**
+ * Bloque de podio (2º-1º-3º, con el 1º en el centro y más alto) para las
+ * pestañas Individual y Equipos (no el Dashboard, que ya tiene sus propias
+ * tarjetas de líder). Se puede apagar entero desde Admin → Liga.
+ */
+function renderPodio(filas, tipo) {
+  if (!configActivo(DATOS.config.mostrar_podio, true)) return '';
+  const top = filas.slice(0, 3).filter(f => f.pos <= 3);
+  if (top.length < 2) return ''; // con 0 o 1 clasificado no hay podio que dibujar
+  const orden = [top[1], top[0], top[2]].filter(Boolean); // 2º, 1º, 3º de izquierda a derecha
+
+  const puesto = f => {
+    const clase = f.pos === 1 ? 'p1' : f.pos === 2 ? 'p2' : 'p3';
+    const alto = f.pos === 1 ? 132 : f.pos === 2 ? 96 : 72;
+    let visual, nombre, dato, attr;
+    if (tipo === 'equipos') {
+      visual = f.escudo ? escudoEquipoHTML(f, 46) : (f.color ? dot(f.color) : '');
+      nombre = f.equipo;
+      dato = `${fmtMedia(f.media)} de media`;
+      attr = ` data-equipo="${esc(f.id)}"`;
+    } else {
+      const alumno = DATOS.alumnos.find(a => String(a.id_alumno) === String(f.id));
+      visual = alumno ? svgAvatar(alumno, { color: f.color }, 'pequeno') : '';
+      nombre = f.nombre;
+      dato = `${f.puntos} pts`;
+      attr = ` data-alumno="${esc(f.id)}"`;
+    }
+    return `<a class="podio-puesto" href="#"${attr}>
+      <span class="podio-visual">${visual}</span>
+      <span class="podio-nombre">${esc(nombre)}</span>
+      <span class="podio-dato">${esc(dato)}</span>
+      <span class="podio-bloque ${clase}" style="height:${alto}px">${f.pos}</span>
+    </a>`;
+  };
+
+  return `<div class="podio-top3">${orden.map(puesto).join('')}</div>`;
+}
+
 function pillsPeriodo() {
   return `<div class="pills">${PERIODOS_DIANA.map(([v, l]) =>
     `<button data-periodo="${v}" class="${DIANA_PERIODO === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
@@ -1793,6 +1902,7 @@ function render() {
     html = `<div class="fila-titulo"><h2>Clasificación individual</h2>${pills()}</div>
       ${pillsCursos() ? `<div style="margin-bottom:${pillsGrupos(CURSO_SEL) ? '10px' : '20px'}">${pillsCursos()}</div>` : ''}
       ${pillsGrupos(CURSO_SEL) ? `<div style="margin-bottom:20px">${pillsGrupos(CURSO_SEL)}</div>` : ''}
+      ${renderPodio(ind, 'individual')}
       <div class="card tabla-scroll">${tablaIndividual(ind, false, tendAl)}</div>`;
   } else if (VISTA === 'jornadas') {
     html = `<div class="fila-titulo"><h2>Jornadas</h2>${pills()}</div>
@@ -1807,7 +1917,8 @@ function render() {
       ${renderReglas()}`;
   } else {
     html = `<div class="fila-titulo"><h2>Clasificación por equipos</h2>${pills()}</div>
-      ${pillsCursos()}
+      ${pillsCursos() ? `<div style="margin-bottom:20px">${pillsCursos()}</div>` : ''}
+      ${renderPodio(eq, 'equipos')}
       <div class="card"><div class="tabla-scroll">${tablaEquipos(eq, false, tendEq)}</div>
       <p class="nota">Orden principal: media de puntos por alumno y jornada (solo jornadas publicadas). Equilibrio:
       desviación entre las medias de los integrantes con jornadas puntuadas — cuanto más bajo, más parejo el equipo.</p></div>`;
@@ -1828,6 +1939,7 @@ function render() {
     el.addEventListener('click', e => { e.preventDefault(); abrirAlumno(el.dataset.alumno); }));
   main.querySelectorAll('[data-equipo]').forEach(el =>
     el.addEventListener('click', e => { e.preventDefault(); abrirEquipo(el.dataset.equipo); }));
+  $('#repetir-tour').hidden = VISTA !== 'dashboard';
   wireTooltips(main);
 }
 
@@ -1843,6 +1955,8 @@ document.querySelectorAll('#nav button').forEach(b =>
 
 const tituloEl = $('#titulo');
 if (tituloEl) tituloEl.addEventListener('click', () => cambiarVista('dashboard'));
+
+$('#repetir-tour').addEventListener('click', repetirTour);
 
 // Al bloquear la pantalla o salir del navegador (cambiar de app, minimizar...)
 // el móvil dispara "visibilitychange" con document.hidden a true: se para la
@@ -1895,8 +2009,77 @@ function mostrarError(titulo, cuerpo) {
 function ocultarSplash() {
   const splash = $('#splash');
   splash.classList.add('saliendo');
-  setTimeout(() => { splash.hidden = true; }, 500);
+  setTimeout(() => { splash.hidden = true; mostrarTourSiToca(); }, 500);
 }
+
+/* =========================================================================
+   Tour de bienvenida (solo visitantes públicos, solo la primera vez)
+   ========================================================================= */
+
+const TOUR_VISTO_CLAVE = 'liga_tour_visto';
+const TOUR_PASOS = [
+  { titulo: '¡Bienvenido/a a Liga Armónica!',
+    texto: 'Convierte cada sesión de la asignatura en una jornada que suma puntos, tanto para ti como para tu equipo. Este tour rápido te enseña dónde está todo.' },
+  { titulo: 'Cómo se puntúa',
+    texto: 'Cada jornada publicada suma hasta 10 puntos: calidad del trabajo, entrega a tiempo y corrección de los errores señalados. Si no se entrega, cuenta como 0.' },
+  { titulo: 'Clasificaciones',
+    texto: 'En «Individual» y «Equipos» consultas tu posición y la de tu equipo, por trimestre o en el curso completo. Toca tu nombre en cualquier tabla para ver tu ficha con gráficas.' },
+  { titulo: 'Insignias y Salón de la Fama',
+    texto: 'El profesor reparte insignias por rachas, superación y más. Todas las que se van consiguiendo quedan recogidas en «Salón de la Fama».' },
+  { titulo: 'Reglas',
+    texto: 'Si tienes dudas sobre cómo funciona todo esto, en la pestaña «Reglas» está explicado con detalle. ¡A por ello!' },
+];
+let TOUR_PASO = 0;
+
+/** Se llama justo al terminar de ocultarse la bienvenida (con o sin ella activada). */
+function mostrarTourSiToca() {
+  if (!configActivo(DATOS.config.tour_activo, true)) return;
+  if (localStorage.getItem(TOUR_VISTO_CLAVE)) return;
+  if (VISTA !== 'dashboard') return; // por si el enlace de entrada llevaba a otra pestaña
+  TOUR_PASO = 0;
+  renderTour();
+  $('#tour').hidden = false;
+}
+
+function cerrarTour() {
+  localStorage.setItem(TOUR_VISTO_CLAVE, '1');
+  $('#tour').hidden = true;
+}
+
+/** Botón «Repetir tour» del Dashboard: lo abre siempre, pase lo que pase con el ajuste o con localStorage. */
+function repetirTour() {
+  TOUR_PASO = 0;
+  renderTour();
+  $('#tour').hidden = false;
+}
+
+function renderTour() {
+  const paso = TOUR_PASOS[TOUR_PASO];
+  const esUltimo = TOUR_PASO === TOUR_PASOS.length - 1;
+  $('#tour-cuerpo').innerHTML = `
+    <div class="tour-dots">${TOUR_PASOS.map((_, i) => `<span class="${i === TOUR_PASO ? 'on' : ''}"></span>`).join('')}</div>
+    <h3>${esc(paso.titulo)}</h3>
+    <p>${esc(paso.texto)}</p>
+    <div class="admin-barra" style="margin-top:22px;justify-content:space-between">
+      <button class="btn-borde btn-mini" id="tour-saltar">Saltar</button>
+      <div style="display:flex;gap:8px">
+        ${TOUR_PASO > 0 ? `<button class="btn-borde" id="tour-atras">← Atrás</button>` : ''}
+        <button class="btn-oro" id="tour-siguiente">${esUltimo ? 'Empezar' : 'Siguiente →'}</button>
+      </div>
+    </div>`;
+  $('#tour-saltar').addEventListener('click', cerrarTour);
+  const btnAtras = $('#tour-atras');
+  if (btnAtras) btnAtras.addEventListener('click', () => { TOUR_PASO--; renderTour(); });
+  $('#tour-siguiente').addEventListener('click', () => {
+    if (esUltimo) { cerrarTour(); return; }
+    TOUR_PASO++;
+    renderTour();
+  });
+}
+
+$('#tour-cerrar').addEventListener('click', cerrarTour);
+$('#tour').addEventListener('click', e => { if (e.target.id === 'tour') cerrarTour(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#tour').hidden) cerrarTour(); });
 
 /** Aviso flotante y breve para errores de audio que si no se verían (la consola no la mira nadie). */
 function avisarErrorAudio(mensaje) {
@@ -3795,12 +3978,18 @@ function seccionLiga() {
           Mostrar en la clasificación individual si cada alumno/a sube, baja o se mantiene respecto a la última jornada</label>
         <label class="check"><input type="checkbox" id="c-tend-equipos" ${configActivo(c.mostrar_tendencia_equipos) ? 'checked' : ''} />
           Mostrar en la clasificación de equipos si cada equipo sube, baja o se mantiene respecto a la última jornada</label>
+        <label class="check"><input type="checkbox" id="c-tend-numero" ${configActivo(c.mostrar_tendencia_numero) ? 'checked' : ''} />
+          Mostrar cuántos puestos ha subido o bajado junto a la flecha (si la desactivas, se ve la flecha pero no el número; se puede apagar sin tocar las dos anteriores)</label>
+        <label class="check"><input type="checkbox" id="c-podio" ${configActivo(c.mostrar_podio) ? 'checked' : ''} />
+          Mostrar el podio (1º-2º-3º) encima de la tabla en «Individual» y «Equipos» (no afecta al Dashboard)</label>
         <label class="check"><input type="checkbox" id="c-todos-cursos" ${configActivo(c.mostrar_todos_cursos) ? 'checked' : ''} />
           Permitir la opción «Todos los cursos» en los selectores de curso (si la desactivas, siempre hay que elegir uno concreto)</label>
         <label class="check"><input type="checkbox" id="c-bienvenida" ${configActivo(c.bienvenida_activa, false) ? 'checked' : ''} />
           Mostrar una pantalla de bienvenida cada vez que se entra en la web</label>
         <label class="check"><input type="checkbox" id="c-bienvenida-musica-activa" ${configActivo(c.bienvenida_musica_activa, true) ? 'checked' : ''} />
           Reproducir música en la pantalla de bienvenida (si la desactivas, se queda solo la animación, sin sonido)</label>
+        <label class="check"><input type="checkbox" id="c-tour" ${configActivo(c.tour_activo, true) ? 'checked' : ''} />
+          Mostrar el tour de bienvenida (5 pasos) la primera vez que alguien entra en la web</label>
         <label style="grid-column:1/-1">URL de la música de bienvenida (enlace directo a un mp3 u otro audio)
           <input type="text" id="c-bienvenida-musica" value="${esc(c.bienvenida_musica_url || '')}" placeholder="https://.../cancion.mp3" ${ADMIN.audioBienvenida ? 'disabled' : ''} /></label>
         <label style="grid-column:1/-1">O sube directamente un archivo de audio
@@ -4017,10 +4206,13 @@ function wireLiga() {
         jornada_actual: valorDe('c-jornada'),
         mostrar_tendencia_alumnos: marcado('c-tend-alumnos') ? 'TRUE' : 'FALSE',
         mostrar_tendencia_equipos: marcado('c-tend-equipos') ? 'TRUE' : 'FALSE',
+        mostrar_tendencia_numero: marcado('c-tend-numero') ? 'TRUE' : 'FALSE',
+        mostrar_podio: marcado('c-podio') ? 'TRUE' : 'FALSE',
         mostrar_todos_cursos: marcado('c-todos-cursos') ? 'TRUE' : 'FALSE',
         bienvenida_activa: marcado('c-bienvenida') ? 'TRUE' : 'FALSE',
         bienvenida_musica_activa: marcado('c-bienvenida-musica-activa') ? 'TRUE' : 'FALSE',
         bienvenida_musica_url: ADMIN.audioBienvenida !== null ? ADMIN.audioBienvenida : valorDe('c-bienvenida-musica'),
+        tour_activo: marcado('c-tour') ? 'TRUE' : 'FALSE',
         reglas_texto: editorReglas ? sanitizarHTML(editorReglas.innerHTML).trim() : '',
       };
       // Solo se manda (y por tanto solo se toca en la hoja) lo que de verdad
@@ -4100,7 +4292,7 @@ function fmtFecha(f) {
     DIANA_PERIODO = ['1', '2', '3'].includes(TRIMESTRE) ? TRIMESTRE : '1';
     if (DATOS.config.nombre_liga) { $('#titulo').textContent = DATOS.config.nombre_liga; document.title = DATOS.config.nombre_liga; }
     if (DATOS.config.curso) { $('#curso').textContent = DATOS.config.curso; $('#temporada').hidden = false; }
-    if (DATOS.config.profesor) { $('#pie').textContent += ' · ' + DATOS.config.profesor; }
+    if (DATOS.config.profesor) { $('#pie-texto').textContent += ' · ' + DATOS.config.profesor; }
     render();
     finalizarSplash(configActivo(DATOS.config.bienvenida_activa, false));
   } catch (err) {
